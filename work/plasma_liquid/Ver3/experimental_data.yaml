@@ -1,0 +1,90 @@
+# ============================================================================
+# 실험 측정값 — Plasmapatch+liquid_Figureset.pptx (J. Choi)
+# 처리 조건: 1 kHz, 6분 처리, indirect DBD
+# 출처: Figure 4 (Slide 4), Table 1 (Slide 5)
+# ============================================================================
+
+treatment:
+  frequency: 1  # kHz
+  duration: 360  # seconds (6 min)
+  type: "indirect DBD"
+
+# ============================================================================
+# Table 1: pH, Conductivity (Slide 5)
+# ============================================================================
+pH:
+  DI_water:
+    control: {mean: 6.47, std: 0.31}
+    2.6kVpp: {mean: 5.09, std: 0.11}
+    3.2kVpp: {mean: 3.61, std: 0.04}
+    3.6kVpp: {mean: 3.25, std: 0.21}
+  saline:
+    control: {mean: 6.67, std: 0.24}
+    2.6kVpp: {mean: 5.15, std: 0.06}
+    3.2kVpp: {mean: 3.60, std: 0.02}
+    3.6kVpp: {mean: 3.43, std: 0.02}
+
+conductivity:
+  DI_water:  # [uS/cm]
+    control: {mean: 9.23, std: 0.07}
+    2.6kVpp: {mean: 12.23, std: 0.20}
+    3.2kVpp: {mean: 123.87, std: 10.73}
+    3.6kVpp: {mean: 226.67, std: 1.70}
+  saline:  # [mS/cm]
+    control: {mean: 14.27, std: 0.13}
+    2.6kVpp: {mean: 14.30, std: 0.04}
+    3.2kVpp: {mean: 14.23, std: 0.05}
+    3.6kVpp: {mean: 14.47, std: 0.22}
+
+# ============================================================================
+# Figure 4: 액상 최종 농도 (Slide 4)
+# 단위: uM (micro-molar)
+# * = 검출한계 이하 (NO2- detection limit: 0.222 uM)
+# 값은 차트에서 읽은 근사값 (정확한 값은 원본 데이터 참조)
+# ============================================================================
+
+# Figure 4(a): DI water — NO2-, NO3-
+RNS_DI_water:  # [uM]
+  2.6kVpp:
+    NO2-: {mean: 0, note: "below detection limit (<0.222 uM)"}
+    NO3-: {mean: 33, std_approx: 5}
+  3.2kVpp:
+    NO2-: {mean: 3, std_approx: 1}
+    NO3-: {mean: 63, std_approx: 5}
+  3.6kVpp:
+    NO2-: {mean: 21, std_approx: 3}
+    NO3-: {mean: 70, std_approx: 7}
+
+# Figure 4(b): DI water — H2O2
+H2O2_DI_water:  # [uM]
+  2.6kVpp: {mean: 4.8, std_approx: 0.5}
+  3.2kVpp: {mean: 11, std_approx: 2}
+  3.6kVpp: {mean: 16, std_approx: 2}
+
+# Figure 4(c): Saline — H2O2
+H2O2_saline:  # [uM]
+  2.6kVpp: {mean: 2, std_approx: 0.3}
+  3.2kVpp: {mean: 5, std_approx: 0.5}
+  3.6kVpp: {mean: 8, std_approx: 1}
+
+# Figure 4(d): Saline — NO2-, NO3-
+RNS_saline:  # [uM]
+  2.6kVpp:
+    NO2-: {mean: 0, note: "below detection limit (<0.222 uM)"}
+    NO3-: {mean: 32, std_approx: 5}
+  3.2kVpp:
+    NO2-: {mean: 0, note: "below detection limit (<0.222 uM)"}
+    NO3-: {mean: 102, std_approx: 10}
+  3.6kVpp:
+    NO2-: {mean: 0, note: "below detection limit (<0.222 uM)"}
+    NO3-: {mean: 113, std_approx: 20}
+
+# ============================================================================
+# 시뮬레이션 검증 타겟 (3.2 kVpp, DI water, 6분)
+# 테스트 CSV: 1kHz3.2kVpp.csv
+# ============================================================================
+validation_target_3.2kVpp_DI:
+  pH: {mean: 3.61, std: 0.04}
+  NO2-_uM: {mean: 3, std_approx: 1}
+  NO3-_uM: {mean: 63, std_approx: 5}
+  H2O2_uM: {mean: 11, std_approx: 2}

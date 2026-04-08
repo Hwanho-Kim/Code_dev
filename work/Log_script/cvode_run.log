@@ -1,0 +1,5 @@
+=== CVODE Pulsed PFR ===
+tau=33.8s, 338056 pulses
+Starting...
+[  3.0%] t=1.0000s, ne=-7.81e+18, conv=0.0000%, 113s elapsed, ETA 1.0h
+[  5.9%] t=2.0000s, ne=-1.24e+20, conv=-0.0000%, 224s elapsed, ETA 1.0h

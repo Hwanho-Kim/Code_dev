@@ -1,0 +1,25 @@
+IONIZATION
+CH4 -> CH4+
+ 1.260000e+1
+SPECIES: e / CH4
+PROCESS: E + CH4 -> E + E + CH4+, Ionization
+PARAM.:  E = 12.6 eV, complete set
+COMMENT: Partial ionization. Based on H. Chatham, D. Hils, R. Robertson and A. Gallagher 1984 J.
+COMMENT: Chem Phys. 81 1770 (total ioniz. agrees with D. Rapp and P. Englander-Golden, J. Chem.
+COMMENT: Phys. 1965 43 1464 also adopted in Y. Ohmori, K. Kitamori, M. Shimozuna and H. Tagashira
+COMMENT: 1986 J. Phys. D: Appl. Phys. 19 437).
+UPDATED: 2013-09-21 04:35:36
+COLUMNS: Energy (eV) | Cross section (m2)
+-----------------------------
+ 1.260000e+1	0.000000e+0
+ 1.300000e+1	1.000000e-22
+ 1.400000e+1	7.000000e-22
+ 1.500000e+1	1.674400e-21
+ 2.000000e+1	6.614500e-21
+ 3.000000e+1	1.329400e-20
+ 5.000000e+1	1.896900e-20
+ 1.000000e+2	2.018900e-20
+ 2.000000e+2	1.717400e-20
+ 3.000000e+2	1.347800e-20
+ 4.000000e+2	1.143100e-20
+-----------------------------

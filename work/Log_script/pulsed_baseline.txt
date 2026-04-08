@@ -1,0 +1,124 @@
+================================================================
+Pulsed Solver Baseline — Physically Correct Reference
+2026-03-19
+================================================================
+
+1. CONFIGURATION
+================
+solver: scipy constrained BDF (_solve_constrained in solver.py)
+coordinates: scaled (y_bar = y / w, w from scale_weights.npy)
+Jacobian: FD (NOT analytical — analytical causes Newton divergence)
+RHS: Numba @njit (numba_core.py, 21µs/call)
+max_step: 0.5µs
+rtol: 1e-5, atol: 1e-10
+clamping: per-step, c_e and ne_eps only (no ReInit)
+
+2. PULSE PARAMETERS
+====================
+PRF: 10 kHz (T_period = 100µs)
+duty_cycle: 20% (t_on = 20µs)
+P_peak: 8.1 W
+rise_time: 2µs (trapezoidal)
+waveform: trapezoidal
+
+3. REACTOR
+==========
+model: PFR
+V_reactor: 250 cm³
+Q: 0.4 slm
+T_wall: 303 K
+wall_loss_freq: 10000
+P_gas: 101325 Pa
+inlet: N2=70%, O2=15%, CO2=14%, CH4=1%
+tau (PFR): 33.8s
+ne_seed: 1e8 m⁻³
+
+4. VERIFIED RESULTS (2 periods, 200µs)
+=======================================
+t(us)     P_dep        n_e        Te       ne_eps
+  5.0   2.02e+07   2.87e+14    2.504   1.08e+15
+ 10.0   2.02e+07   2.87e+14    2.504   1.08e+15
+ 18.0   2.03e+07   2.85e+14    2.503   1.07e+15
+ 20.0   ~0         6.68e+10    0.026   2.01e+09
+ 21.0   0          1.43e+10    0.026   3.90e+06 (thermal floor)
+ 30.0   0          3.53e+09    0.026   3.90e+06
+ 50.0   0          1.16e+09    0.026   3.90e+06
+ 99.0   0          4.22e+08    0.026   3.90e+06
+105.0   2.02e+07   2.87e+14    2.504   1.08e+15  (2nd pulse ON)
+110.0   2.02e+07   2.87e+14    2.504   1.08e+15
+199.0   0          8.40e+08    0.026   3.90e+06
+
+5. KEY PHYSICS
+==============
+- ON plateau: ne=2.87e14, Te=2.504eV (consistent with continuous mode)
+- OFF afterglow: Te collapses to thermal in ~50ns (A22 cooling)
+- n_e decay in OFF: 3-body attachment (σ/N cross section) dominates
+- n_e at end of OFF: ~4e8 (above seed 1e8)
+- 2nd pulse reignition: successful, same ON plateau
+- ne_eps: floors at 3.90e6 = ne_seed × eps_thermal (thermal energy)
+- All species concentrations physically reasonable
+- CH4/OH evolution correct in ON phase
+
+6. PERFORMANCE
+==============
+wall time: 3.5s for 200µs (2 periods)
+= 1.75s/period
+steps: ~2420 (for 200µs)
+clamp rate: ~40%
+RHS evals: via Numba (21µs/call)
+FD Jacobian: 67 × Numba RHS = 1.4ms/Jac
+
+ETA 340k periods: 340000 × 1.75s = 165 hours
+
+7. WHAT MAKES THIS WORK
+========================
+a) Scaled coordinates: κ(I-hJ) drops from 10^40 to 10^6
+   → FD Jacobian produces meaningful results
+b) FD Jacobian (NOT analytical): analytical Jac with κ=10^6 should work
+   but scipy BDF's Newton still fails with it. FD regularizes.
+c) Per-step clamping WITHOUT ReInit: clamp corrupts BDF history slightly
+   but doesn't destroy it. ReInit resets to order 1 = too slow.
+d) max_step=0.5µs: prevents BDF from taking steps that overshoot
+   the ne_eps thermal decay (~ps timescale). Smaller than pulse features.
+e) Numba RHS: 21µs instead of 126µs Python = 6.6× faster per call
+
+8. WHAT DOES NOT WORK
+======================
+a) Analytical Jacobian in scipy BDF: Newton diverges (even with scaling)
+b) CVODE ctypes + Python callback: callback overhead negates C loop benefit
+c) CVODE + constraints: fails at t=20µs (ne_eps constraint unsatisfiable)
+d) CVODE + ONE_STEP + clamp: ne=1e8 stuck (ReInit kills BDF history)
+e) CVODE + no constraint: ne goes negative, Te nonsensical
+f) asinh transform: ne_eps still goes negative (ne_eps needs special handling)
+g) Semi-implicit Euler: Te diverges (order 1 insufficient for this stiffness)
+h) Macro-timestep: forward Euler overshoots, implicit not implemented
+
+9. SPEED IMPROVEMENT PATH
+===========================
+Current bottleneck: scipy Python BDF stepping loop
+  - Each step: Python overhead ~0.3ms + RHS 21µs + FD Jac 1.4ms (when recomputed)
+  - ~1200 steps/period × ~0.5ms/step ≈ 600ms + FD Jac overhead = 1.75s
+
+To reach ~10ms/period (target for ~1h ETA):
+  → Need 175× speedup on the loop
+  → CVODE with Numba @cfunc callback (zero Python overhead per step)
+  → Numba Jacobian callback (1.4ms → 0.1ms)
+  → Keep scaled coords + clamping logic in C/Numba
+
+10. FILES
+=========
+solver.py: _solve_constrained (line ~1143) — the working solver
+numba_core.py: rhs_numba + extract_numba_params — Numba RHS
+scale_weights.npy: 67 scaling weights from continuous steady state
+config.yaml: pulse section
+power.py: _pulsed_power_density
+reactions.yaml: 218 reactions (including O2(a1Dg) chemistry)
+species.yaml: 67 species
+
+11. CONTINUOUS MODE REFERENCE
+==============================
+PFR 4-temperature (same mechanism):
+  30°C:  4.95% (exp 5.26%)
+ 100°C:  7.18% (exp 8.05%)
+ 180°C: 13.21% (exp 14.36%)
+ 250°C: 19.92% (exp 20.02%)

@@ -1,0 +1,3724 @@
+reactions:
+- id: 1
+  type: ELECTRON_IMPACT
+  formula: e + CH4 -> CH3 + H + e
+  reactants:
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: H
+  cross_section_file: CH4_dissociation1_Re1.txt
+  energy_loss_eV: 7.5
+  ref: Bouwman 2021
+- id: 2
+  type: ELECTRON_IMPACT
+  formula: e + CH4 -> CH2 + H2 + e
+  reactants:
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: CH2
+  - coeff: 1
+    species: H2
+  cross_section_file: CH4_dissociation2_Re2.txt
+  energy_loss_eV: 9.1
+  ref: Bouwman 2021
+- id: 3
+  type: ELECTRON_IMPACT
+  formula: e + CO2 -> CO + O + e
+  reactants:
+  - coeff: 1
+    species: CO2
+  products:
+  - coeff: 1
+    species: CO
+  - coeff: 1
+    species: O
+  cross_section_file: CO2_dissociation_Re3.txt
+  energy_loss_eV: 7.0
+  ref: Phelps 1978
+- id: 4
+  type: ELECTRON_IMPACT
+  formula: e + H2 -> H + H + e
+  reactants:
+  - coeff: 1
+    species: H2
+  products:
+  - coeff: 1
+    species: H
+  - coeff: 1
+    species: H
+  cross_section_file: H2_dissociation_Re4.txt
+  energy_loss_eV: 8.9
+  ref: Buckman & Phelps 1985
+- id: 5
+  type: ELECTRON_IMPACT
+  formula: e + O2 -> O + O + e
+  reactants:
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: O
+  cross_section_file: O2_dissociation_Re5.txt
+  energy_loss_eV: 6.0
+  ref: Lawton & Phelps 1978
+- id: 6
+  type: ELECTRON_IMPACT
+  formula: e + H2O -> OH + H + e
+  reactants:
+  - coeff: 1
+    species: H2O
+  products:
+  - coeff: 1
+    species: OH
+  - coeff: 1
+    species: H
+  cross_section_file: H2O_dissociation_Re6.txt
+  energy_loss_eV: 7.0
+  ref: Morgan/Kinema
+- id: 7
+  type: ELECTRON_IMPACT
+  formula: e + N2 -> N2(A) + e
+  reactants:
+  - coeff: 1
+    species: N2
+  products:
+  - coeff: 1
+    species: N2(A)
+  cross_section_file: N2_excitation_A3_v04_Re7.txt
+  energy_loss_eV: 6.17
+  ref: Phelps & Pitchford 1985
+- id: 8
+  type: ELECTRON_IMPACT
+  formula: e + N2 -> N2(A) + e
+  reactants:
+  - coeff: 1
+    species: N2
+  products:
+  - coeff: 1
+    species: N2(A)
+  cross_section_file: N2_excitation_A3_v59_Re8.txt
+  energy_loss_eV: 7.0
+  ref: Phelps & Pitchford 1985
+- id: 9
+  type: ELECTRON_IMPACT
+  formula: e + N2 -> N2(A) + e
+  reactants:
+  - coeff: 1
+    species: N2
+  products:
+  - coeff: 1
+    species: N2(A)
+  cross_section_file: N2_excitation_A3_v10_Re9.txt
+  energy_loss_eV: 7.8
+  ref: Phelps & Pitchford 1985
+- id: 10
+  type: ELECTRON_IMPACT
+  formula: e + N2 -> N2(a1) + e
+  reactants:
+  - coeff: 1
+    species: N2
+  products:
+  - coeff: 1
+    species: N2(a1)
+  cross_section_file: N2_excitation_a1prime_Re10.txt
+  energy_loss_eV: 8.4
+  ref: Phelps & Pitchford 1985
+- id: 11
+  type: ELECTRON_IMPACT
+  formula: e + CH4 -> CH + H2 + H + e
+  reactants:
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: CH
+  - coeff: 1
+    species: H2
+  - coeff: 1
+    species: H
+  cross_section_file: CH4_dissociation3.txt
+  energy_loss_eV: 15.5
+  ref: Bouwman 2021
+- id: 12
+  type: ELECTRON_IMPACT
+  formula: e + CH4 -> C + 2H2 + e
+  reactants:
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: C
+  - coeff: 2
+    species: H2
+  cross_section_file: CH4_dissociation4.txt
+  energy_loss_eV: 15.5
+  ref: Bouwman 2021
+- id: 13
+  type: ELECTRON_IMPACT
+  formula: e + C2H6 -> C2H5 + H + e
+  reactants:
+  - coeff: 1
+    species: C2H6
+  products:
+  - coeff: 1
+    species: C2H5
+  - coeff: 1
+    species: H
+  cross_section_file: C2H6_1.txt
+  energy_loss_eV: 7.5
+  ref: Janev & Reiter 2002
+- id: 14
+  type: ELECTRON_IMPACT
+  formula: e + C2H6 -> C2H4 + H2 + e
+  reactants:
+  - coeff: 1
+    species: C2H6
+  products:
+  - coeff: 1
+    species: C2H4
+  - coeff: 1
+    species: H2
+  cross_section_file: C2H6_2.txt
+  energy_loss_eV: 7.5
+  ref: Janev & Reiter 2002
+- id: 15
+  type: ELECTRON_IMPACT
+  formula: e + C2H4 -> C2H3 + H + e
+  reactants:
+  - coeff: 1
+    species: C2H4
+  products:
+  - coeff: 1
+    species: C2H3
+  - coeff: 1
+    species: H
+  cross_section_file: C2H4_3.txt
+  energy_loss_eV: 7.5
+  ref: Janev & Reiter 2002
+- id: 16
+  type: ELECTRON_IMPACT
+  formula: e + C2H4 -> C2H2 + H2 + e
+  reactants:
+  - coeff: 1
+    species: C2H4
+  products:
+  - coeff: 1
+    species: C2H2
+  - coeff: 1
+    species: H2
+  cross_section_file: C2H4_4.txt
+  energy_loss_eV: 7.5
+  ref: Janev & Reiter 2002
+- id: 17
+  type: ELECTRON_IMPACT
+  formula: e + C3H8 -> C3H7 + H + e
+  reactants:
+  - coeff: 1
+    species: C3H8
+  products:
+  - coeff: 1
+    species: C3H7
+  - coeff: 1
+    species: H
+  cross_section_file: C3H8_5.txt
+  energy_loss_eV: 7.5
+  ref: Janev & Reiter 2002
+- id: 18
+  type: ELECTRON_IMPACT
+  formula: e + C3H8 -> C3H6 + H2 + e
+  reactants:
+  - coeff: 1
+    species: C3H8
+  products:
+  - coeff: 1
+    species: C3H6
+  - coeff: 1
+    species: H2
+  cross_section_file: C3H8_6.txt
+  energy_loss_eV: 7.5
+  ref: Janev & Reiter 2002
+- id: 19
+  type: ELECTRON_IMPACT
+  formula: e + C3H8 -> C2H4 + CH4 + e
+  reactants:
+  - coeff: 1
+    species: C3H8
+  products:
+  - coeff: 1
+    species: C2H4
+  - coeff: 1
+    species: CH4
+  cross_section_file: C3H8_7.txt
+  energy_loss_eV: 7.5
+  ref: Janev & Reiter 2002
+- id: 20
+  type: ELECTRON_IMPACT
+  formula: e + C3H6 -> C2H2 + CH4 + e
+  reactants:
+  - coeff: 1
+    species: C3H6
+  products:
+  - coeff: 1
+    species: C2H2
+  - coeff: 1
+    species: CH4
+  cross_section_file: C3H6_8.txt
+  energy_loss_eV: 7.5
+  ref: Janev & Reiter 2002
+- id: 21
+  type: ELECTRON_IMPACT
+  formula: e + C3H6 -> C3H5 + H + e
+  reactants:
+  - coeff: 1
+    species: C3H6
+  products:
+  - coeff: 1
+    species: C3H5
+  - coeff: 1
+    species: H
+  cross_section_file: C3H6_9.txt
+  energy_loss_eV: 7.5
+  ref: Janev & Reiter 2002
+- id: 22
+  type: ARRHENIUS
+  formula: CH4 + O -> CH3 + OH
+  reactants:
+  - coeff: 1
+    species: CH4
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: OH
+  A: 6.622928180900538
+  n: 2.16
+  E: 31420.0
+  order: 2
+  ref: 2021BUR/MAN023102
+- id: 23
+  type: ARRHENIUS
+  formula: CH4 + OH -> CH3 + H2O
+  reactants:
+  - coeff: 1
+    species: CH4
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: H2O
+  A: 0.6182517207314309
+  n: 2.23
+  E: 9840.0
+  order: 2
+- id: 24
+  type: ARRHENIUS
+  formula: CH3 + O2 -> CH3O2
+  reactants:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: CH3O2
+  A: 782.4863239278003
+  n: 1.2
+  E: 0.0
+  order: 2
+- id: 25
+  type: ARRHENIUS
+  formula: CH3 + OH -> CH3OH
+  reactants:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH3OH
+  A: 60221407.6
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 26
+  type: ARRHENIUS
+  formula: CH3 + CH3 -> C2H6
+  reactants:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: CH3
+  products:
+  - coeff: 1
+    species: C2H6
+  A: 36072623.152399994
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 27
+  type: ARRHENIUS
+  formula: CH3OH + O -> CH2OH + OH
+  reactants:
+  - coeff: 1
+    species: CH3OH
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH2OH
+  - coeff: 1
+    species: OH
+  A: 0.38799999999999996
+  n: 2.5
+  E: 12970.4
+  order: 2
+- id: 28
+  type: ARRHENIUS
+  formula: CH3OH + O -> CH3O + OH
+  reactants:
+  - coeff: 1
+    species: CH3OH
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: OH
+  A: 0.13
+  n: 2.5
+  E: 20920.0
+  order: 2
+- id: 29
+  type: ARRHENIUS
+  formula: CH3OH + OH -> CH2OH + H2O
+  reactants:
+  - coeff: 1
+    species: CH3OH
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH2OH
+  - coeff: 1
+    species: H2O
+  A: 1.44
+  n: 2.0
+  E: -3514.56
+  order: 2
+- id: 30
+  type: ARRHENIUS
+  formula: CH3OH + OH -> CH3O + H2O
+  reactants:
+  - coeff: 1
+    species: CH3OH
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: H2O
+  A: 6.3
+  n: 2.0
+  E: 6276.0
+  order: 2
+- id: 31
+  type: ARRHENIUS
+  formula: CH3OH + H -> CH2OH + H2
+  reactants:
+  - coeff: 1
+    species: CH3OH
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: CH2OH
+  - coeff: 1
+    species: H2
+  A: 17.0
+  n: 2.1
+  E: 20376.08
+  order: 2
+- id: 32
+  type: ARRHENIUS
+  formula: CH3OH + H -> CH3O + H2
+  reactants:
+  - coeff: 1
+    species: CH3OH
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: H2
+  A: 4.2
+  n: 2.1
+  E: 20376.08
+  order: 2
+- id: 33
+  type: ARRHENIUS
+  formula: CH3O + O2 -> CH2O + HO2
+  reactants:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: HO2
+  A: 21679.706736
+  n: 0.0
+  E: 7317.0
+  order: 2
+- id: 34
+  type: ARRHENIUS
+  formula: CH2OH + O2 -> CH2O + HO2
+  reactants:
+  - coeff: 1
+    species: CH2OH
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: HO2
+  A: 5781255.1296
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 35
+  type: ARRHENIUS
+  formula: CH2O + O -> HCO + OH
+  reactants:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: HCO
+  - coeff: 1
+    species: OH
+  A: 416742.34788502543
+  n: 0.57
+  E: 11600.0
+  order: 2
+- id: 36
+  type: ARRHENIUS
+  formula: CH2O + OH -> HCO + H2O
+  reactants:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: HCO
+  - coeff: 1
+    species: H2O
+  A: 3420.721437924076
+  n: 1.18
+  E: -1871.0
+  order: 2
+- id: 37
+  type: ARRHENIUS
+  formula: CH2O + H -> HCO + H2
+  reactants:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: HCO
+  - coeff: 1
+    species: H2
+  A: 126.45451141561438
+  n: 1.62
+  E: 9060.0
+  order: 2
+- id: 38
+  type: ARRHENIUS
+  formula: HCO + O2 -> CO + HO2
+  reactants:
+  - coeff: 1
+    species: HCO
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: CO
+  - coeff: 1
+    species: HO2
+  A: 3312177.418
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 39
+  type: ARRHENIUS
+  formula: HCO + H -> CO + H2
+  reactants:
+  - coeff: 1
+    species: HCO
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: CO
+  - coeff: 1
+    species: H2
+  A: 90332111.4
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 40
+  type: ARRHENIUS
+  formula: CO + OH -> CO2 + H
+  reactants:
+  - coeff: 1
+    species: CO
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CO2
+  - coeff: 1
+    species: H
+  A: 6.32150180229193
+  n: 1.5
+  E: -2080.0
+  order: 2
+- id: 41
+  type: ARRHENIUS
+  formula: O + HO2 -> O2 + OH
+  reactants:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: HO2
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: OH
+  A: 16259780.052000001
+  n: 0.0
+  E: -1860.0
+  order: 2
+- id: 42
+  type: ARRHENIUS
+  formula: O + O2 -> O3
+  reactants:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: O3
+  A: 106923627.47604883
+  n: -2.3
+  E: 0.0
+  order: 3
+- id: 43
+  type: ARRHENIUS
+  formula: O3 + H -> O2 + OH
+  reactants:
+  - coeff: 1
+    species: O3
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: OH
+  A: 84309970.64
+  n: 0.0
+  E: 3990.0
+  order: 2
+- id: 44
+  type: ARRHENIUS
+  formula: O3 + HO2 -> O2 + O2 + OH
+  reactants:
+  - coeff: 1
+    species: O3
+  - coeff: 1
+    species: HO2
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: OH
+  A: 5.848558007621342e-10
+  n: 4.57
+  E: -5760.0
+  order: 2
+- id: 45
+  type: ARRHENIUS
+  formula: H + O2 -> HO2
+  reactants:
+  - coeff: 1
+    species: H
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: HO2
+  A: 615594.6238106391
+  n: -0.8
+  E: 0.0
+  order: 3
+- id: 46
+  type: ARRHENIUS
+  formula: H2 + OH -> H2O + H
+  reactants:
+  - coeff: 1
+    species: H2
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: H2O
+  - coeff: 1
+    species: H
+  A: 4637048.3852
+  n: 0.0
+  E: 17460.0
+  order: 2
+- id: 47
+  type: ARRHENIUS
+  formula: HO2 + O -> O2 + OH
+  reactants:
+  - coeff: 1
+    species: HO2
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: OH
+  A: 16259780.052000001
+  n: 0.0
+  E: -1860.0
+  order: 2
+- id: 48
+  type: ARRHENIUS
+  formula: HO2 + HO2 -> H2O2 + O2
+  reactants:
+  - coeff: 1
+    species: HO2
+  - coeff: 1
+    species: HO2
+  products:
+  - coeff: 1
+    species: H2O2
+  - coeff: 1
+    species: O2
+  A: 689.0574073318141
+  n: 0.0
+  E: -8150.0
+  order: 3
+- id: 49
+  type: ARRHENIUS
+  formula: CH4 + N2(a1) -> N2 + C + 2H2
+  reactants:
+  - coeff: 1
+    species: CH4
+  - coeff: 1
+    species: N2(a1)
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: C
+  - coeff: 2
+    species: H2
+  A: 180664222.8
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 50
+  type: ARRHENIUS
+  formula: CH4 + N2(A) -> N2 + CH3 + H
+  reactants:
+  - coeff: 1
+    species: CH4
+  - coeff: 1
+    species: N2(A)
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: H
+  A: 903321.1140000001
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 51
+  type: ARRHENIUS
+  formula: CH4 + N2(a1) -> N2 + CH3 + H
+  reactants:
+  - coeff: 1
+    species: CH4
+  - coeff: 1
+    species: N2(a1)
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: H
+  A: 180664222.8
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 52
+  type: ARRHENIUS
+  formula: CH4 + N2(a1) -> N2 + CH2 + H2
+  reactants:
+  - coeff: 1
+    species: CH4
+  - coeff: 1
+    species: N2(a1)
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: CH2
+  - coeff: 1
+    species: H2
+  A: 180664222.8
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 53
+  type: ARRHENIUS
+  formula: N2(A) + N2 -> N2 + N2
+  reactants:
+  - coeff: 1
+    species: N2(A)
+  - coeff: 1
+    species: N2
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: N2
+  A: 222.81920811999998
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 54
+  type: ARRHENIUS
+  formula: N2(A) + O2 -> N2 + O2
+  reactants:
+  - coeff: 1
+    species: N2(A)
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: O2
+  A: 4.2828e+05
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 55
+  type: ARRHENIUS
+  formula: N2(a1) + N2 -> N2 + N2
+  reactants:
+  - coeff: 1
+    species: N2(a1)
+  - coeff: 1
+    species: N2
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: N2
+  A: 222.81920811999998
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 56
+  type: ARRHENIUS
+  formula: N2(a1) + O2 -> N2 + O2
+  reactants:
+  - coeff: 1
+    species: N2(a1)
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: O2
+  A: 487793.40155999997
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 57
+  type: ARRHENIUS
+  formula: CH2 + CO2 -> CH2O + CO
+  reactants:
+  - coeff: 1
+    species: CH2
+  - coeff: 1
+    species: CO2
+  products:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: CO
+  A: 23486.348963999997
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 58
+  type: ARRHENIUS
+  formula: CH3 + O2 -> CH3O2
+  reactants:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: CH3O2
+  A: 53017039913248.89
+  n: -3.3
+  E: 0.0
+  order: 3
+- id: 59
+  type: ARRHENIUS
+  formula: CH3O2 + HO2 -> CH3OOH + O2
+  reactants:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: HO2
+  products:
+  - coeff: 1
+    species: CH3OOH
+  - coeff: 1
+    species: O2
+  A: 228841.34888
+  n: 0.0
+  E: -6490.0
+  order: 2
+- id: 60
+  type: ARRHENIUS
+  formula: CH3OOH + O -> CH3O2 + OH
+  reactants:
+  - coeff: 1
+    species: CH3OOH
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: OH
+  A: 19873064.508
+  n: 0.0
+  E: 19870.0
+  order: 2
+- id: 61
+  type: ARRHENIUS
+  formula: CH3OOH + OH -> CH3O2 + H2O
+  reactants:
+  - coeff: 1
+    species: CH3OOH
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: H2O
+  A: 722656.8912
+  n: 0.0
+  E: -1080.0
+  order: 2
+- id: 62
+  type: ARRHENIUS
+  formula: CH3OOH -> CH3O + OH
+  reactants:
+  - coeff: 1
+    species: CH3OOH
+  products:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: OH
+  A: 4000000000.0
+  n: 0.0
+  E: 180000.0
+  order: 1
+- id: 63
+  type: ARRHENIUS
+  formula: CH3O2 + O -> CH3O + O2
+  reactants:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: O2
+  A: 8998000.0
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 64
+  type: ARRHENIUS
+  formula: CH3O2 + OH -> CH3O + HO2
+  reactants:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: HO2
+  A: 900000.0
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 65
+  type: ARRHENIUS
+  formula: CH3O2 + H -> CH3O + OH
+  reactants:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: OH
+  A: 96000000.0
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 66
+  type: ARRHENIUS
+  formula: CH3O2 + CH3 -> 2CH3O
+  reactants:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: CH3
+  products:
+  - coeff: 2
+    species: CH3O
+  A: 24000000.0
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 67
+  type: ARRHENIUS
+  formula: CH3O2 + CH3O2 -> 2CH3O + O2
+  reactants:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: CH3O2
+  products:
+  - coeff: 2
+    species: CH3O
+  - coeff: 1
+    species: O2
+  A: 280000.0
+  n: 0.3
+  E: -3263.52
+  order: 2
+- id: 68
+  type: ARRHENIUS
+  formula: CH3O2 + NO -> CH3O + NO2
+  reactants:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: 'NO'
+  products:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: NO2
+  A: 2529299.1192
+  n: 0.0
+  E: -1500.0
+  order: 2
+- id: 69
+  type: ARRHENIUS
+  formula: CH3O2 + NO3 -> CH3O + NO2 + O2
+  reactants:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: NO3
+  products:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: NO2
+  - coeff: 1
+    species: O2
+  A: 782878.2988
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 70
+  type: ARRHENIUS
+  formula: CH3O2 + OH -> CH3OH + O2
+  reactants:
+  - coeff: 1
+    species: CH3O2
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH3OH
+  - coeff: 1
+    species: O2
+  A: 900000.0
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 71
+  type: ARRHENIUS
+  formula: CH3O + O -> CH2O + OH
+  reactants:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: OH
+  A: 6022140.76
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 72
+  type: ARRHENIUS
+  formula: CH3O + OH -> CH2O + H2O
+  reactants:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: H2O
+  A: 18126643.687599998
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 73
+  type: ARRHENIUS
+  formula: CH3O + HO2 -> CH2O + H2O2
+  reactants:
+  - coeff: 1
+    species: CH3O
+  - coeff: 1
+    species: HO2
+  products:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: H2O2
+  A: 301107.038
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 74
+  type: ARRHENIUS
+  formula: CH2OH + O -> CH2O + OH
+  reactants:
+  - coeff: 1
+    species: CH2OH
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: OH
+  A: 42215206.7276
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 75
+  type: ARRHENIUS
+  formula: CH2OH + OH -> CH2O + H2O
+  reactants:
+  - coeff: 1
+    species: CH2OH
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: H2O
+  A: 24088563.04
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 76
+  type: ARRHENIUS
+  formula: CH2OH + HO2 -> CH2O + H2O
+  reactants:
+  - coeff: 1
+    species: CH2OH
+  - coeff: 1
+    species: HO2
+  products:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: H2O
+  A: 12104502.9276
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 77
+  type: ARRHENIUS
+  formula: HCO + O -> CO + OH
+  reactants:
+  - coeff: 1
+    species: HCO
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CO
+  - coeff: 1
+    species: OH
+  A: 30110703.8
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 78
+  type: ARRHENIUS
+  formula: HCO + O -> CO2 + H
+  reactants:
+  - coeff: 1
+    species: HCO
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CO2
+  - coeff: 1
+    species: H
+  A: 30110703.8
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 79
+  type: ARRHENIUS
+  formula: N(2D) + O2 -> NO + O
+  reactants:
+  - coeff: 1
+    species: N(2D)
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: 'NO'
+  - coeff: 1
+    species: O
+  A: 5841476.5372
+  n: 0.0
+  E: 1538.0
+  order: 2
+  ref: NIST
+- id: 80
+  type: ARRHENIUS
+  formula: N + O3 -> NO + O2
+  reactants:
+  - coeff: 1
+    species: N
+  - coeff: 1
+    species: O3
+  products:
+  - coeff: 1
+    species: 'NO'
+  - coeff: 1
+    species: O2
+  A: 301.10703800000005
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Coupling of chemical kinetics, gas dynamics, and charged particle kinetics models for the analysis of NO reduction
+    from flue gases
+- id: 81
+  type: ARRHENIUS
+  formula: NO + O -> NO2
+  reactants:
+  - coeff: 1
+    species: 'NO'
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: NO2
+  A: 329797855.4700244
+  n: -1.6
+  E: 0.0
+  order: 3
+  ref: NIST
+- id: 82
+  type: ARRHENIUS
+  formula: NO + O3 -> NO2 + O2
+  reactants:
+  - coeff: 1
+    species: 'NO'
+  - coeff: 1
+    species: O3
+  products:
+  - coeff: 1
+    species: NO2
+  - coeff: 1
+    species: O2
+  A: 843099.7064
+  n: 0.0
+  E: 10900.0
+  order: 2
+  ref: NIST
+- id: 83
+  type: ARRHENIUS
+  formula: NO2 + O3 -> NO3 + O2
+  reactants:
+  - coeff: 1
+    species: NO2
+  - coeff: 1
+    species: O3
+  products:
+  - coeff: 1
+    species: NO3
+  - coeff: 1
+    species: O2
+  A: 84309.97064
+  n: 0.0
+  E: 20500.0
+  order: 2
+  ref: NIST
+- id: 84
+  type: ARRHENIUS
+  formula: N2(A) + O -> NO + N(2D)
+  reactants:
+  - coeff: 1
+    species: N2(A)
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: 'NO'
+  - coeff: 1
+    species: N(2D)
+  A: 4215498.532
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: 'Modelling N2–O2 plasmas: volume and surface kinetics'
+- id: 85
+  type: ARRHENIUS
+  formula: N2(A) + O2 -> N2O + O
+  reactants:
+  - coeff: 1
+    species: N2(A)
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: N2O
+  - coeff: 1
+    species: O
+  A: 8.7187e+05
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992, 57% branching (Fraser & Piper 1989)
+- id: 86
+  type: ARRHENIUS
+  formula: N2(A)+CO2 -> N2 + CO + O
+  reactants:
+  - coeff: 1
+    species: N2(A)
+  - coeff: 1
+    species: CO2
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: CO
+  - coeff: 1
+    species: O
+  A: 12044.28152
+  n: 0.0
+  E: 0.0
+  order: 2
+- id: 87
+  type: ARRHENIUS
+  formula: N2(a1)+O2 -> N2 + 2O
+  reactants:
+  - coeff: 1
+    species: N2(a1)
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 2
+    species: O
+  A: 16861994.128
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Coupling of chemical kinetics, gas dynamics, and charged particle kinetics models for the analysis of NO reduction
+    from flue gases
+- id: 88
+  type: ARRHENIUS
+  formula: O3 -> O + O2
+  reactants:
+  - coeff: 1
+    species: O3
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: O2
+  A: 431185278.416
+  n: 0.0
+  E: 93120.0
+  order: 2
+  note: +M required
+- id: 89
+  type: ARRHENIUS
+  formula: O3 + O -> 2O2
+  reactants:
+  - coeff: 1
+    species: O3
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 2
+    species: O2
+  A: 11020517.5908
+  n: 0.0
+  E: 17990.0
+  order: 2
+- id: 90
+  type: ARRHENIUS
+  formula: OH + OH -> H2O2
+  reactants:
+  - coeff: 1
+    species: OH
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: H2O2
+  A: 289131.53676487907
+  n: -0.76
+  E: 0.0
+  order: 3
+- id: 91
+  type: ARRHENIUS
+  formula: HO2 + OH -> H2O + O2
+  reactants:
+  - coeff: 1
+    species: HO2
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: H2O
+  - coeff: 1
+    species: O2
+  A: 28906275.648000002
+  n: 0.0
+  E: -2080.0
+  order: 2
+- id: 92
+  type: ARRHENIUS
+  formula: HO2 + NO -> NO2 + OH
+  reactants:
+  - coeff: 1
+    species: HO2
+  - coeff: 1
+    species: 'NO'
+  products:
+  - coeff: 1
+    species: NO2
+  - coeff: 1
+    species: OH
+  A: 2107749.266
+  n: 0.0
+  E: -2000.0
+  order: 2
+- id: 93
+  type: ARRHENIUS
+  formula: CO + O -> CO2
+  reactants:
+  - coeff: 1
+    species: CO
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CO2
+  A: 616.5250486653074
+  n: 0.0
+  E: 12600.0
+  order: 3
+- id: 94
+  type: ARRHENIUS
+  formula: H2O2 + OH -> H2O + HO2
+  reactants:
+  - coeff: 1
+    species: H2O2
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: H2O
+  - coeff: 1
+    species: HO2
+  A: 1752442.96116
+  n: 0.0
+  E: 1330.0
+  order: 2
+- id: 95
+  type: ARRHENIUS
+  formula: CH3 + CH3 -> C2H6
+  reactants:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: CH3
+  products:
+  - coeff: 1
+    species: C2H6
+  A: 8.053759503068209e+19
+  n: -3.75
+  E: 4107.0
+  order: 3
+  ref: Experimental and theoretical investigations on the methyl-methyl recombination reaction (NIST)
+- id: 96
+  type: ARRHENIUS
+  formula: CH3 + CH2 -> C2H4 + H
+  reactants:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: CH2
+  products:
+  - coeff: 1
+    species: C2H4
+  - coeff: 1
+    species: H
+  A: 42215206.7276
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Evaluated kinetic data for combustion modelling, 1992 (NIST)
+- id: 97
+  type: ARRHENIUS
+  formula: CH2 + CH2 -> C2H2 + 2H
+  reactants:
+  - coeff: 1
+    species: CH2
+  - coeff: 1
+    species: CH2
+  products:
+  - coeff: 1
+    species: C2H2
+  - coeff: 2
+    species: H
+  A: 199935073.232
+  n: 0.0
+  E: 46000.0
+  order: 2
+  ref: Recombination and decomposition of methylene radicals at high temperatures (NIST)
+- id: 98
+  type: ARRHENIUS
+  formula: CH + CH4 -> C2H4 + H
+  reactants:
+  - coeff: 1
+    species: CH
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: C2H4
+  - coeff: 1
+    species: H
+  A: 10237639.292
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Investigation of Kinetics of CH-Radicals Decay by Cavity Ring-Down Spectroscopy (NIST)
+- id: 99
+  type: ARRHENIUS
+  formula: C2H6 + OH -> C2H5 + H2O
+  reactants:
+  - coeff: 1
+    species: C2H6
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: C2H5
+  - coeff: 1
+    species: H2O
+  A: 4155277.1244
+  n: 0.0
+  E: 8314.0
+  order: 2
+  ref: Summary of Evaluated Kinetic and Photochemical Data for Atmospheric Chemistry, 2001 (NIST)
+- id: 100
+  type: ARRHENIUS
+  formula: C2H6 + O -> C2H5 + OH
+  reactants:
+  - coeff: 1
+    species: C2H6
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: C2H5
+  - coeff: 1
+    species: OH
+  A: 999.7338035476498
+  n: 1.5
+  E: 24300.0
+  order: 2
+  ref: Evaluated kinetic data for combustion modelling, 1992 (NIST)
+- id: 101
+  type: ARRHENIUS
+  formula: C2H5 + C2H5 -> C4H10
+  reactants:
+  - coeff: 1
+    species: C2H5
+  - coeff: 1
+    species: C2H5
+  products:
+  - coeff: 1
+    species: C4H10
+  A: 11502288.8516
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Evaluated kinetic data for combustion modelling, 1992 (NIST)
+- id: 102
+  type: ARRHENIUS
+  formula: C2H5 + C2H5 -> C2H6 + C2H4
+  reactants:
+  - coeff: 1
+    species: C2H5
+  - coeff: 1
+    species: C2H5
+  products:
+  - coeff: 1
+    species: C2H6
+  - coeff: 1
+    species: C2H4
+  A: 1451335.92316
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Evaluated kinetic data for combustion modelling, 1992 (NIST)
+- id: 103
+  type: ARRHENIUS
+  formula: C2H5 + CH3 -> C3H8
+  reactants:
+  - coeff: 1
+    species: C2H5
+  - coeff: 1
+    species: CH3
+  products:
+  - coeff: 1
+    species: C3H8
+  A: 28304061.572
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Evaluated kinetic data for combustion modelling, 1992 (NIST)
+- id: 104
+  type: ARRHENIUS
+  formula: C2H5 + H -> C2H6
+  reactants:
+  - coeff: 1
+    species: C2H5
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: C2H6
+  A: 99967536.616
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: "Kinetics of the reactions H+C2H4→\x92C2H5, H+C2H5→\x922CH3 and CH3+C2H5→\x92products studied by pulse radiolysis combined\
+    \ with infrared diode laser spectroscopy (NIST)"
+- id: 105
+  type: ARRHENIUS
+  formula: C2H5 + H -> 2CH3
+  reactants:
+  - coeff: 1
+    species: C2H5
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 2
+    species: CH3
+  A: 36072623.152399994
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Evaluated kinetic data for combustion modelling, 1992 (NIST)
+- id: 106
+  type: ARRHENIUS
+  formula: C2H4 + H -> C2H5
+  reactants:
+  - coeff: 1
+    species: C2H4
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: C2H5
+  A: 4714603.31332294
+  n: 0.0
+  E: 3159.0
+  order: 3
+  ref: Evaluated kinetic data for combusion modelling. Supplement I, 1994 (NIST)
+- id: 107
+  type: ARRHENIUS
+  formula: C2H4 + N2(A) -> C2H2 + H2 + N2
+  reactants:
+  - coeff: 1
+    species: C2H4
+  - coeff: 1
+    species: N2(A)
+  products:
+  - coeff: 1
+    species: C2H2
+  - coeff: 1
+    species: H2
+  - coeff: 1
+    species: N2
+  A: 60221407.6
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Evaluated Chemical Kinetics Data for Reactions of N(2D), N(2P), and N2(A) in the Gas Phase
+- id: 108
+  type: ARRHENIUS
+  formula: C2H3 + C2H3 -> C2H4 + C2H2
+  reactants:
+  - coeff: 1
+    species: C2H3
+  - coeff: 1
+    species: C2H3
+  products:
+  - coeff: 1
+    species: C2H4
+  - coeff: 1
+    species: C2H2
+  A: 21077492.66
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Reactions and kinetics of unsaturated C2 hydrocarbon radicals (NIST)
+- id: 109
+  type: ARRHENIUS
+  formula: C2H3 + CH3 -> C3H6
+  reactants:
+  - coeff: 1
+    species: C2H3
+  - coeff: 1
+    species: CH3
+  products:
+  - coeff: 1
+    species: C3H6
+  A: 72265689.12
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Reactions and kinetics of unsaturated C2 hydrocarbon radicals (NIST)
+- id: 110
+  type: ARRHENIUS
+  formula: C2H3 + H -> C2H2 + H2
+  reactants:
+  - coeff: 1
+    species: C2H3
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: C2H2
+  - coeff: 1
+    species: H2
+  A: 12104502.9276
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Evaluated kinetic data for combustion modelling, 1992 (NIST)
+- id: 111
+  type: ARRHENIUS
+  formula: C2H2 + H -> C2H3
+  reactants:
+  - coeff: 1
+    species: C2H2
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: C2H3
+  A: 1200410.5359306866
+  n: 0.0
+  E: 6153.0
+  order: 3
+  ref: Evaluated kinetic data for combustion modelling, 1992 (NIST)
+- id: 112
+  type: ARRHENIUS
+  formula: C3H6 + H -> C3H7
+  reactants:
+  - coeff: 1
+    species: C3H6
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: C3H7
+  A: 13007824.041599998
+  n: 0.0
+  E: 6527.0
+  order: 2
+  ref: Chemical kinetic data base for hydrocarbon pyrolysis, 1992 (NIST)
+- id: 113
+  type: ARRHENIUS
+  formula: C3H7 + H -> C3H8
+  reactants:
+  - coeff: 1
+    species: C3H7
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: C3H8
+  A: 19993507.3232
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Combustion Chemistry, 1984 (NIST)
+- id: 114
+  type: ARRHENIUS
+  formula: C2H3 + O -> CH2CO + H
+  reactants:
+  - coeff: 1
+    species: C2H3
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH2CO
+  - coeff: 1
+    species: H
+  A: 96354252.16
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Chemical kinetic data base for combustion chemistry. Part I. Methane and related compounds, 1986 (NIST)
+- id: 115
+  type: ARRHENIUS
+  formula: C2H3 + OH -> C2H2 + H2O
+  reactants:
+  - coeff: 1
+    species: C2H3
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: C2H2
+  - coeff: 1
+    species: H2O
+  A: 30110703.8
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Chemical kinetic data base for combustion chemistry. Part I. Methane and related compounds, 1986 (NIST)
+- id: 116
+  type: ARRHENIUS
+  formula: C2H2 + O -> C2HO + H
+  reactants:
+  - coeff: 1
+    species: C2H2
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: C2HO
+  - coeff: 1
+    species: H
+  A: 9033211.14
+  n: 0.0
+  E: 19000.0
+  order: 2
+  ref: Chemical kinetic data base for combustion chemistry. Part I. Methane and related compounds, 1986 (NIST)
+- id: 117
+  type: ARRHENIUS
+  formula: C2H2 + O -> CO + CH2
+  reactants:
+  - coeff: 1
+    species: C2H2
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CO
+  - coeff: 1
+    species: CH2
+  A: 409.72696866706957
+  n: 1.5
+  E: 0.0
+  order: 2
+  ref: Combustion Chemistry, 1984 (NIST)
+- id: 118
+  type: ARRHENIUS
+  formula: C2HO + O -> 2CO + H
+  reactants:
+  - coeff: 1
+    species: C2HO
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 2
+    species: CO
+  - coeff: 1
+    species: H
+  A: 96354252.16
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Evaluated kinetic data for combustion modelling, 1992 (NIST)
+- id: 119
+  type: ARRHENIUS
+  formula: C2HO + H -> CO + CH2
+  reactants:
+  - coeff: 1
+    species: C2HO
+  - coeff: 1
+    species: H
+  products:
+  - coeff: 1
+    species: CO
+  - coeff: 1
+    species: CH2
+  A: 29990260.9848
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Combustion Chemistry, 1984 (NIST)
+- id: 120
+  type: ARRHENIUS
+  formula: C2H5 + O2 -> C2H5O2
+  reactants:
+  - coeff: 1
+    species: C2H5
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: C2H5O2
+  A: 5.399774453669526e+16
+  n: -3.8
+  E: 0.0
+  order: 3
+  ref: Evaluated Kinetic and Photochemical Data for Atmospheric Chemistry. Supplement IV, IUPAC Subcommittee on Gas Kinetic
+    Data Evaluation for Atmospheric Chemistry. 1992 (NIST)
+- id: 121
+  type: ARRHENIUS
+  formula: C2H5O2 + OH -> C2H5O + HO2
+  reactants:
+  - coeff: 1
+    species: C2H5O2
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: C2H5O
+  - coeff: 1
+    species: HO2
+  A: 68050190.588
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: 'Experimental and theoretical investigation of the reactionof RO2 radicals with OH radicals: Dependence of the HO2
+    yieldon the size of the alkyl group (NIST)'
+- id: 122
+  type: ARRHENIUS
+  formula: C2H5O2 + OH -> C2H5OH + O2
+  reactants:
+  - coeff: 1
+    species: C2H5O2
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: C2H5OH
+  - coeff: 1
+    species: O2
+  A: 22281920.812000003
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: 'Experimental and theoretical investigation of the reactionof RO2 radicals with OH radicals: Dependence of the HO2
+    yieldon the size of the alkyl group (NIST)'
+- id: 123
+  type: ARRHENIUS
+  formula: C2H5O2 + HO2 -> C2H5OOH + O2
+  reactants:
+  - coeff: 1
+    species: C2H5O2
+  - coeff: 1
+    species: HO2
+  products:
+  - coeff: 1
+    species: C2H5OOH
+  - coeff: 1
+    species: O2
+  A: 228841.34888
+  n: 0.0
+  E: -7483.0
+  order: 2
+  ref: Summary of Evaluated Kinetic and Photochemical Data for Atmospheric Chemistry, 2001 (NIST)
+- id: 124
+  type: ARRHENIUS
+  formula: C2H5O2 + NO -> C2H5O + NO2
+  reactants:
+  - coeff: 1
+    species: C2H5O2
+  - coeff: 1
+    species: 'NO'
+  products:
+  - coeff: 1
+    species: C2H5O
+  - coeff: 1
+    species: NO2
+  A: 5239262.4612
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: 'Evaluated kinetic, photochemical and heterogeneous data for atmospheric chemistry: supplement V, IUPAC subcommittee
+    on gas kinetic data evaluation for atmospheric chemistry, 1997 (NIST)'
+- id: 125
+  type: ARRHENIUS
+  formula: C2H5O + O2 -> CH3CHO + HO2
+  reactants:
+  - coeff: 1
+    species: C2H5O
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: CH3CHO
+  - coeff: 1
+    species: HO2
+  A: 36132.84456
+  n: 0.0
+  E: 4573.0
+  order: 2
+  ref: Summary of Evaluated Kinetic and Photochemical Data for Atmospheric Chemistry, 2001 (NIST)
+- id: 126
+  type: ARRHENIUS
+  formula: C2H5OH + OH -> C2H4OH + H2O
+  reactants:
+  - coeff: 1
+    species: C2H5OH
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: C2H4OH
+  - coeff: 1
+    species: H2O
+  A: 2469077.7116
+  n: 0.0
+  E: 582.0
+  order: 2
+  ref: Summary of Evaluated Kinetic and Photochemical Data for Atmospheric Chemistry, 2001 (NIST)
+- id: 127
+  type: ARRHENIUS
+  formula: C2H5OH + OH -> C2H5O + H2O
+  reactants:
+  - coeff: 1
+    species: C2H5OH
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: C2H5O
+  - coeff: 1
+    species: H2O
+  A: 96354.25216
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Summary of Evaluated Kinetic and Photochemical Data for Atmospheric Chemistry, 2001 (NIST)
+- id: 128
+  type: ARRHENIUS
+  formula: C2H5OOH + O -> C2H5O2 + OH
+  reactants:
+  - coeff: 1
+    species: C2H5OOH
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: C2H5O2
+  - coeff: 1
+    species: OH
+  A: 9.27071809260858e-05
+  n: 1.57
+  E: -2650.0
+  order: 2
+  ref: Theoretical study of mechanisms and kinetics of reactions of the O(3P) atom with alkyl hydroperoxides (ROOH) where
+    (R = CH3 & C2H5)
+- id: 129
+  type: ARRHENIUS
+  formula: C2H5OOH + OH -> C2H5O2 + H2O
+  reactants:
+  - coeff: 1
+    species: C2H5OOH
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: C2H5O2
+  - coeff: 1
+    species: H2O
+  A: 0.17635795156457845
+  n: 2.32
+  E: -6664.0
+  order: 2
+  ref: Theoretical Study on the Kinetics of OH Radical Reactions with CH3OOH and CH3CH2OOH, 2011 (NIST)
+- id: 130
+  type: ARRHENIUS
+  formula: C2H4OH + O2 -> CH3CHO + HO2
+  reactants:
+  - coeff: 1
+    species: C2H4OH
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: CH3CHO
+  - coeff: 1
+    species: HO2
+  A: 11442067.444
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Summary of Evaluated Kinetic and Photochemical Data for Atmospheric Chemistry, 2001 (NIST)
+- id: 131
+  type: ARRHENIUS
+  formula: CH3CHO + O -> CH3CO + OH
+  reactants:
+  - coeff: 1
+    species: CH3CHO
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH3CO
+  - coeff: 1
+    species: OH
+  A: 10779631.9604
+  n: 0.0
+  E: 9146.0
+  order: 2
+  ref: Chemical kinetics and photochemical data for use in stratospheric modeling. Evaluation number 12, 1997 (NIST)
+- id: 132
+  type: ARRHENIUS
+  formula: CH3CHO + OH -> CH3CO + H2O
+  reactants:
+  - coeff: 1
+    species: CH3CHO
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH3CO
+  - coeff: 1
+    species: H2O
+  A: 2649741.9343999997
+  n: 0.0
+  E: -3035.0
+  order: 2
+  ref: Summary of Evaluated Kinetic and Photochemical Data for Atmospheric Chemistry, 2001 (NIST)
+- id: 133
+  type: ARRHENIUS
+  formula: CH3CO + O -> CH2CO + OH
+  reactants:
+  - coeff: 1
+    species: CH3CO
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH2CO
+  - coeff: 1
+    species: OH
+  A: 38541700.864
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Evaluated kinetic data for combusion modelling. Supplement I, 1994 (NIST)
+- id: 134
+  type: ARRHENIUS
+  formula: CH3CO + O -> CH3 + CO2
+  reactants:
+  - coeff: 1
+    species: CH3CO
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: CO2
+  A: 154166803.456
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Evaluated kinetic data for combusion modelling. Supplement I, 1994 (NIST)
+- id: 135
+  type: ARRHENIUS
+  formula: CH2CO + O -> CH2O + CO
+  reactants:
+  - coeff: 1
+    species: CH2CO
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH2O
+  - coeff: 1
+    species: CO
+  A: 361328.4456
+  n: 0.0
+  E: 5654.0
+  order: 2
+  ref: 'Evaluated Kinetic Data for Combustion Modeling: Supplement II, 2005 (NIST)'
+- id: 136
+  type: ARRHENIUS
+  formula: CH2CO + O -> CH2 + CO2
+  reactants:
+  - coeff: 1
+    species: CH2CO
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: CH2
+  - coeff: 1
+    species: CO2
+  A: 1083985.3368
+  n: 0.0
+  E: 5654.0
+  order: 2
+  ref: 'Evaluated Kinetic Data for Combustion Modeling: Supplement II, 2005 (NIST)'
+- id: 137
+  type: ARRHENIUS
+  formula: CH2CO + O -> 2HCO
+  reactants:
+  - coeff: 1
+    species: CH2CO
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 2
+    species: HCO
+  A: 361328.4456
+  n: 0.0
+  E: 5654.0
+  order: 2
+  ref: 'Evaluated Kinetic Data for Combustion Modeling: Supplement II, 2005 (NIST)'
+- id: 138
+  type: ARRHENIUS
+  formula: CH2CO + OH -> CH3 + CO2
+  reactants:
+  - coeff: 1
+    species: CH2CO
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: CO2
+  A: 674479.76512
+  n: 0.0
+  E: 4240.0
+  order: 2
+  ref: 'Evaluated Kinetic Data for Combustion Modeling: Supplement II, 2005 (NIST)'
+- id: 139
+  type: ARRHENIUS
+  formula: CH2CO + OH -> CH2OH + CO
+  reactants:
+  - coeff: 1
+    species: CH2CO
+  - coeff: 1
+    species: OH
+  products:
+  - coeff: 1
+    species: CH2OH
+  - coeff: 1
+    species: CO
+  A: 1011719.6476799999
+  n: 0.0
+  E: 4240.0
+  order: 2
+  ref: 'Evaluated Kinetic Data for Combustion Modeling: Supplement II, 2005 (NIST)'
+- id: 140
+  type: ELECTRON_IMPACT
+  formula: e + N2 -> N2+ + 2e
+  reactants:
+  - coeff: 1
+    species: N2
+  products:
+  - coeff: 1
+    species: "N2+"
+  - coeff: 1
+    species: e
+  cross_section_file: N2_ionization.txt
+  energy_loss_eV: 15.6
+  ref: IST-Lisbon / Rapp 1965
+- id: 141
+  type: ELECTRON_IMPACT
+  formula: e + O2 -> O2+ + 2e
+  reactants:
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: "O2+"
+  - coeff: 1
+    species: e
+  cross_section_file: O2_ionization.txt
+  energy_loss_eV: 12.1
+  ref: Phelps 1985
+- id: 142
+  type: ELECTRON_IMPACT
+  formula: e + CH4 -> CH4+ + 2e
+  reactants:
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: "CH4+"
+  - coeff: 1
+    species: e
+  cross_section_file: CH4_ionization.txt
+  energy_loss_eV: 12.6
+  ref: Chatham 1984
+- id: 143
+  type: ELECTRON_IMPACT
+  formula: e + CH4 -> CH3+ + H + 2e
+  reactants:
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: "CH3+"
+  - coeff: 1
+    species: H
+  - coeff: 1
+    species: e
+  cross_section_file: CH4_ionization2.txt
+  energy_loss_eV: 14.3
+  ref: Chatham 1984
+- id: 144
+  type: ELECTRON_IMPACT
+  formula: e + CO2 -> CO2+ + 2e
+  reactants:
+  - coeff: 1
+    species: CO2
+  products:
+  - coeff: 1
+    species: "CO2+"
+  - coeff: 1
+    species: e
+  cross_section_file: CO2_ionization.txt
+  energy_loss_eV: 13.8
+  ref: Itikawa 2002
+- id: 145
+  type: TE_DEPENDENT
+  formula: e + N2+ -> N + N
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: "N2+"
+  products:
+  - coeff: 2
+    species: N
+  A_cgs: 2.2e-07
+  n_Te: 0.39
+  ref: Sheehan 2004
+- id: 146
+  type: TE_DEPENDENT
+  formula: e + O2+ -> O + O
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: "O2+"
+  products:
+  - coeff: 2
+    species: O
+  A_cgs: 1.95e-07
+  n_Te: 0.70
+  ref: Sheehan 2004
+- id: 147
+  type: TE_DEPENDENT
+  formula: e + CO2+ -> CO + O
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: "CO2+"
+  products:
+  - coeff: 1
+    species: CO
+  - coeff: 1
+    species: O
+  A_cgs: 3.8e-07
+  n_Te: 0.50
+  ref: Florescu-Mitchell 2006
+- id: 148
+  type: TE_DEPENDENT
+  formula: e + CH4+ -> CH3 + H
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: "CH4+"
+  products:
+  - coeff: 1
+    species: CH3
+  - coeff: 1
+    species: H
+  A_cgs: 1.05e-07
+  n_Te: 0.50
+  ref: Sheehan 2004
+- id: 149
+  type: TE_DEPENDENT
+  formula: e + CH3+ -> CH2 + H
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: "CH3+"
+  products:
+  - coeff: 1
+    species: CH2
+  - coeff: 1
+    species: H
+  A_cgs: 1.1e-08
+  n_Te: 0.50
+  ref: Vejby-Christensen 1997
+- id: 150
+  type: TE_DEPENDENT
+  formula: e + N4+ -> N2 + N2
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: "N4+"
+  products:
+  - coeff: 2
+    species: N2
+  A_cgs: 2.6e-06
+  n_Te: 0.50
+  ref: Cao & Johnsen 1991
+- id: 151
+  type: TE_DEPENDENT
+  formula: e + O4+ -> O2 + O2
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: "O4+"
+  products:
+  - coeff: 2
+    species: O2
+  A_cgs: 1.4e-06
+  n_Te: 0.50
+  ref: Florescu-Mitchell 2006
+- id: 152
+  type: TE_DEPENDENT
+  formula: e + NO+ -> N + O
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: "NO+"
+  products:
+  - coeff: 1
+    species: N
+  - coeff: 1
+    species: O
+  A_cgs: 3.5e-07
+  n_Te: 0.69
+  ref: Sheehan 2004
+- id: 153
+  type: ARRHENIUS
+  formula: N2+ + O2 -> O2+ + N2
+  reactants:
+  - coeff: 1
+    species: "N2+"
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: "O2+"
+  - coeff: 1
+    species: N2
+  A: 3.61328e+07
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 154
+  type: ARRHENIUS
+  formula: N2+ + CO2 -> CO2+ + N2
+  reactants:
+  - coeff: 1
+    species: "N2+"
+  - coeff: 1
+    species: CO2
+  products:
+  - coeff: 1
+    species: "CO2+"
+  - coeff: 1
+    species: N2
+  A: 4.21550e+07
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Anicich 1993
+- id: 155
+  type: ARRHENIUS
+  formula: N2+ + CH4 -> CH3+ + H + N2
+  reactants:
+  - coeff: 1
+    species: "N2+"
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: "CH3+"
+  - coeff: 1
+    species: H
+  - coeff: 1
+    species: N2
+  A: 3.31218e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Anicich 1993
+- id: 156
+  type: ARRHENIUS
+  formula: N2+ + CH4 -> CH4+ + N2
+  reactants:
+  - coeff: 1
+    species: "N2+"
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: "CH4+"
+  - coeff: 1
+    species: N2
+  A: 2.64974e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Anicich 1993
+- id: 157
+  type: ARRHENIUS
+  formula: CO2+ + CH4 -> CH3+ + OH + CO
+  reactants:
+  - coeff: 1
+    species: "CO2+"
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: "CH3+"
+  - coeff: 1
+    species: OH
+  - coeff: 1
+    species: CO
+  A: 6.02214e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Anicich 1993
+- id: 158
+  type: ARRHENIUS
+  formula: CH4+ + CH4 -> CH5+ + CH3
+  reactants:
+  - coeff: 1
+    species: "CH4+"
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: "CH5+"
+  - coeff: 1
+    species: CH3
+  A: 6.62436e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Anicich 1993
+- id: 159
+  type: ARRHENIUS
+  formula: O2+ + NO -> NO+ + O2
+  reactants:
+  - coeff: 1
+    species: "O2+"
+  - coeff: 1
+    species: 'NO'
+  products:
+  - coeff: 1
+    species: "NO+"
+  - coeff: 1
+    species: O2
+  A: 2.64974e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 160
+  type: ARRHENIUS
+  formula: N4+ + O2 -> O2+ + N2 + N2
+  reactants:
+  - coeff: 1
+    species: "N4+"
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: "O2+"
+  - coeff: 2
+    species: N2
+  A: 1.50554e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 161
+  type: ARRHENIUS
+  formula: N4+ + CH4 -> CH4+ + N2 + N2
+  reactants:
+  - coeff: 1
+    species: "N4+"
+  - coeff: 1
+    species: CH4
+  products:
+  - coeff: 1
+    species: "CH4+"
+  - coeff: 2
+    species: N2
+  A: 6.02214e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Anicich 1993
+- id: 162
+  type: ARRHENIUS
+  formula: CH5+ + H2O -> H3O+ + CH4
+  reactants:
+  - coeff: 1
+    species: "CH5+"
+  - coeff: 1
+    species: H2O
+  products:
+  - coeff: 1
+    species: "H3O+"
+  - coeff: 1
+    species: CH4
+  A: 1.20443e+09
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Anicich 1993
+- id: 163
+  type: ARRHENIUS
+  formula: N2+ + N2 + M -> N4+ + M
+  reactants:
+  - coeff: 1
+    species: "N2+"
+  - coeff: 1
+    species: N2
+  products:
+  - coeff: 1
+    species: "N4+"
+  A: 4.99837e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 164
+  type: ARRHENIUS
+  formula: O2+ + O2 + M -> O4+ + M
+  reactants:
+  - coeff: 1
+    species: "O2+"
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: "O4+"
+  A: 3.61328e+07
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 165
+  type: ELECTRON_IMPACT
+  formula: e + O2 + M -> O2- + M
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: "O2-"
+  cross_section_file: O2_3body_attachment.txt
+  energy_loss_eV: 0.0
+  sigma_over_N: true
+  ref: Phelps DB (LXCat), 3-body attachment sigma/N
+- id: 166
+  type: ELECTRON_IMPACT
+  formula: e + O2 -> O- + O
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: O
+  cross_section_file: O2_attachment.txt
+  energy_loss_eV: 3.64
+  ref: Phelps DB
+- id: 167
+  type: TE_DEPENDENT
+  formula: e + O3 -> O2- + O
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: O3
+  products:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: O
+  A_cgs: 1.0e-09
+  n_Te: 0.0
+  ref: Capitelli 2000
+- id: 168
+  type: ARRHENIUS
+  formula: O- + O -> O2 + e
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: e
+  A: 8.43100e+07
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 169
+  type: ARRHENIUS
+  formula: O2- + O -> O3 + e
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: O
+  products:
+  - coeff: 1
+    species: O3
+  - coeff: 1
+    species: e
+  A: 1.98727e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (3.3e-10 cm3/s, original value)
+- id: 170
+  type: ARRHENIUS
+  formula: O- + N2(A) -> O + N2 + e
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: N2(A)
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: e
+  A: 1.32487e+09
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 171
+  type: ARRHENIUS
+  formula: O2- + N2(A) -> O2 + N2 + e
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: N2(A)
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: e
+  A: 1.26465e+09
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 172
+  type: ARRHENIUS
+  formula: O- + O2+ -> O + O2
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "O2+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: O2
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 173
+  type: ARRHENIUS
+  formula: O- + N2+ -> O + N2
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "N2+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: N2
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 174
+  type: ARRHENIUS
+  formula: O- + NO+ -> O + NO
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "NO+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: 'NO'
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 175
+  type: ARRHENIUS
+  formula: O2- + O2+ -> O2 + O2
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "O2+"
+  products:
+  - coeff: 2
+    species: O2
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 176
+  type: ARRHENIUS
+  formula: O2- + N2+ -> O2 + N2
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "N2+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: N2
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 177
+  type: ARRHENIUS
+  formula: O2- + NO+ -> O2 + NO
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "NO+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: 'NO'
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+
+# ============================================================
+# Ion-Ion Recombination (IIR) — Binary, Missing Pairs
+# Cluster ions (O4+, N4+, CH5+): k = 1.0e-7 cm3/s = 6.022e10 SI, flat
+# Molecular ions (CH4+, CH3+, CO2+): k = 2.0e-7*(300/T)^0.5 cm3/s = 2.08610e12 SI, n=-0.5
+# Ref: Kossyi 1992 (binary channel), ZDPlasKin simplified models
+# ============================================================
+
+# --- O- + cluster/molecular cations ---
+- id: 178
+  type: ARRHENIUS
+  formula: O- + O4+ -> O + O2 + O2
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "O4+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 2
+    species: O2
+  A: 6.02200e+10
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (cluster binary)
+- id: 179
+  type: ARRHENIUS
+  formula: O- + N4+ -> O + N2 + N2
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "N4+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 2
+    species: N2
+  A: 6.02200e+10
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (cluster binary)
+- id: 180
+  type: ARRHENIUS
+  formula: O- + CH4+ -> O + CH4
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "CH4+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: CH4
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (molecular binary)
+- id: 181
+  type: ARRHENIUS
+  formula: O- + CH3+ -> O + CH3
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "CH3+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: CH3
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (molecular binary)
+- id: 182
+  type: ARRHENIUS
+  formula: O- + CO2+ -> O + CO2
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "CO2+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: CO2
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (molecular binary)
+- id: 183
+  type: ARRHENIUS
+  formula: O- + CH5+ -> O + CH4 + H
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "CH5+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: CH4
+  - coeff: 1
+    species: H
+  A: 6.02200e+10
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (cluster binary)
+
+# --- O2- + cluster/molecular cations ---
+- id: 184
+  type: ARRHENIUS
+  formula: O2- + O4+ -> O2 + O2 + O2
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "O4+"
+  products:
+  - coeff: 3
+    species: O2
+  A: 6.02200e+10
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (cluster binary)
+- id: 185
+  type: ARRHENIUS
+  formula: O2- + N4+ -> O2 + N2 + N2
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "N4+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 2
+    species: N2
+  A: 6.02200e+10
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (cluster binary)
+- id: 186
+  type: ARRHENIUS
+  formula: O2- + CH4+ -> O2 + CH4
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "CH4+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: CH4
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (molecular binary)
+- id: 187
+  type: ARRHENIUS
+  formula: O2- + CH3+ -> O2 + CH3
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "CH3+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: CH3
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (molecular binary)
+- id: 188
+  type: ARRHENIUS
+  formula: O2- + CO2+ -> O2 + CO2
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "CO2+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: CO2
+  A: 2.08610e+12
+  n: -0.5
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (molecular binary)
+- id: 189
+  type: ARRHENIUS
+  formula: O2- + CH5+ -> O2 + CH4 + H
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "CH5+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: CH4
+  - coeff: 1
+    species: H
+  A: 6.02200e+10
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992 (cluster binary)
+
+# ============================================================
+# Ion-Ion Recombination (IIR) — Ternary (3-body) Channel
+# A- + B+ + M -> products + M
+# k3 = 2.0e-25*(300/T)^2.5 cm6/s (Kossyi 1992, universal)
+# A_SI = 1.13067e+17 (= 2e-25 * 300^2.5 * NA^2 * 1e-12)
+# At 300K, 1atm: k_eff = k3*[M] = 4.9e-6 cm3/s (~25x binary)
+# Ref: Kossyi 1992, Bogaerts/ZDPlasKin detailed models
+# ============================================================
+
+# --- O- + cations (ternary) ---
+- id: 190
+  type: ARRHENIUS
+  formula: O- + O2+ + M -> O + O2 + M
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "O2+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: O2
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 191
+  type: ARRHENIUS
+  formula: O- + N2+ + M -> O + N2 + M
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "N2+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: N2
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 192
+  type: ARRHENIUS
+  formula: O- + NO+ + M -> O + NO + M
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "NO+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: 'NO'
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 193
+  type: ARRHENIUS
+  formula: O- + O4+ + M -> O + O2 + O2 + M
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "O4+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 2
+    species: O2
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 194
+  type: ARRHENIUS
+  formula: O- + N4+ + M -> O + N2 + N2 + M
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "N4+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 2
+    species: N2
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 195
+  type: ARRHENIUS
+  formula: O- + CH4+ + M -> O + CH4 + M
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "CH4+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: CH4
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 196
+  type: ARRHENIUS
+  formula: O- + CH3+ + M -> O + CH3 + M
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "CH3+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: CH3
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 197
+  type: ARRHENIUS
+  formula: O- + CO2+ + M -> O + CO2 + M
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "CO2+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: CO2
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 198
+  type: ARRHENIUS
+  formula: O- + CH5+ + M -> O + CH4 + H + M
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "CH5+"
+  products:
+  - coeff: 1
+    species: O
+  - coeff: 1
+    species: CH4
+  - coeff: 1
+    species: H
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+
+# --- O2- + cations (ternary) ---
+- id: 199
+  type: ARRHENIUS
+  formula: O2- + O2+ + M -> O2 + O2 + M
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "O2+"
+  products:
+  - coeff: 2
+    species: O2
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 200
+  type: ARRHENIUS
+  formula: O2- + N2+ + M -> O2 + N2 + M
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "N2+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: N2
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 201
+  type: ARRHENIUS
+  formula: O2- + NO+ + M -> O2 + NO + M
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "NO+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: 'NO'
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 202
+  type: ARRHENIUS
+  formula: O2- + O4+ + M -> O2 + O2 + O2 + M
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "O4+"
+  products:
+  - coeff: 3
+    species: O2
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 203
+  type: ARRHENIUS
+  formula: O2- + N4+ + M -> O2 + N2 + N2 + M
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "N4+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 2
+    species: N2
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 204
+  type: ARRHENIUS
+  formula: O2- + CH4+ + M -> O2 + CH4 + M
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "CH4+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: CH4
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 205
+  type: ARRHENIUS
+  formula: O2- + CH3+ + M -> O2 + CH3 + M
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "CH3+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: CH3
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 206
+  type: ARRHENIUS
+  formula: O2- + CO2+ + M -> O2 + CO2 + M
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "CO2+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: CO2
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+- id: 207
+  type: ARRHENIUS
+  formula: O2- + CH5+ + M -> O2 + CH4 + H + M
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "CH5+"
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: CH4
+  - coeff: 1
+    species: H
+  A: 1.13067e+17
+  n: -2.5
+  E: 0.0
+  order: 3
+  ref: Kossyi 1992 (ternary)
+
+
+# ============================================================
+# O2(a1Dg) chemistry + additional detachment reactions
+# ============================================================
+- id: 208
+  type: ELECTRON_IMPACT
+  formula: e + O2 -> O2(a1Dg) + e
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: "O2(a1Dg)"
+  cross_section_file: O2_excitation_O2a1.txt
+  energy_loss_eV: 0.977
+  ref: Phelps DB (Linder-Schmidt, Trajmar)
+- id: 209
+  type: ARRHENIUS
+  formula: N2(A) + O2 -> N2 + O2(a1Dg)
+  reactants:
+  - coeff: 1
+    species: N2(A)
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 1
+    species: N2
+  - coeff: 1
+    species: "O2(a1Dg)"
+  A: 2.2944e+05
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992, 15% branching (Golde 1988)
+- id: 210
+  type: ARRHENIUS
+  formula: O2(a1Dg) + O2 -> O2 + O2
+  reactants:
+  - coeff: 1
+    species: "O2(a1Dg)"
+  - coeff: 1
+    species: O2
+  products:
+  - coeff: 2
+    species: O2
+  A: 9.6352e-01
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 211
+  type: ARRHENIUS
+  formula: O2- + O2(a1Dg) -> O2 + O2 + e
+  reactants:
+  - coeff: 1
+    species: "O2-"
+  - coeff: 1
+    species: "O2(a1Dg)"
+  products:
+  - coeff: 2
+    species: O2
+  - coeff: 1
+    species: e
+  A: 3.9745e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Midey and Viggiano 2007
+- id: 212
+  type: ARRHENIUS
+  formula: O- + O2(a1Dg) -> O3 + e
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "O2(a1Dg)"
+  products:
+  - coeff: 1
+    species: O3
+  - coeff: 1
+    species: e
+  A: 6.6242e+07
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Midey 2007
+- id: 213
+  type: ARRHENIUS
+  formula: O2(a1Dg) + O3 -> O2 + O2 + O
+  reactants:
+  - coeff: 1
+    species: "O2(a1Dg)"
+  - coeff: 1
+    species: O3
+  products:
+  - coeff: 2
+    species: O2
+  - coeff: 1
+    species: O
+  A: 3.1314e+07
+  n: 0.0
+  E: -2840.0
+  order: 2
+  ref: NIST, 5.2e-11 exp(-2840/T)
+- id: 214
+  type: ARRHENIUS
+  formula: O2(a1Dg) + N2 -> O2 + N2
+  reactants:
+  - coeff: 1
+    species: "O2(a1Dg)"
+  - coeff: 1
+    species: N2
+  products:
+  - coeff: 1
+    species: O2
+  - coeff: 1
+    species: N2
+  A: 9.0330e-02
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Kossyi 1992
+- id: 215
+  type: ELECTRON_IMPACT
+  formula: e + O2(a1Dg) -> O- + O
+  reactants:
+  - coeff: 1
+    species: e
+  - coeff: 1
+    species: "O2(a1Dg)"
+  products:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: O
+  cross_section_file: O2a1Dg_attachment.txt
+  energy_loss_eV: 2.66
+  ref: Gudmundsson 2001, shifted from ground O2 by 0.977 eV
+- id: 216
+  type: ARRHENIUS
+  formula: O- + NO -> NO2 + e
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: "NO"
+  products:
+  - coeff: 1
+    species: NO2
+  - coeff: 1
+    species: e
+  A: 1.3248e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Moruzzi 1968
+- id: 217
+  type: ARRHENIUS
+  formula: O- + CO -> CO2 + e
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: CO
+  products:
+  - coeff: 1
+    species: CO2
+  - coeff: 1
+    species: e
+  A: 3.3121e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: McFarland 1973
+- id: 218
+  type: ARRHENIUS
+  formula: O- + H2 -> H2O + e
+  reactants:
+  - coeff: 1
+    species: "O-"
+  - coeff: 1
+    species: H2
+  products:
+  - coeff: 1
+    species: H2O
+  - coeff: 1
+    species: e
+  A: 4.5165e+08
+  n: 0.0
+  E: 0.0
+  order: 2
+  ref: Moruzzi 1968

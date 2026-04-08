@@ -1,0 +1,565 @@
+# Aqueous Phase Reaction Database for NOx Chemistry
+# Based on J. Phys. D methodology
+#
+# Reaction types:
+#   - reversible: Has both forward (k_f) and backward (k_b) rate constants
+#   - irreversible: Has only forward rate constant (k)
+#
+# Rate constant units: L/(mol·s) for bimolecular, 1/s for unimolecular
+
+metadata:
+  version: "1.0"
+  description: "NOx aqueous chemistry reactions from J. Phys. D paper"
+  reference: "Journal of Physics D: Applied Physics"
+  temperature: 298.15  # K
+  units:
+    concentration: "mol/L"
+    rate_constant_unimolecular: "1/s"
+    rate_constant_bimolecular: "L/(mol·s)"
+
+# =============================================================================
+# NO-Producing Reactions
+# =============================================================================
+no_producing_reactions:
+  - id: "R13"
+    type: "reversible"
+    reactants:
+      HONO: 2
+    products:
+      NO: 1
+      NO2: 1
+    k_f: 13.4
+    k_b: 1.1e9
+    label: "R13: 2HONO → NO + NO2"
+    description: "HONO disproportionation"
+
+  - id: "R14"
+    type: "reversible"
+    reactants:
+      ONOO-: 1
+    products:
+      NO: 1
+      O2-: 1
+    k_f: 0.02
+    k_b: 5.0e9
+    label: "R14: ONOO- → NO + O2-"
+    description: "Peroxynitrite decomposition"
+
+  - id: "R81"
+    type: "irreversible"
+    reactants:
+      OH: 1
+      ONOO-: 1
+    products:
+      O2: 1
+      OH-: 1
+      NO: 1
+    k: 4.8e9
+    label: "R81: OH + ONOO- → O2 + OH- + NO"
+    description: "OH attack on peroxynitrite"
+
+  - id: "R74"
+    type: "irreversible"
+    reactants:
+      NO: 1
+      OH: 1
+    products:
+      NO2-: 1
+      H+: 1
+    k: 2.0e10
+    label: "R74: NO + OH → NO2- + H+"
+    description: "NO oxidation by OH"
+
+  - id: "R76"
+    type: "irreversible"
+    reactants:
+      NO: 1
+      HO2: 1
+    products:
+      ONOOH: 1
+    k: 3.2e9
+    label: "R76: NO + HO2 → ONOOH"
+    description: "Peroxynitrous acid formation"
+
+  - id: "R_2NO_O2"
+    type: "irreversible"
+    reactants:
+      NO: 2
+      O2: 1
+    products:
+      NO2: 2
+    k: 2.3e6
+    label: "R: 2NO + O2 → 2NO2"
+    description: "NO autoxidation"
+
+  - id: "R101"
+    type: "irreversible"
+    reactants:
+      H: 1
+      NO2-: 1
+    products:
+      OH-: 1
+      NO: 1
+    k: 7.1e8
+    label: "R101: H + NO2- → OH- + NO"
+    description: "Nitrite reduction by H atom"
+
+  - id: "R12"
+    type: "reversible"
+    reactants:
+      NO2: 1
+      NO: 1
+    products:
+      N2O3: 1
+    k_f: 1.1e9
+    k_b: 8.4e4
+    label: "R12: NO2 + NO ↔ N2O3"
+    description: "N2O3 formation/decomposition"
+
+# =============================================================================
+# NO2-Producing Reactions
+# =============================================================================
+no2_producing_reactions:
+  - id: "R78"
+    type: "irreversible"
+    reactants:
+      OH: 1
+      HONO: 1
+    products:
+      NO2: 1
+    k: 1.0e9
+    label: "R78: OH + HONO → NO2 + H2O"
+    description: "HONO oxidation"
+
+  - id: "R92"
+    type: "irreversible"
+    reactants:
+      NO3: 1
+      NO2-: 1
+    products:
+      NO3-: 1
+      NO2: 1
+    k: 1.2e9
+    label: "R92: NO3 + NO2- → NO3- + NO2"
+    description: "Nitrite oxidation by NO3"
+
+  - id: "R15"
+    type: "reversible"
+    reactants:
+      ONOOH: 1
+    products:
+      NO2: 1
+      OH: 1
+    k_f: 0.35
+    k_b: 4.5e9
+    label: "R15: ONOOH → NO2 + OH"
+    description: "Peroxynitrous acid homolysis"
+
+  - id: "R16"
+    type: "reversible"
+    reactants:
+      ONOO-: 1
+    products:
+      NO2: 1
+      O-: 1
+    k_f: 1.0e-6
+    k_b: 3.5e9
+    label: "R16: ONOO- → NO2 + O-"
+    description: "Peroxynitrite homolysis"
+
+  - id: "R77"
+    type: "irreversible"
+    reactants:
+      OH: 1
+      NO2-: 1
+    products:
+      OH-: 1
+      NO2: 1
+    k: 1.0e9
+    label: "R77: OH + NO2- → OH- + NO2"
+    description: "Nitrite oxidation by OH"
+
+  - id: "R99"
+    type: "irreversible"
+    reactants:
+      H: 1
+      NO2: 1
+    products:
+      HONO: 1
+    k: 1.0e10
+    label: "R99: H + NO2 → HONO"
+    description: "NO2 reduction by H atom"
+
+  - id: "R11"
+    type: "reversible"
+    reactants:
+      NO2: 2
+    products:
+      N2O4: 1
+    k_f: 4.5e8
+    k_b: 6.9e3
+    label: "R11: 2NO2 ↔ N2O4"
+    description: "N2O4 formation/decomposition"
+
+  - id: "R88"
+    type: "irreversible"
+    reactants:
+      NO2: 1
+      OH: 1
+    products:
+      NO3-: 1
+      H+: 1
+    k: 1.3e9
+    label: "R88: NO2 + OH → NO3- + H+"
+    description: "Nitrate formation from NO2"
+
+  - id: "R86"
+    type: "irreversible"
+    reactants:
+      NO2: 1
+      O2-: 1
+    products:
+      NO2-: 1
+      O2: 1
+    k: 1.0e9
+    label: "R86: NO2 + O2- → NO2- + O2"
+    description: "NO2 reduction by superoxide"
+
+# =============================================================================
+# O3 Reactions
+# =============================================================================
+o3_reactions:
+  - id: "O3_OH-_1"
+    type: "irreversible"
+    reactants:
+      O3: 1
+      OH-: 1
+    products:
+      O2: 1
+      HO2-: 1
+    k: 40
+    label: "O3 + OH- → O2 + HO2-"
+
+  - id: "O3_OH-_2"
+    type: "irreversible"
+    reactants:
+      O3: 1
+      OH-: 1
+    products:
+      O2-: 1
+      HO2: 1
+    k: 70
+    label: "O3 + OH- → O2- + HO2"
+
+  - id: "O3_O-"
+    type: "irreversible"
+    reactants:
+      O3: 1
+      O-: 1
+    products:
+      O2-: 1
+      O2: 1
+    k: 5.0e9
+    label: "O3 + O- → O2- + O2"
+
+  - id: "O3_O2-"
+    type: "irreversible"
+    reactants:
+      O3: 1
+      O2-: 1
+    products:
+      O3-: 1
+      O2: 1
+    k: 1.6e9
+    label: "O3 + O2- → O3- + O2"
+
+  - id: "O3_OH"
+    type: "irreversible"
+    reactants:
+      O3: 1
+      OH: 1
+    products:
+      HO2: 1
+      O2: 1
+    k: 3.0e9
+    label: "O3 + OH → HO2 + O2"
+
+  - id: "O3_HO2"
+    type: "irreversible"
+    reactants:
+      O3: 1
+      HO2: 1
+    products:
+      O2: 1
+      HO3: 1
+    k: 5.0e8
+    label: "O3 + HO2 → O2 + HO3"
+
+  - id: "O3_H2O2"
+    type: "irreversible"
+    reactants:
+      O3: 1
+      H2O2: 1
+    products:
+      OH: 1
+      HO2: 1
+      O2: 1
+    k: 0.0065
+    label: "O3 + H2O2 → OH + HO2 + O2"
+
+  - id: "O3_NO2-"
+    type: "irreversible"
+    reactants:
+      O3: 1
+      NO2-: 1
+    products:
+      O2: 1
+      NO3-: 1
+    k: 5.0e5
+    label: "O3 + NO2- → O2 + NO3-"
+
+# =============================================================================
+# NOx Hydrolysis Reactions
+# =============================================================================
+hydrolysis_reactions:
+  - id: "NO2_NO3"
+    type: "irreversible"
+    reactants:
+      NO2: 1
+      NO3: 1
+    products:
+      N2O5: 1
+    k: 1.7e9
+    label: "NO2 + NO3 → N2O5"
+
+  - id: "N2O4_hydrolysis"
+    type: "irreversible"
+    reactants:
+      N2O4: 1
+    products:
+      NO2-: 1
+      NO3-: 1
+      H+: 2
+    k: 1000
+    label: "N2O4 + H2O → NO2- + NO3- + 2H+"
+
+  - id: "N2O5_hydrolysis"
+    type: "irreversible"
+    reactants:
+      N2O5: 1
+    products:
+      NO3-: 2
+      H+: 2
+    k: 5.0e9
+    label: "N2O5 + H2O → 2NO3- + 2H+"
+
+  - id: "2NO2_hydrolysis"
+    type: "reversible"
+    reactants:
+      NO2: 2
+    products:
+      NO2-: 1
+      NO3-: 1
+      H+: 2
+    k_f: 1.0e8
+    k_b: 0
+    label: "2NO2 + H2O → NO2- + NO3- + 2H+"
+
+# =============================================================================
+# OH Radical Reactions
+# =============================================================================
+oh_reactions:
+  - id: "2OH"
+    type: "irreversible"
+    reactants:
+      OH: 2
+    products:
+      H2O2: 1
+    k: 3.6e9
+    label: "2OH → H2O2"
+
+  - id: "OH_HO2"
+    type: "irreversible"
+    reactants:
+      OH: 1
+      HO2: 1
+    products:
+      O2: 1
+    k: 7.1e9
+    label: "OH + HO2 → O2 + H2O"
+
+  - id: "OH_H2O2"
+    type: "irreversible"
+    reactants:
+      OH: 1
+      H2O2: 1
+    products:
+      HO2: 1
+    k: 1.2e10
+    label: "OH + H2O2 → HO2 + H2O"
+
+# =============================================================================
+# H Atom Reactions
+# =============================================================================
+h_atom_reactions:
+  - id: "H_O2"
+    type: "irreversible"
+    reactants:
+      H: 1
+      O2: 1
+    products:
+      HO2: 1
+    k: 2.1e10
+    label: "H + O2 → HO2"
+
+  - id: "H_H2O2"
+    type: "irreversible"
+    reactants:
+      H: 1
+      H2O2: 1
+    products:
+      OH: 1
+    k: 9.0e7
+    label: "H + H2O2 → OH + H2O"
+
+  - id: "H_OH"
+    type: "irreversible"
+    reactants:
+      H: 1
+      OH: 1
+    products: {}
+    k: 6.3e9
+    label: "H + OH → H2O"
+
+# =============================================================================
+# HO2 Reactions
+# =============================================================================
+ho2_reactions:
+  - id: "2HO2"
+    type: "irreversible"
+    reactants:
+      HO2: 2
+    products:
+      H2O2: 1
+      O2: 1
+    k: 8.3e5
+    label: "2HO2 → H2O2 + O2"
+
+  - id: "HO2_O2-"
+    type: "irreversible"
+    reactants:
+      HO2: 1
+      O2-: 1
+    products:
+      HO2-: 1
+      O2: 1
+    k: 9.7e7
+    label: "HO2 + O2- → HO2- + O2"
+
+# =============================================================================
+# Peroxynitrite Reactions
+# =============================================================================
+peroxynitrite_reactions:
+  - id: "R84"
+    type: "irreversible"
+    reactants:
+      ONOOH: 1
+    products:
+      H+: 1
+      NO3-: 1
+    k: 0.9
+    label: "R84: ONOOH → H+ + NO3-"
+    description: "Peroxynitrous acid isomerization"
+
+  - id: "R85"
+    type: "irreversible"
+    reactants:
+      ONOO-: 1
+    products:
+      NO3-: 1
+    k: 8.0e-6
+    label: "R85: ONOO- → NO3-"
+    description: "Peroxynitrite isomerization"
+
+  - id: "R80"
+    type: "irreversible"
+    reactants:
+      OH: 1
+      ONOO-: 1
+    products:
+      H+: 1
+      O2-: 1
+      NO2: 1
+    k: 4.0e9
+    label: "R80: OH + ONOO- → H+ + O2- + NO2"
+
+# =============================================================================
+# Additional Reactions
+# =============================================================================
+additional_reactions:
+  - id: "NO3_HO2"
+    type: "irreversible"
+    reactants:
+      NO3: 1
+      HO2: 1
+    products:
+      NO3-: 1
+      H+: 1
+      O2: 1
+    k: 4.5e9
+    label: "NO3 + HO2 → NO3- + H+ + O2"
+
+  - id: "O_O2"
+    type: "reversible"
+    reactants:
+      O: 1
+      O2: 1
+    products:
+      O3: 1
+    k_f: 4.0e9
+    k_b: 3.0e-26
+    label: "O + O2 ↔ O3"
+
+  - id: "O-_O2"
+    type: "reversible"
+    reactants:
+      O-: 1
+      O2: 1
+    products:
+      O3-: 1
+    k_f: 3.6e9
+    k_b: 3.3e3
+    label: "O- + O2 ↔ O3-"
+
+  - id: "HO3_dissoc"
+    type: "reversible"
+    reactants:
+      HO3: 1
+    products:
+      O3-: 1
+      H+: 1
+    k_f: 1.4e5
+    k_b: 5.0e10
+    label: "HO3 ↔ O3- + H+"
+
+  - id: "NO2_O2-_peroxynitrate"
+    type: "reversible"
+    reactants:
+      NO2: 1
+      O2-: 1
+    products:
+      O2NOO-: 1
+    k_f: 4.5e9
+    k_b: 1.05
+    label: "NO2 + O2- ↔ O2NOO-"
+
+  - id: "NO2_HO2_peroxynitrate"
+    type: "reversible"
+    reactants:
+      NO2: 1
+      HO2: 1
+    products:
+      O2NOOH: 1
+    k_f: 1.8e9
+    k_b: 0.026
+    label: "NO2 + HO2 ↔ O2NOOH"

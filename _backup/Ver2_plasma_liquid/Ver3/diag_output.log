@@ -1,0 +1,155 @@
+================================================================================
+SALINE DIAGNOSTIC — Full Species Concentration Tracking
+================================================================================
+  A/V=13.30 m⁻¹
+  Gas: HONO=6.219e+14, HONO2=6.761e+14, H2O2=1.061e+15
+
+--- Mass Transfer Coefficients ---
+  O3      : H=2.2980e-01, k_L*a=2.3221e-04 s⁻¹
+  NO      : H=4.6000e-02, k_L*a=2.9389e-04 s⁻¹
+  NO2     : H=9.7800e-01, k_L*a=2.4321e-04 s⁻¹
+  NO3     : H=4.4000e+01, k_L*a=9.7354e-05 s⁻¹
+  N2O4    : H=3.6670e+01, k_L*a=9.7351e-05 s⁻¹
+  N2O5    : H=5.1340e+01, k_L*a=8.4721e-05 s⁻¹
+  HONO    : H=1.1980e+03, k_L*a=1.3638e-05 s⁻¹
+  HONO2   : H=5.1000e+06, k_L*a=3.1306e-09 s⁻¹
+  H2O2    : H=2.1000e+06, k_L*a=8.2359e-09 s⁻¹
+
+  Gas O3: mean=8.091e+16 cm⁻³, C_gas_molar=1.347e-04 M, C_eq(aq)=3.096e-05 M
+2026-03-12 15:46:15 - plasma_liquid - INFO - Loaded 101 reactions from /home/hawn/work/plasma_liquid/Ver3/reactions_full.yaml
+2026-03-12 15:46:15 - plasma_liquid - INFO - Loaded 93 saline reactions (total: 194)
+  Reactions: 194 total
+  Species in ODE: 47
+
+ Step    Time      pH            OH            O3           O3-            Cl          HClO        NO2-
+----------------------------------------------------------------------------------------------------
+    0       0   7.000     6.798e-17     2.357e-20     1.000e-30     2.164e-17     1.508e-12       0.017μM
+   60      60   5.257     1.090e-17     9.908e-09     1.337e-16     1.000e-30     1.203e-10       0.829μM
+  120     120   4.849     2.896e-15     6.537e-09     2.386e-15     7.123e-16     7.143e-10       1.435μM
+  180     180   4.627     4.711e-15     4.824e-09     3.303e-15     1.625e-15     6.316e-10       1.934μM
+  240     240   4.475     6.763e-15     3.740e-09     4.348e-15     2.313e-15     5.375e-10       2.366μM
+  300     300   4.358     8.396e-15     2.983e-09     5.311e-15     2.808e-15     4.912e-10       2.750μM
+  360     360   4.263     9.437e-15     2.464e-09     5.738e-15     3.202e-15     4.046e-10       3.096μM
+
+================================================================================
+FINAL SPECIES CONCENTRATIONS (t=360s)
+================================================================================
+
+--- ENTRY_REACTANTS ---
+  Species           Concentration    Unit  Notes
+  ------------------------------------------------------------
+  OH                   9.4372e-15       M  9.44 fM
+  O3                   2.4644e-09       M  2.46 nM
+  H2O2                 1.0937e-05       M  10.94 μM
+  HO2                  1.0055e-11       M  10.05 pM
+  O2-                  2.9212e-12       M  2.92 pM
+  ONOOH                7.9307e-13       M  793.07 fM
+  O2NOOH               1.8369e-09       M  1.84 nM
+  O3-                  5.7380e-15       M  5.74 fM
+  NO3                  1.0000e-30       M  ≈ TRACE
+
+--- CL_INTERMEDIATES ---
+  Species           Concentration    Unit  Notes
+  ------------------------------------------------------------
+  Cl                   3.2020e-15       M  3.20 fM
+  Cl2-                 1.3268e-15       M  1.33 fM
+  HOCl-                3.4832e-17       M  0.03 fM
+  Cl2                  5.0036e-12       M  5.00 pM
+  HClO                 4.0464e-10       M  404.64 pM
+  ClO-                 2.3456e-13       M  234.56 fM
+  ClNO2                3.8053e-10       M  380.53 pM
+  HOClH                1.0000e-30       M  ≈ TRACE
+  ClO                  2.7013e-12       M  2.70 pM
+  ClO2                 5.0779e-21       M  0.00 fM
+  Cl2O2                1.0944e-16       M  0.11 fM
+  HClO2                1.0809e-18       M  0.00 fM
+  ClO2-                2.2232e-16       M  0.22 fM
+
+--- NOX ---
+  Species           Concentration    Unit  Notes
+  ------------------------------------------------------------
+  NO2-                 3.0961e-06       M  3.10 μM
+  NO3-                 6.3402e-05       M  63.40 μM
+  NO                   1.0000e-30       M  ≈ TRACE
+  NO2                  1.9113e-09       M  1.91 nM
+  N2O3                 1.0000e-30       M  ≈ TRACE
+  N2O4                 2.0931e-13       M  209.31 fM
+  N2O5                 1.0000e-30       M  ≈ TRACE
+  HONO                 4.2425e-07       M  424.25 nM
+  HONO2                1.5809e-10       M  158.09 pM
+  ONOO-                3.6518e-15       M  3.65 fM
+  O2NOO-               4.2392e-11       M  42.39 pM
+
+--- ROS ---
+  Species           Concentration    Unit  Notes
+  ------------------------------------------------------------
+  H2O2                 1.0937e-05       M  10.94 μM
+  HO2-                 4.4883e-13       M  448.83 fM
+  O-                   1.0000e-30       M  ≈ TRACE
+  H                    1.0000e-30       M  ≈ TRACE
+  HO3                  1.8155e-14       M  18.16 fM
+
+--- CONSERVED ---
+  Species           Concentration    Unit  Notes
+  ------------------------------------------------------------
+  Cl-                  1.5400e-01       M  154.00 mM
+  H+                   5.4552e-05       M  54.55 μM
+  OH-                  1.8331e-10       M  183.31 pM
+  O2                   2.5262e-04       M  252.62 μM
+
+================================================================================
+Cl⁻ ENTRY-POINT REACTION RATES (final timestep)
+================================================================================
+
+  Reaction                               Rate (M/s)    360s cumul  Product
+  --------------------------------------------------------------------------------
+  S19: Cl⁻+O₃→ClO⁻                        7.590e-13    2.73e-10 M  ClO⁻
+  S20: Cl⁻+H₂O₂→ClO⁻                      3.032e-15    1.09e-12 M  ClO⁻
+  S21: Cl⁻+H₂O₂+H⁺→HClO                   7.626e-17    2.75e-14 M  HClO
+  S22: Cl⁻+OH→Cl                          6.249e-06    2249.76 μM  Cl
+  S55: NO₃+Cl⁻→NO₃⁻+Cl                    1.540e-23    5.54e-21 M  Cl
+  S96: Cl⁻+O₂NOOH→HClO                    3.960e-12       1.43 nM  HClO
+  S4f: OH+Cl⁻→HOCl⁻                       6.249e-06    2249.76 μM  HOCl⁻
+
+================================================================================
+O₃ BUDGET ANALYSIS
+================================================================================
+  Gas O₃ = 1.052e+17 cm⁻³ = 1.747e-04 M
+  C_eq(aq) = H × C_gas = 0.2298 × 1.747e-04 = 4.014e-05 M
+  Actual [O₃(aq)] = 2.464e-09 M
+  k_L*a = 2.3221e-04 s⁻¹
+  Mass transfer rate = k_L*a × (C_eq - C_aq) = 9.322e-09 M/s
+
+  Key O₃ sinks:
+    R32: O₃+NO₂⁻ (k=5e5): rate = 3.815e-09 M/s
+    R25: O₃+O₂⁻ (k=1.6e9): rate = 1.152e-11 M/s
+    R27: O₃+OH (k=3e9): rate = 6.977e-14 M/s
+    R30: O₃+H₂O₂ (k=6.5e-3): rate = 1.752e-16 M/s
+    S19: O₃+Cl⁻ (k=2e-3): rate = 7.590e-13 M/s
+
+================================================================================
+OH BUDGET ANALYSIS
+================================================================================
+  [OH] = 9.437e-15 M
+
+  OH Production:
+    R38: O₃⁻+H⁺→OH (k=9e10): rate = 2.817e-08 M/s
+    R33: O₃⁻→OH+O₂+OH⁻ (k=25): rate = 1.434e-13 M/s
+    R30: O₃+H₂O₂→OH (k=6.5e-3): rate = 1.752e-16 M/s
+    R15f: ONOOH→NO₂+OH (k=0.35): rate = 2.776e-13 M/s
+    R26: O₃+HO₂⁻→OH (k=5.5e6): rate = 6.083e-15 M/s
+
+  OH Consumption:
+    R77: OH+NO₂⁻ (k=1e9): rate = 2.922e-11 M/s
+    R78: OH+HONO (k=1e9): rate = 4.004e-12 M/s
+    R79: OH+HONO₂ (k=5.3e7): rate = 7.907e-17 M/s
+    R41: OH+H₂O₂ (k=2.7e7): rate = 2.787e-12 M/s
+    S4f: OH+Cl⁻→HOCl⁻ (k=4.3e9): rate = 6.249e-06 M/s
+    S22: OH+Cl⁻→Cl (k=4.3e9): rate = 6.249e-06 M/s
+    S4+S22 total Cl⁻ sink: 1.250e-05 M/s
+    Non-Cl OH sinks: 3.601e-11 M/s
+    Cl OH sinks: 1.250e-05 M/s
+    Cl/Non-Cl ratio: 347096.2×
+
+  Full diagnostic data saved to: /home/hawn/work/plasma_liquid/Ver3/saline_diagnostic.csv
+  Elapsed: 1608.6s

@@ -1,0 +1,28 @@
+=== Pulsed CSTR Newton-Krylov Shooting ===
+PRF=10kHz, dc=20%, P_peak=8.1W, T_period=100us
+
+Phase 1: Warmup (20 periods)...
+
+Phase 1: Warmup (100 periods)...
+  period 20: ne=7.41e+09, conv=0.0001%, |F|=172.3, dt=13.2s, total=263s
+  period 40: ne=1.15e+10, conv=0.0001%, |F|=32.2, dt=9.2s, total=510s
+  period 60: ne=1.31e+10, conv=0.0002%, |F|=90.5, dt=8.4s, total=781s
+  period 80: ne=1.46e+10, conv=0.0003%, |F|=63.3, dt=10.1s, total=1039s
+  period 100: ne=1.65e+10, conv=0.0004%, |F|=35.6, dt=8.9s, total=1286s
+
+Phase 2: Newton-Krylov shooting...
+  f_tol=100, maxiter=30, inner_maxiter=10
+/home/hawn/work/.venv/lib/python3.12/site-packages/scipy/optimize/_nonlin.py:376: RuntimeWarning: invalid value encountered in scalar divide
+  and dx_norm/self.x_rtol <= x_norm))
+0:  |F(x)| = 35.5563; step 2.13194e-15
+
+=== PSS FOUND ===
+Newton-Krylov: 80s, 111 flow maps
+Total time: 1366s (22.8 min)
+CH4 conversion: 0.0004%
+ne = 1.65e+10 m-3
+Te = 0.000 eV
+T_gas = 303.00 K
+
+Expected (continuous P_avg=1.62W CSTR): ~1.44%
+Saved to pulsed_pss_result.npz
