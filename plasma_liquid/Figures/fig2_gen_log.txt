@@ -1,0 +1,845 @@
+======================================================================
+Figure 2: Time-resolved reaction rate contributions
+  α_b=0.03, dt=10.0s, species=['NO3-', 'O3', 'NO2-', 'H2O2']
+======================================================================
+Running DIW: α_b=0.03, dt=10.0s, t_end=720.0s, 72 eval points
+PDESolver1D: 25 species × 188 cells = 4700 ODEs
+  Grid: L=10.0mm, N_z=188, dz=[5–106.9]μm (geometric)
+  delta_gas=10.0mm, delta_liq=100.0um, eta=1.0000
+  Time: 0-720.0s, method=BDF
+  Poisson: DISABLED (ε_r=78.4, V_T=0.02569V)
+  Strang split: 72 macro steps, dt=10.0s, 188 cells × 25 species
+    Step 1, cell 0/188: 0.0s, nfev=469
+    Step 1, cell 20/188: 0.0s, nfev=26
+    Step 1, cell 40/188: 0.0s, nfev=26
+    Step 1, cell 60/188: 0.0s, nfev=26
+    Step 1, cell 80/188: 0.0s, nfev=26
+    Step 1, cell 100/188: 0.0s, nfev=26
+    Step 1, cell 120/188: 0.0s, nfev=26
+    Step 1, cell 140/188: 0.0s, nfev=26
+    Step 1, cell 160/188: 0.0s, nfev=26
+    Step 1, cell 180/188: 0.0s, nfev=26
+    Chem step 1 total: 0.4s, 0 slow cells (>2s)
+    Step 2, cell 0/188: 0.1s, nfev=568
+    Step 2, cell 20/188: 0.0s, nfev=127
+    Step 2, cell 40/188: 0.0s, nfev=41
+    Step 2, cell 60/188: 0.0s, nfev=65
+    Step 2, cell 80/188: 0.0s, nfev=234
+    Step 2, cell 100/188: 0.0s, nfev=46
+    Step 2, cell 120/188: 0.0s, nfev=46
+    Step 2, cell 140/188: 0.0s, nfev=46
+    Step 2, cell 160/188: 0.0s, nfev=46
+    Step 2, cell 180/188: 0.0s, nfev=46
+    Chem step 2 total: 1.3s, 0 slow cells (>2s)
+    Step 3, cell 0/188: 0.1s, nfev=1198
+    Step 3, cell 20/188: 0.0s, nfev=310
+    Step 3, cell 40/188: 0.0s, nfev=95
+    Step 3, cell 60/188: 0.0s, nfev=287
+    Step 3, cell 80/188: 0.0s, nfev=48
+    Step 3, cell 100/188: 0.0s, nfev=236
+    Step 3, cell 120/188: 0.0s, nfev=30
+    Step 3, cell 140/188: 0.0s, nfev=24
+    Step 3, cell 160/188: 0.0s, nfev=56
+    Step 3, cell 180/188: 0.0s, nfev=56
+    Chem step 3 total: 1.8s, 0 slow cells (>2s)
+    Step 4, cell 0/188: 0.1s, nfev=670
+    Step 4, cell 20/188: 0.0s, nfev=266
+    Step 4, cell 40/188: 0.0s, nfev=142
+    Step 4, cell 60/188: 0.0s, nfev=124
+    Step 4, cell 80/188: 0.0s, nfev=120
+    Step 4, cell 100/188: 0.0s, nfev=477
+    Step 4, cell 120/188: 0.0s, nfev=152
+    Step 4, cell 140/188: 0.0s, nfev=32
+    Step 4, cell 160/188: 0.0s, nfev=42
+    Step 4, cell 180/188: 0.0s, nfev=42
+    Chem step 4 total: 2.2s, 0 slow cells (>2s)
+    Step 5, cell 0/188: 0.1s, nfev=674
+    Step 5, cell 20/188: 0.0s, nfev=105
+    Step 5, cell 40/188: 0.0s, nfev=79
+    Step 5, cell 60/188: 0.0s, nfev=55
+    Step 5, cell 80/188: 0.0s, nfev=70
+    Step 5, cell 100/188: 0.0s, nfev=48
+    Step 5, cell 120/188: 0.0s, nfev=180
+    Step 5, cell 140/188: 0.0s, nfev=196
+    Step 5, cell 160/188: 0.0s, nfev=62
+    Step 5, cell 180/188: 0.0s, nfev=52
+    Chem step 5 total: 1.5s, 0 slow cells (>2s)
+    Step 6, cell 0/188: 0.0s, nfev=162
+    Step 6, cell 20/188: 0.0s, nfev=91
+    Step 6, cell 40/188: 0.0s, nfev=64
+    Step 6, cell 60/188: 0.0s, nfev=473
+    Step 6, cell 80/188: 0.0s, nfev=53
+    Step 6, cell 100/188: 0.0s, nfev=437
+    Step 6, cell 120/188: 0.0s, nfev=68
+    Step 6, cell 140/188: 0.0s, nfev=240
+    Step 6, cell 160/188: 0.0s, nfev=36
+    Step 6, cell 180/188: 0.0s, nfev=62
+    Chem step 6 total: 1.9s, 0 slow cells (>2s)
+    Step 7, cell 0/188: 0.1s, nfev=646
+    Step 7, cell 20/188: 0.0s, nfev=54
+    Step 7, cell 40/188: 0.0s, nfev=60
+    Step 7, cell 60/188: 0.0s, nfev=170
+    Step 7, cell 80/188: 0.0s, nfev=215
+    Step 7, cell 100/188: 0.0s, nfev=89
+    Step 7, cell 120/188: 0.0s, nfev=48
+    Step 7, cell 140/188: 0.0s, nfev=20
+    Step 7, cell 160/188: 0.0s, nfev=62
+    Step 7, cell 180/188: 0.0s, nfev=62
+    Chem step 7 total: 1.9s, 0 slow cells (>2s)
+    Step 8, cell 0/188: 0.1s, nfev=596
+    Step 8, cell 20/188: 0.0s, nfev=274
+    Step 8, cell 40/188: 0.0s, nfev=231
+    Step 8, cell 60/188: 0.0s, nfev=104
+    Step 8, cell 80/188: 0.0s, nfev=120
+    Step 8, cell 100/188: 0.0s, nfev=73
+    Step 8, cell 120/188: 0.0s, nfev=53
+    Step 8, cell 140/188: 0.0s, nfev=38
+    Step 8, cell 160/188: 0.0s, nfev=56
+    Step 8, cell 180/188: 0.0s, nfev=62
+    Chem step 8 total: 2.3s, 0 slow cells (>2s)
+    Step 9, cell 0/188: 0.1s, nfev=1066
+    Step 9, cell 20/188: 0.0s, nfev=113
+    Step 9, cell 40/188: 0.0s, nfev=347
+    Step 9, cell 60/188: 0.0s, nfev=26
+    Step 9, cell 80/188: 0.0s, nfev=160
+    Step 9, cell 100/188: 0.0s, nfev=74
+    Step 9, cell 120/188: 0.0s, nfev=16
+    Step 9, cell 140/188: 0.0s, nfev=20
+    Step 9, cell 160/188: 0.0s, nfev=20
+    Step 9, cell 180/188: 0.0s, nfev=28
+    Chem step 9 total: 1.8s, 0 slow cells (>2s)
+    Step 10, cell 0/188: 0.1s, nfev=796
+    Step 10, cell 20/188: 0.0s, nfev=195
+    Step 10, cell 40/188: 0.0s, nfev=52
+    Step 10, cell 60/188: 0.0s, nfev=68
+    Step 10, cell 80/188: 0.0s, nfev=92
+    Step 10, cell 100/188: 0.0s, nfev=274
+    Step 10, cell 120/188: 0.0s, nfev=20
+    Step 10, cell 140/188: 0.0s, nfev=20
+    Step 10, cell 160/188: 0.0s, nfev=20
+    Step 10, cell 180/188: 0.0s, nfev=22
+    Chem step 10 total: 2.2s, 0 slow cells (>2s)
+    Step 10/72: t=100s, pH=4.839, nfev=218292
+    Step 11, cell 0/188: 0.1s, nfev=639
+    Step 11, cell 20/188: 0.0s, nfev=102
+    Step 11, cell 40/188: 0.0s, nfev=89
+    Step 11, cell 60/188: 0.0s, nfev=86
+    Step 11, cell 80/188: 0.0s, nfev=206
+    Step 11, cell 100/188: 0.0s, nfev=49
+    Step 11, cell 120/188: 0.0s, nfev=52
+    Step 11, cell 140/188: 0.0s, nfev=70
+    Step 11, cell 160/188: 0.0s, nfev=118
+    Step 11, cell 180/188: 0.0s, nfev=22
+    Chem step 11 total: 1.7s, 0 slow cells (>2s)
+    Step 12, cell 0/188: 0.1s, nfev=912
+    Step 12, cell 20/188: 0.0s, nfev=273
+    Step 12, cell 40/188: 0.0s, nfev=39
+    Step 12, cell 60/188: 0.0s, nfev=44
+    Step 12, cell 80/188: 0.0s, nfev=348
+    Step 12, cell 100/188: 0.0s, nfev=414
+    Step 12, cell 120/188: 0.0s, nfev=52
+    Step 12, cell 140/188: 0.0s, nfev=64
+    Step 12, cell 160/188: 0.0s, nfev=20
+    Step 12, cell 180/188: 0.0s, nfev=242
+    Chem step 12 total: 2.3s, 0 slow cells (>2s)
+    Step 13, cell 0/188: 0.0s, nfev=286
+    Step 13, cell 20/188: 0.0s, nfev=422
+    Step 13, cell 40/188: 0.0s, nfev=28
+    Step 13, cell 60/188: 0.0s, nfev=153
+    Step 13, cell 80/188: 0.0s, nfev=282
+    Step 13, cell 100/188: 0.0s, nfev=118
+    Step 13, cell 120/188: 0.0s, nfev=53
+    Step 13, cell 140/188: 0.0s, nfev=86
+    Step 13, cell 160/188: 0.0s, nfev=22
+    Step 13, cell 180/188: 0.0s, nfev=20
+    Chem step 13 total: 1.8s, 0 slow cells (>2s)
+    Step 14, cell 0/188: 0.1s, nfev=571
+    Step 14, cell 20/188: 0.0s, nfev=156
+    Step 14, cell 40/188: 0.0s, nfev=488
+    Step 14, cell 60/188: 0.0s, nfev=103
+    Step 14, cell 80/188: 0.0s, nfev=210
+    Step 14, cell 100/188: 0.0s, nfev=242
+    Step 14, cell 120/188: 0.0s, nfev=90
+    Step 14, cell 140/188: 0.0s, nfev=64
+    Step 14, cell 160/188: 0.0s, nfev=45
+    Step 14, cell 180/188: 0.0s, nfev=40
+    Chem step 14 total: 1.7s, 0 slow cells (>2s)
+    Step 15, cell 0/188: 0.1s, nfev=892
+    Step 15, cell 20/188: 0.0s, nfev=74
+    Step 15, cell 40/188: 0.0s, nfev=127
+    Step 15, cell 60/188: 0.0s, nfev=189
+    Step 15, cell 80/188: 0.0s, nfev=22
+    Step 15, cell 100/188: 0.0s, nfev=41
+    Step 15, cell 120/188: 0.0s, nfev=21
+    Step 15, cell 140/188: 0.0s, nfev=90
+    Step 15, cell 160/188: 0.0s, nfev=18
+    Step 15, cell 180/188: 0.0s, nfev=82
+    Chem step 15 total: 1.9s, 0 slow cells (>2s)
+    Step 16, cell 0/188: 0.1s, nfev=615
+    Step 16, cell 20/188: 0.0s, nfev=222
+    Step 16, cell 40/188: 0.0s, nfev=247
+    Step 16, cell 60/188: 0.0s, nfev=242
+    Step 16, cell 80/188: 0.0s, nfev=303
+    Step 16, cell 100/188: 0.0s, nfev=474
+    Step 16, cell 120/188: 0.0s, nfev=78
+    Step 16, cell 140/188: 0.0s, nfev=59
+    Step 16, cell 160/188: 0.0s, nfev=14
+    Step 16, cell 180/188: 0.0s, nfev=88
+    Chem step 16 total: 2.8s, 0 slow cells (>2s)
+    Step 17, cell 0/188: 0.0s, nfev=111
+    Step 17, cell 20/188: 0.0s, nfev=162
+    Step 17, cell 40/188: 0.0s, nfev=111
+    Step 17, cell 60/188: 0.0s, nfev=36
+    Step 17, cell 80/188: 0.0s, nfev=60
+    Step 17, cell 100/188: 0.0s, nfev=141
+    Step 17, cell 120/188: 0.0s, nfev=174
+    Step 17, cell 140/188: 0.0s, nfev=22
+    Step 17, cell 160/188: 0.0s, nfev=24
+    Step 17, cell 180/188: 0.0s, nfev=22
+    Chem step 17 total: 2.0s, 0 slow cells (>2s)
+    Step 18, cell 0/188: 0.0s, nfev=151
+    Step 18, cell 20/188: 0.0s, nfev=258
+    Step 18, cell 40/188: 0.0s, nfev=329
+    Step 18, cell 60/188: 0.0s, nfev=153
+    Step 18, cell 80/188: 0.0s, nfev=108
+    Step 18, cell 100/188: 0.0s, nfev=358
+    Step 18, cell 120/188: 0.0s, nfev=77
+    Step 18, cell 140/188: 0.0s, nfev=20
+    Step 18, cell 160/188: 0.0s, nfev=60
+    Step 18, cell 180/188: 0.0s, nfev=78
+    Chem step 18 total: 2.9s, 0 slow cells (>2s)
+    Step 19, cell 0/188: 0.0s, nfev=271
+    Step 19, cell 20/188: 0.0s, nfev=186
+    Step 19, cell 40/188: 0.0s, nfev=63
+    Step 19, cell 60/188: 0.0s, nfev=283
+    Step 19, cell 80/188: 0.0s, nfev=348
+    Step 19, cell 100/188: 0.0s, nfev=269
+    Step 19, cell 120/188: 0.0s, nfev=164
+    Step 19, cell 140/188: 0.0s, nfev=20
+    Step 19, cell 160/188: 0.0s, nfev=20
+    Step 19, cell 180/188: 0.0s, nfev=20
+    Chem step 19 total: 2.5s, 0 slow cells (>2s)
+    Step 20, cell 0/188: 0.2s, nfev=1581
+    Step 20, cell 20/188: 0.0s, nfev=198
+    Step 20, cell 40/188: 0.0s, nfev=227
+    Step 20, cell 60/188: 0.0s, nfev=214
+    Step 20, cell 80/188: 0.0s, nfev=116
+    Step 20, cell 100/188: 0.0s, nfev=59
+    Step 20, cell 120/188: 0.0s, nfev=115
+    Step 20, cell 140/188: 0.0s, nfev=20
+    Step 20, cell 160/188: 0.0s, nfev=52
+    Step 20, cell 180/188: 0.0s, nfev=178
+    Chem step 20 total: 3.0s, 0 slow cells (>2s)
+    Step 20/72: t=200s, pH=4.506, nfev=507663
+    Step 21, cell 0/188: 0.0s, nfev=475
+    Step 21, cell 20/188: 0.0s, nfev=564
+    Step 21, cell 40/188: 0.0s, nfev=275
+    Step 21, cell 60/188: 0.0s, nfev=92
+    Step 21, cell 80/188: 0.0s, nfev=62
+    Step 21, cell 100/188: 0.0s, nfev=210
+    Step 21, cell 120/188: 0.0s, nfev=82
+    Step 21, cell 140/188: 0.0s, nfev=20
+    Step 21, cell 160/188: 0.0s, nfev=76
+    Step 21, cell 180/188: 0.0s, nfev=20
+    Chem step 21 total: 2.3s, 0 slow cells (>2s)
+    Step 22, cell 0/188: 0.0s, nfev=118
+    Step 22, cell 20/188: 0.0s, nfev=197
+    Step 22, cell 40/188: 0.0s, nfev=641
+    Step 22, cell 60/188: 0.0s, nfev=132
+    Step 22, cell 80/188: 0.0s, nfev=100
+    Step 22, cell 100/188: 0.0s, nfev=90
+    Step 22, cell 120/188: 0.0s, nfev=283
+    Step 22, cell 140/188: 0.0s, nfev=242
+    Step 22, cell 160/188: 0.0s, nfev=357
+    Step 22, cell 180/188: 0.0s, nfev=66
+    Chem step 22 total: 2.5s, 0 slow cells (>2s)
+    Step 23, cell 0/188: 0.0s, nfev=168
+    Step 23, cell 20/188: 0.0s, nfev=421
+    Step 23, cell 40/188: 0.0s, nfev=321
+    Step 23, cell 60/188: 0.0s, nfev=504
+    Step 23, cell 80/188: 0.0s, nfev=342
+    Step 23, cell 100/188: 0.0s, nfev=249
+    Step 23, cell 120/188: 0.0s, nfev=40
+    Step 23, cell 140/188: 0.0s, nfev=42
+    Step 23, cell 160/188: 0.0s, nfev=554
+    Step 23, cell 180/188: 0.0s, nfev=50
+    Chem step 23 total: 2.9s, 0 slow cells (>2s)
+    Step 24, cell 0/188: 0.0s, nfev=152
+    Step 24, cell 20/188: 0.0s, nfev=483
+    Step 24, cell 40/188: 0.0s, nfev=191
+    Step 24, cell 60/188: 0.0s, nfev=152
+    Step 24, cell 80/188: 0.0s, nfev=147
+    Step 24, cell 100/188: 0.0s, nfev=530
+    Step 24, cell 120/188: 0.0s, nfev=84
+    Step 24, cell 140/188: 0.0s, nfev=62
+    Step 24, cell 160/188: 0.0s, nfev=20
+    Step 24, cell 180/188: 0.0s, nfev=49
+    Chem step 24 total: 2.8s, 0 slow cells (>2s)
+    Step 25, cell 0/188: 0.0s, nfev=184
+    Step 25, cell 20/188: 0.1s, nfev=704
+    Step 25, cell 40/188: 0.0s, nfev=171
+    Step 25, cell 60/188: 0.0s, nfev=258
+    Step 25, cell 80/188: 0.0s, nfev=150
+    Step 25, cell 100/188: 0.0s, nfev=76
+    Step 25, cell 120/188: 0.0s, nfev=231
+    Step 25, cell 140/188: 0.0s, nfev=61
+    Step 25, cell 160/188: 0.0s, nfev=449
+    Step 25, cell 180/188: 0.0s, nfev=20
+    Chem step 25 total: 2.9s, 0 slow cells (>2s)
+    Step 26, cell 0/188: 0.0s, nfev=271
+    Step 26, cell 20/188: 0.0s, nfev=314
+    Step 26, cell 40/188: 0.0s, nfev=496
+    Step 26, cell 60/188: 0.0s, nfev=272
+    Step 26, cell 80/188: 0.0s, nfev=164
+    Step 26, cell 100/188: 0.0s, nfev=208
+    Step 26, cell 120/188: 0.0s, nfev=109
+    Step 26, cell 140/188: 0.0s, nfev=80
+    Step 26, cell 160/188: 0.0s, nfev=54
+    Step 26, cell 180/188: 0.0s, nfev=104
+    Chem step 26 total: 2.6s, 0 slow cells (>2s)
+    Step 27, cell 0/188: 0.0s, nfev=151
+    Step 27, cell 20/188: 0.0s, nfev=182
+    Step 27, cell 40/188: 0.0s, nfev=588
+    Step 27, cell 60/188: 0.0s, nfev=240
+    Step 27, cell 80/188: 0.1s, nfev=701
+    Step 27, cell 100/188: 0.0s, nfev=191
+    Step 27, cell 120/188: 0.0s, nfev=186
+    Step 27, cell 140/188: 0.0s, nfev=20
+    Step 27, cell 160/188: 0.0s, nfev=64
+    Step 27, cell 180/188: 0.0s, nfev=42
+    Chem step 27 total: 2.8s, 0 slow cells (>2s)
+    Step 28, cell 0/188: 0.0s, nfev=166
+    Step 28, cell 20/188: 0.0s, nfev=62
+    Step 28, cell 40/188: 0.0s, nfev=226
+    Step 28, cell 60/188: 0.0s, nfev=144
+    Step 28, cell 80/188: 0.0s, nfev=22
+    Step 28, cell 100/188: 0.0s, nfev=116
+    Step 28, cell 120/188: 0.0s, nfev=221
+    Step 28, cell 140/188: 0.0s, nfev=78
+    Step 28, cell 160/188: 0.0s, nfev=20
+    Step 28, cell 180/188: 0.0s, nfev=18
+    Chem step 28 total: 2.6s, 0 slow cells (>2s)
+    Step 29, cell 0/188: 0.0s, nfev=119
+    Step 29, cell 20/188: 0.0s, nfev=100
+    Step 29, cell 40/188: 0.1s, nfev=807
+    Step 29, cell 60/188: 0.0s, nfev=168
+    Step 29, cell 80/188: 0.0s, nfev=46
+    Step 29, cell 100/188: 0.0s, nfev=364
+    Step 29, cell 120/188: 0.0s, nfev=99
+    Step 29, cell 140/188: 0.0s, nfev=74
+    Step 29, cell 160/188: 0.0s, nfev=20
+    Step 29, cell 180/188: 0.0s, nfev=30
+    Chem step 29 total: 2.5s, 0 slow cells (>2s)
+    Step 30, cell 0/188: 0.0s, nfev=205
+    Step 30, cell 20/188: 0.0s, nfev=474
+    Step 30, cell 40/188: 0.0s, nfev=222
+    Step 30, cell 60/188: 0.0s, nfev=294
+    Step 30, cell 80/188: 0.0s, nfev=409
+    Step 30, cell 100/188: 0.0s, nfev=30
+    Step 30, cell 120/188: 0.0s, nfev=159
+    Step 30, cell 140/188: 0.0s, nfev=88
+    Step 30, cell 160/188: 0.0s, nfev=86
+    Step 30, cell 180/188: 0.0s, nfev=76
+    Chem step 30 total: 2.3s, 0 slow cells (>2s)
+    Step 30/72: t=300s, pH=4.344, nfev=847285
+    Step 31, cell 0/188: 0.0s, nfev=131
+    Step 31, cell 20/188: 0.0s, nfev=274
+    Step 31, cell 40/188: 0.0s, nfev=182
+    Step 31, cell 60/188: 0.0s, nfev=371
+    Step 31, cell 80/188: 0.0s, nfev=221
+    Step 31, cell 100/188: 0.0s, nfev=20
+    Step 31, cell 120/188: 0.0s, nfev=20
+    Step 31, cell 140/188: 0.0s, nfev=51
+    Step 31, cell 160/188: 0.0s, nfev=20
+    Step 31, cell 180/188: 0.0s, nfev=22
+    Chem step 31 total: 2.3s, 0 slow cells (>2s)
+    Step 32, cell 0/188: 0.0s, nfev=158
+    Step 32, cell 20/188: 0.0s, nfev=260
+    Step 32, cell 40/188: 0.0s, nfev=221
+    Step 32, cell 60/188: 0.0s, nfev=199
+    Step 32, cell 80/188: 0.0s, nfev=120
+    Step 32, cell 100/188: 0.0s, nfev=20
+    Step 32, cell 120/188: 0.0s, nfev=47
+    Step 32, cell 140/188: 0.0s, nfev=52
+    Step 32, cell 160/188: 0.0s, nfev=16
+    Step 32, cell 180/188: 0.0s, nfev=20
+    Chem step 32 total: 2.5s, 0 slow cells (>2s)
+    Step 33, cell 0/188: 0.1s, nfev=694
+    Step 33, cell 20/188: 0.0s, nfev=92
+    Step 33, cell 40/188: 0.0s, nfev=122
+    Step 33, cell 60/188: 0.0s, nfev=117
+    Step 33, cell 80/188: 0.0s, nfev=504
+    Step 33, cell 100/188: 0.0s, nfev=106
+    Step 33, cell 120/188: 0.0s, nfev=59
+    Step 33, cell 140/188: 0.0s, nfev=94
+    Step 33, cell 160/188: 0.0s, nfev=24
+    Step 33, cell 180/188: 0.0s, nfev=86
+    Chem step 33 total: 2.6s, 0 slow cells (>2s)
+    Step 34, cell 0/188: 0.0s, nfev=111
+    Step 34, cell 20/188: 0.0s, nfev=162
+    Step 34, cell 40/188: 0.0s, nfev=156
+    Step 34, cell 60/188: 0.0s, nfev=264
+    Step 34, cell 80/188: 0.0s, nfev=136
+    Step 34, cell 100/188: 0.0s, nfev=116
+    Step 34, cell 120/188: 0.0s, nfev=192
+    Step 34, cell 140/188: 0.0s, nfev=68
+    Step 34, cell 160/188: 0.0s, nfev=70
+    Step 34, cell 180/188: 0.0s, nfev=178
+    Chem step 34 total: 3.0s, 0 slow cells (>2s)
+    Step 35, cell 0/188: 0.0s, nfev=208
+    Step 35, cell 20/188: 0.0s, nfev=377
+    Step 35, cell 40/188: 0.0s, nfev=188
+    Step 35, cell 60/188: 0.0s, nfev=376
+    Step 35, cell 80/188: 0.0s, nfev=24
+    Step 35, cell 100/188: 0.0s, nfev=76
+    Step 35, cell 120/188: 0.0s, nfev=98
+    Step 35, cell 140/188: 0.0s, nfev=100
+    Step 35, cell 160/188: 0.0s, nfev=20
+    Step 35, cell 180/188: 0.0s, nfev=20
+    Chem step 35 total: 2.7s, 0 slow cells (>2s)
+    Step 36, cell 0/188: 0.0s, nfev=261
+    Step 36, cell 20/188: 0.0s, nfev=197
+    Step 36, cell 40/188: 0.0s, nfev=415
+    Step 36, cell 60/188: 0.0s, nfev=150
+    Step 36, cell 80/188: 0.0s, nfev=284
+    Step 36, cell 100/188: 0.0s, nfev=79
+    Step 36, cell 120/188: 0.0s, nfev=130
+    Step 36, cell 140/188: 0.0s, nfev=52
+    Step 36, cell 160/188: 0.0s, nfev=112
+    Step 36, cell 180/188: 0.0s, nfev=70
+    Chem step 36 total: 3.1s, 0 slow cells (>2s)
+    Step 37, cell 0/188: 0.0s, nfev=207
+    Step 37, cell 20/188: 0.0s, nfev=588
+    Step 37, cell 40/188: 0.0s, nfev=107
+    Step 37, cell 60/188: 0.0s, nfev=143
+    Step 37, cell 80/188: 0.0s, nfev=280
+    Step 37, cell 100/188: 0.0s, nfev=428
+    Step 37, cell 120/188: 0.0s, nfev=170
+    Step 37, cell 140/188: 0.0s, nfev=28
+    Step 37, cell 160/188: 0.0s, nfev=84
+    Step 37, cell 180/188: 0.0s, nfev=18
+    Chem step 37 total: 2.9s, 0 slow cells (>2s)
+    Step 38, cell 0/188: 0.0s, nfev=177
+    Step 38, cell 20/188: 0.0s, nfev=350
+    Step 38, cell 40/188: 0.0s, nfev=333
+    Step 38, cell 60/188: 0.0s, nfev=384
+    Step 38, cell 80/188: 0.0s, nfev=158
+    Step 38, cell 100/188: 0.0s, nfev=39
+    Step 38, cell 120/188: 0.0s, nfev=162
+    Step 38, cell 140/188: 0.0s, nfev=58
+    Step 38, cell 160/188: 0.0s, nfev=20
+    Step 38, cell 180/188: 0.0s, nfev=204
+    Chem step 38 total: 2.7s, 0 slow cells (>2s)
+    Step 39, cell 0/188: 0.0s, nfev=160
+    Step 39, cell 20/188: 0.0s, nfev=191
+    Step 39, cell 40/188: 0.0s, nfev=209
+    Step 39, cell 60/188: 0.0s, nfev=399
+    Step 39, cell 80/188: 0.0s, nfev=396
+    Step 39, cell 100/188: 0.0s, nfev=170
+    Step 39, cell 120/188: 0.0s, nfev=290
+    Step 39, cell 140/188: 0.0s, nfev=56
+    Step 39, cell 160/188: 0.0s, nfev=74
+    Step 39, cell 180/188: 0.0s, nfev=22
+    Chem step 39 total: 3.0s, 0 slow cells (>2s)
+    Step 40, cell 0/188: 0.0s, nfev=162
+    Step 40, cell 20/188: 0.0s, nfev=266
+    Step 40, cell 40/188: 0.0s, nfev=214
+    Step 40, cell 60/188: 0.0s, nfev=406
+    Step 40, cell 80/188: 0.0s, nfev=62
+    Step 40, cell 100/188: 0.0s, nfev=60
+    Step 40, cell 120/188: 0.0s, nfev=96
+    Step 40, cell 140/188: 0.0s, nfev=60
+    Step 40, cell 160/188: 0.0s, nfev=20
+    Step 40, cell 180/188: 0.0s, nfev=82
+    Chem step 40 total: 2.7s, 0 slow cells (>2s)
+    Step 40/72: t=400s, pH=4.256, nfev=1195561
+    Step 41, cell 0/188: 0.0s, nfev=399
+    Step 41, cell 20/188: 0.0s, nfev=194
+    Step 41, cell 40/188: 0.0s, nfev=180
+    Step 41, cell 60/188: 0.0s, nfev=161
+    Step 41, cell 80/188: 0.0s, nfev=465
+    Step 41, cell 100/188: 0.0s, nfev=97
+    Step 41, cell 120/188: 0.0s, nfev=50
+    Step 41, cell 140/188: 0.0s, nfev=47
+    Step 41, cell 160/188: 0.0s, nfev=68
+    Step 41, cell 180/188: 0.0s, nfev=20
+    Chem step 41 total: 2.8s, 0 slow cells (>2s)
+    Step 42, cell 0/188: 0.0s, nfev=94
+    Step 42, cell 20/188: 0.0s, nfev=442
+    Step 42, cell 40/188: 0.0s, nfev=131
+    Step 42, cell 60/188: 0.0s, nfev=200
+    Step 42, cell 80/188: 0.0s, nfev=136
+    Step 42, cell 100/188: 0.0s, nfev=250
+    Step 42, cell 120/188: 0.0s, nfev=242
+    Step 42, cell 140/188: 0.0s, nfev=110
+    Step 42, cell 160/188: 0.0s, nfev=20
+    Step 42, cell 180/188: 0.0s, nfev=100
+    Chem step 42 total: 2.8s, 0 slow cells (>2s)
+    Step 43, cell 0/188: 0.0s, nfev=138
+    Step 43, cell 20/188: 0.0s, nfev=337
+    Step 43, cell 40/188: 0.0s, nfev=282
+    Step 43, cell 60/188: 0.0s, nfev=143
+    Step 43, cell 80/188: 0.0s, nfev=68
+    Step 43, cell 100/188: 0.0s, nfev=20
+    Step 43, cell 120/188: 0.0s, nfev=62
+    Step 43, cell 140/188: 0.0s, nfev=80
+    Step 43, cell 160/188: 0.0s, nfev=156
+    Step 43, cell 180/188: 0.0s, nfev=18
+    Chem step 43 total: 2.1s, 0 slow cells (>2s)
+    Step 44, cell 0/188: 0.0s, nfev=152
+    Step 44, cell 20/188: 0.0s, nfev=206
+    Step 44, cell 40/188: 0.0s, nfev=107
+    Step 44, cell 60/188: 0.0s, nfev=155
+    Step 44, cell 80/188: 0.0s, nfev=246
+    Step 44, cell 100/188: 0.0s, nfev=248
+    Step 44, cell 120/188: 0.0s, nfev=16
+    Step 44, cell 140/188: 0.0s, nfev=178
+    Step 44, cell 160/188: 0.0s, nfev=16
+    Step 44, cell 180/188: 0.0s, nfev=146
+    Chem step 44 total: 2.9s, 0 slow cells (>2s)
+    Step 45, cell 0/188: 0.0s, nfev=245
+    Step 45, cell 20/188: 0.1s, nfev=899
+    Step 45, cell 40/188: 0.0s, nfev=521
+    Step 45, cell 60/188: 0.0s, nfev=184
+    Step 45, cell 80/188: 0.0s, nfev=112
+    Step 45, cell 100/188: 0.0s, nfev=114
+    Step 45, cell 120/188: 0.0s, nfev=82
+    Step 45, cell 140/188: 0.0s, nfev=20
+    Step 45, cell 160/188: 0.0s, nfev=264
+    Step 45, cell 180/188: 0.0s, nfev=20
+    Chem step 45 total: 2.7s, 0 slow cells (>2s)
+    Step 46, cell 0/188: 0.0s, nfev=139
+    Step 46, cell 20/188: 0.0s, nfev=141
+    Step 46, cell 40/188: 0.0s, nfev=609
+    Step 46, cell 60/188: 0.0s, nfev=97
+    Step 46, cell 80/188: 0.0s, nfev=92
+    Step 46, cell 100/188: 0.0s, nfev=257
+    Step 46, cell 120/188: 0.0s, nfev=119
+    Step 46, cell 140/188: 0.0s, nfev=56
+    Step 46, cell 160/188: 0.0s, nfev=38
+    Step 46, cell 180/188: 0.0s, nfev=90
+    Chem step 46 total: 2.6s, 0 slow cells (>2s)
+    Step 47, cell 0/188: 0.0s, nfev=136
+    Step 47, cell 20/188: 0.0s, nfev=501
+    Step 47, cell 40/188: 0.0s, nfev=224
+    Step 47, cell 60/188: 0.0s, nfev=67
+    Step 47, cell 80/188: 0.0s, nfev=169
+    Step 47, cell 100/188: 0.0s, nfev=224
+    Step 47, cell 120/188: 0.0s, nfev=20
+    Step 47, cell 140/188: 0.0s, nfev=74
+    Step 47, cell 160/188: 0.0s, nfev=248
+    Step 47, cell 180/188: 0.0s, nfev=58
+    Chem step 47 total: 2.3s, 0 slow cells (>2s)
+    Step 48, cell 0/188: 0.1s, nfev=1092
+    Step 48, cell 20/188: 0.0s, nfev=174
+    Step 48, cell 40/188: 0.0s, nfev=298
+    Step 48, cell 60/188: 0.0s, nfev=197
+    Step 48, cell 80/188: 0.0s, nfev=94
+    Step 48, cell 100/188: 0.0s, nfev=20
+    Step 48, cell 120/188: 0.0s, nfev=59
+    Step 48, cell 140/188: 0.0s, nfev=54
+    Step 48, cell 160/188: 0.0s, nfev=136
+    Step 48, cell 180/188: 0.0s, nfev=190
+    Chem step 48 total: 2.4s, 0 slow cells (>2s)
+    Step 49, cell 0/188: 0.0s, nfev=399
+    Step 49, cell 20/188: 0.0s, nfev=126
+    Step 49, cell 40/188: 0.1s, nfev=767
+    Step 49, cell 60/188: 0.0s, nfev=127
+    Step 49, cell 80/188: 0.0s, nfev=95
+    Step 49, cell 100/188: 0.0s, nfev=178
+    Step 49, cell 120/188: 0.0s, nfev=31
+    Step 49, cell 140/188: 0.0s, nfev=54
+    Step 49, cell 160/188: 0.0s, nfev=52
+    Step 49, cell 180/188: 0.0s, nfev=142
+    Chem step 49 total: 2.9s, 0 slow cells (>2s)
+    Step 50, cell 0/188: 0.0s, nfev=132
+    Step 50, cell 20/188: 0.0s, nfev=227
+    Step 50, cell 40/188: 0.0s, nfev=110
+    Step 50, cell 60/188: 0.0s, nfev=260
+    Step 50, cell 80/188: 0.0s, nfev=84
+    Step 50, cell 100/188: 0.0s, nfev=210
+    Step 50, cell 120/188: 0.0s, nfev=67
+    Step 50, cell 140/188: 0.0s, nfev=58
+    Step 50, cell 160/188: 0.0s, nfev=20
+    Step 50, cell 180/188: 0.0s, nfev=50
+    Chem step 50 total: 3.0s, 0 slow cells (>2s)
+    Step 50/72: t=500s, pH=4.181, nfev=1528183
+    Step 51, cell 0/188: 0.0s, nfev=138
+    Step 51, cell 20/188: 0.0s, nfev=311
+    Step 51, cell 40/188: 0.0s, nfev=110
+    Step 51, cell 60/188: 0.0s, nfev=523
+    Step 51, cell 80/188: 0.0s, nfev=324
+    Step 51, cell 100/188: 0.0s, nfev=60
+    Step 51, cell 120/188: 0.0s, nfev=102
+    Step 51, cell 140/188: 0.0s, nfev=130
+    Step 51, cell 160/188: 0.0s, nfev=304
+    Step 51, cell 180/188: 0.0s, nfev=58
+    Chem step 51 total: 2.8s, 0 slow cells (>2s)
+    Step 52, cell 0/188: 0.0s, nfev=136
+    Step 52, cell 20/188: 0.0s, nfev=206
+    Step 52, cell 40/188: 0.0s, nfev=142
+    Step 52, cell 60/188: 0.0s, nfev=146
+    Step 52, cell 80/188: 0.0s, nfev=94
+    Step 52, cell 100/188: 0.0s, nfev=80
+    Step 52, cell 120/188: 0.0s, nfev=144
+    Step 52, cell 140/188: 0.0s, nfev=52
+    Step 52, cell 160/188: 0.0s, nfev=22
+    Step 52, cell 180/188: 0.0s, nfev=20
+    Chem step 52 total: 2.3s, 0 slow cells (>2s)
+    Step 53, cell 0/188: 0.0s, nfev=130
+    Step 53, cell 20/188: 0.1s, nfev=825
+    Step 53, cell 40/188: 0.0s, nfev=183
+    Step 53, cell 60/188: 0.0s, nfev=152
+    Step 53, cell 80/188: 0.0s, nfev=194
+    Step 53, cell 100/188: 0.0s, nfev=28
+    Step 53, cell 120/188: 0.0s, nfev=29
+    Step 53, cell 140/188: 0.0s, nfev=20
+    Step 53, cell 160/188: 0.0s, nfev=238
+    Step 53, cell 180/188: 0.0s, nfev=66
+    Chem step 53 total: 2.3s, 0 slow cells (>2s)
+    Step 54, cell 0/188: 0.0s, nfev=97
+    Step 54, cell 20/188: 0.0s, nfev=167
+    Step 54, cell 40/188: 0.0s, nfev=165
+    Step 54, cell 60/188: 0.0s, nfev=106
+    Step 54, cell 80/188: 0.0s, nfev=56
+    Step 54, cell 100/188: 0.0s, nfev=102
+    Step 54, cell 120/188: 0.0s, nfev=24
+    Step 54, cell 140/188: 0.0s, nfev=78
+    Step 54, cell 160/188: 0.0s, nfev=20
+    Step 54, cell 180/188: 0.0s, nfev=20
+    Chem step 54 total: 2.5s, 0 slow cells (>2s)
+    Step 55, cell 0/188: 0.0s, nfev=131
+    Step 55, cell 20/188: 0.0s, nfev=407
+    Step 55, cell 40/188: 0.0s, nfev=115
+    Step 55, cell 60/188: 0.0s, nfev=120
+    Step 55, cell 80/188: 0.0s, nfev=31
+    Step 55, cell 100/188: 0.0s, nfev=208
+    Step 55, cell 120/188: 0.0s, nfev=48
+    Step 55, cell 140/188: 0.0s, nfev=40
+    Step 55, cell 160/188: 0.0s, nfev=34
+    Step 55, cell 180/188: 0.0s, nfev=20
+    Chem step 55 total: 2.1s, 0 slow cells (>2s)
+    Step 56, cell 0/188: 0.0s, nfev=120
+    Step 56, cell 20/188: 0.0s, nfev=237
+    Step 56, cell 40/188: 0.0s, nfev=159
+    Step 56, cell 60/188: 0.0s, nfev=121
+    Step 56, cell 80/188: 0.0s, nfev=137
+    Step 56, cell 100/188: 0.0s, nfev=33
+    Step 56, cell 120/188: 0.0s, nfev=254
+    Step 56, cell 140/188: 0.0s, nfev=24
+    Step 56, cell 160/188: 0.0s, nfev=20
+    Step 56, cell 180/188: 0.0s, nfev=122
+    Chem step 56 total: 2.3s, 0 slow cells (>2s)
+    Step 57, cell 0/188: 0.0s, nfev=163
+    Step 57, cell 20/188: 0.0s, nfev=264
+    Step 57, cell 40/188: 0.0s, nfev=128
+    Step 57, cell 60/188: 0.0s, nfev=192
+    Step 57, cell 80/188: 0.0s, nfev=136
+    Step 57, cell 100/188: 0.0s, nfev=106
+    Step 57, cell 120/188: 0.0s, nfev=104
+    Step 57, cell 140/188: 0.0s, nfev=70
+    Step 57, cell 160/188: 0.0s, nfev=56
+    Step 57, cell 180/188: 0.0s, nfev=36
+    Chem step 57 total: 2.3s, 0 slow cells (>2s)
+    Step 58, cell 0/188: 0.0s, nfev=165
+    Step 58, cell 20/188: 0.0s, nfev=256
+    Step 58, cell 40/188: 0.0s, nfev=156
+    Step 58, cell 60/188: 0.0s, nfev=317
+    Step 58, cell 80/188: 0.0s, nfev=24
+    Step 58, cell 100/188: 0.0s, nfev=48
+    Step 58, cell 120/188: 0.0s, nfev=24
+    Step 58, cell 140/188: 0.0s, nfev=88
+    Step 58, cell 160/188: 0.0s, nfev=144
+    Step 58, cell 180/188: 0.0s, nfev=20
+    Chem step 58 total: 2.2s, 0 slow cells (>2s)
+    Step 59, cell 0/188: 0.0s, nfev=117
+    Step 59, cell 20/188: 0.1s, nfev=753
+    Step 59, cell 40/188: 0.0s, nfev=485
+    Step 59, cell 60/188: 0.0s, nfev=214
+    Step 59, cell 80/188: 0.0s, nfev=41
+    Step 59, cell 100/188: 0.0s, nfev=20
+    Step 59, cell 120/188: 0.0s, nfev=22
+    Step 59, cell 140/188: 0.0s, nfev=48
+    Step 59, cell 160/188: 0.0s, nfev=56
+    Step 59, cell 180/188: 0.0s, nfev=98
+    Chem step 59 total: 2.0s, 0 slow cells (>2s)
+    Step 60, cell 0/188: 0.1s, nfev=1119
+    Step 60, cell 20/188: 0.1s, nfev=887
+    Step 60, cell 40/188: 0.0s, nfev=144
+    Step 60, cell 60/188: 0.0s, nfev=169
+    Step 60, cell 80/188: 0.0s, nfev=70
+    Step 60, cell 100/188: 0.0s, nfev=210
+    Step 60, cell 120/188: 0.0s, nfev=178
+    Step 60, cell 140/188: 0.0s, nfev=52
+    Step 60, cell 160/188: 0.0s, nfev=170
+    Step 60, cell 180/188: 0.0s, nfev=20
+    Chem step 60 total: 2.3s, 0 slow cells (>2s)
+    Step 60/72: t=600s, pH=4.124, nfev=1814504
+    Step 61, cell 0/188: 0.0s, nfev=387
+    Step 61, cell 20/188: 0.0s, nfev=396
+    Step 61, cell 40/188: 0.0s, nfev=207
+    Step 61, cell 60/188: 0.0s, nfev=150
+    Step 61, cell 80/188: 0.0s, nfev=94
+    Step 61, cell 100/188: 0.0s, nfev=22
+    Step 61, cell 120/188: 0.0s, nfev=62
+    Step 61, cell 140/188: 0.0s, nfev=23
+    Step 61, cell 160/188: 0.0s, nfev=53
+    Step 61, cell 180/188: 0.0s, nfev=52
+    Chem step 61 total: 2.4s, 0 slow cells (>2s)
+    Step 62, cell 0/188: 0.0s, nfev=214
+    Step 62, cell 20/188: 0.0s, nfev=513
+    Step 62, cell 40/188: 0.0s, nfev=381
+    Step 62, cell 60/188: 0.0s, nfev=166
+    Step 62, cell 80/188: 0.0s, nfev=100
+    Step 62, cell 100/188: 0.0s, nfev=144
+    Step 62, cell 120/188: 0.0s, nfev=56
+    Step 62, cell 140/188: 0.0s, nfev=163
+    Step 62, cell 160/188: 0.0s, nfev=156
+    Step 62, cell 180/188: 0.0s, nfev=193
+    Chem step 62 total: 2.7s, 0 slow cells (>2s)
+    Step 63, cell 0/188: 0.0s, nfev=122
+    Step 63, cell 20/188: 0.0s, nfev=270
+    Step 63, cell 40/188: 0.0s, nfev=118
+    Step 63, cell 60/188: 0.0s, nfev=113
+    Step 63, cell 80/188: 0.0s, nfev=82
+    Step 63, cell 100/188: 0.0s, nfev=56
+    Step 63, cell 120/188: 0.0s, nfev=76
+    Step 63, cell 140/188: 0.0s, nfev=46
+    Step 63, cell 160/188: 0.0s, nfev=20
+    Step 63, cell 180/188: 0.0s, nfev=22
+    Chem step 63 total: 2.5s, 0 slow cells (>2s)
+    Step 64, cell 0/188: 0.0s, nfev=145
+    Step 64, cell 20/188: 0.0s, nfev=387
+    Step 64, cell 40/188: 0.0s, nfev=271
+    Step 64, cell 60/188: 0.0s, nfev=213
+    Step 64, cell 80/188: 0.0s, nfev=114
+    Step 64, cell 100/188: 0.0s, nfev=251
+    Step 64, cell 120/188: 0.0s, nfev=64
+    Step 64, cell 140/188: 0.0s, nfev=22
+    Step 64, cell 160/188: 0.0s, nfev=166
+    Step 64, cell 180/188: 0.0s, nfev=20
+    Chem step 64 total: 2.7s, 0 slow cells (>2s)
+    Step 65, cell 0/188: 0.0s, nfev=114
+    Step 65, cell 20/188: 0.0s, nfev=515
+    Step 65, cell 40/188: 0.0s, nfev=236
+    Step 65, cell 60/188: 0.0s, nfev=367
+    Step 65, cell 80/188: 0.0s, nfev=24
+    Step 65, cell 100/188: 0.0s, nfev=158
+    Step 65, cell 120/188: 0.0s, nfev=134
+    Step 65, cell 140/188: 0.0s, nfev=64
+    Step 65, cell 160/188: 0.0s, nfev=84
+    Step 65, cell 180/188: 0.0s, nfev=365
+    Chem step 65 total: 2.5s, 0 slow cells (>2s)
+    Step 66, cell 0/188: 0.0s, nfev=212
+    Step 66, cell 20/188: 0.1s, nfev=652
+    Step 66, cell 40/188: 0.0s, nfev=325
+    Step 66, cell 60/188: 0.0s, nfev=117
+    Step 66, cell 80/188: 0.0s, nfev=184
+    Step 66, cell 100/188: 0.0s, nfev=100
+    Step 66, cell 120/188: 0.0s, nfev=111
+    Step 66, cell 140/188: 0.0s, nfev=72
+    Step 66, cell 160/188: 0.0s, nfev=79
+    Step 66, cell 180/188: 0.0s, nfev=20
+    Chem step 66 total: 2.5s, 0 slow cells (>2s)
+    Step 67, cell 0/188: 0.0s, nfev=114
+    Step 67, cell 20/188: 0.0s, nfev=337
+    Step 67, cell 40/188: 0.1s, nfev=842
+    Step 67, cell 60/188: 0.0s, nfev=99
+    Step 67, cell 80/188: 0.0s, nfev=26
+    Step 67, cell 100/188: 0.0s, nfev=22
+    Step 67, cell 120/188: 0.0s, nfev=16
+    Step 67, cell 140/188: 0.0s, nfev=42
+    Step 67, cell 160/188: 0.0s, nfev=21
+    Step 67, cell 180/188: 0.0s, nfev=20
+    Chem step 67 total: 2.0s, 0 slow cells (>2s)
+    Step 68, cell 0/188: 0.0s, nfev=174
+    Step 68, cell 20/188: 0.0s, nfev=147
+    Step 68, cell 40/188: 0.0s, nfev=176
+    Step 68, cell 60/188: 0.0s, nfev=170
+    Step 68, cell 80/188: 0.0s, nfev=24
+    Step 68, cell 100/188: 0.0s, nfev=40
+    Step 68, cell 120/188: 0.0s, nfev=24
+    Step 68, cell 140/188: 0.0s, nfev=144
+    Step 68, cell 160/188: 0.0s, nfev=16
+    Step 68, cell 180/188: 0.0s, nfev=20
+    Chem step 68 total: 1.7s, 0 slow cells (>2s)
+    Step 69, cell 0/188: 0.0s, nfev=128
+    Step 69, cell 20/188: 0.0s, nfev=204
+    Step 69, cell 40/188: 0.0s, nfev=330
+    Step 69, cell 60/188: 0.0s, nfev=92
+    Step 69, cell 80/188: 0.0s, nfev=86
+    Step 69, cell 100/188: 0.0s, nfev=132
+    Step 69, cell 120/188: 0.0s, nfev=48
+    Step 69, cell 140/188: 0.0s, nfev=102
+    Step 69, cell 160/188: 0.0s, nfev=272
+    Step 69, cell 180/188: 0.0s, nfev=56
+    Chem step 69 total: 2.0s, 0 slow cells (>2s)
+    Step 70, cell 0/188: 0.0s, nfev=205
+    Step 70, cell 20/188: 0.0s, nfev=333
+    Step 70, cell 40/188: 0.0s, nfev=203
+    Step 70, cell 60/188: 0.0s, nfev=288
+    Step 70, cell 80/188: 0.0s, nfev=148
+    Step 70, cell 100/188: 0.0s, nfev=108
+    Step 70, cell 120/188: 0.0s, nfev=248
+    Step 70, cell 140/188: 0.0s, nfev=46
+    Step 70, cell 160/188: 0.0s, nfev=20
+    Step 70, cell 180/188: 0.0s, nfev=24
+    Chem step 70 total: 2.2s, 0 slow cells (>2s)
+    Step 70/72: t=700s, pH=4.075, nfev=2105250
+    Step 71, cell 0/188: 0.0s, nfev=160
+    Step 71, cell 20/188: 0.0s, nfev=181
+    Step 71, cell 40/188: 0.1s, nfev=694
+    Step 71, cell 60/188: 0.0s, nfev=242
+    Step 71, cell 80/188: 0.0s, nfev=24
+    Step 71, cell 100/188: 0.0s, nfev=22
+    Step 71, cell 120/188: 0.0s, nfev=20
+    Step 71, cell 140/188: 0.0s, nfev=20
+    Step 71, cell 160/188: 0.0s, nfev=36
+    Step 71, cell 180/188: 0.0s, nfev=46
+    Chem step 71 total: 1.9s, 0 slow cells (>2s)
+    Step 72, cell 0/188: 0.0s, nfev=101
+    Step 72, cell 20/188: 0.0s, nfev=489
+    Step 72, cell 40/188: 0.0s, nfev=70
+    Step 72, cell 60/188: 0.0s, nfev=311
+    Step 72, cell 80/188: 0.0s, nfev=186
+    Step 72, cell 100/188: 0.0s, nfev=20
+    Step 72, cell 120/188: 0.0s, nfev=37
+    Step 72, cell 140/188: 0.0s, nfev=66
+    Step 72, cell 160/188: 0.0s, nfev=206
+    Step 72, cell 180/188: 0.0s, nfev=20
+    Chem step 72 total: 2.1s, 0 slow cells (>2s)
+    Step 72/72: t=720s, pH=4.069, nfev=2155106
+Simulation: 172.1s
+  73 snapshots collected
+Computing per-reaction rates...
+    1/73 (t=0s)
+    20/73 (t=190s)
+    40/73 (t=390s)
+    60/73 (t=590s)
+  Rate computation: 2.2s
+
+  NO₃⁻: 1 reactions ≥1.0%
+    R98      avg=+1.154e-07  (N₂O₅ → 2H⁺ + 2NO₃⁻)
+  O₃: 4 reactions ≥1.0%
+    MT       avg=+1.614e-09  (mass transfer)
+    R28      avg=-1.067e-09  (O₃ + HO₂ → O₂ + HO₃)
+    R27      avg=-4.903e-10  (O₃ + OH → HO₂ + O₂)
+    R25      avg=-3.808e-10  (O₃ + O₂⁻ → O₃⁻ + O₂)
+  NO₂⁻: 7 reactions ≥1.0%
+    R92      avg=-4.479e-11  (NO₃ + NO₂⁻ → NO₃⁻ + NO₂)
+    R95      avg=+2.429e-11  (N₂O₄ → NO₂⁻ + NO₃⁻ + 2H⁺)
+    R32      avg=-1.259e-11  (O₃ + NO₂⁻ → O₂ + NO₃⁻)
+    R77      avg=-1.008e-11  (OH + NO₂⁻ → OH⁻ + NO₂)
+    R19      avg=+7.767e-12  (2NO₂ → NO₂⁻ + NO₃⁻ + 2H⁺)
+    R87      avg=+7.541e-12  (O₂NOO⁻ → NO₂⁻ + O₂)
+    R86      avg=+1.642e-12  (NO₂ + O₂⁻ → NO₂⁻ + O₂)
+  H₂O₂: 4 reactions ≥1.0%
+    R41      avg=-4.923e-11  (OH + H₂O₂ → HO₂)
+    R45      avg=+1.715e-11  (2OH → H₂O₂)
+    MT       avg=-1.190e-11  (mass transfer)
+    R91      avg=-1.776e-12  (NO₃ + H₂O₂ → NO₃⁻ + HO₂ + H⁺)
+  Cache saved: fig2_rate_cache.npz
+
+  → fig2_rate_evolution.png / fig2_rate_evolution.pdf saved
+
+Done!

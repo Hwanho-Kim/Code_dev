@@ -1,0 +1,1059 @@
+# Aqueous Phase Reaction Database for Saline (NaCl) Chemistry
+# Based on: Liu et al., Plasma Processes and Polymers (2016)
+# "Chemical kinetics and reactive species in normal saline activated by a surface air discharge"
+#
+# These reactions are ADDITIONAL to the base NOx reactions (reactions.yaml)
+# Only loaded when "Saline solution" is selected in GUI
+
+metadata:
+  version: "1.0"
+  description: "Chlorine aqueous chemistry reactions for saline solution"
+  reference: "Plasma Processes and Polymers, ppap.201600113"
+  temperature: 298.15  # K
+  units:
+    concentration: "mol/L"
+    rate_constant_unimolecular: "1/s"
+    rate_constant_bimolecular: "L/(mol·s)"
+
+# =============================================================================
+# Reversible Reactions (1-18)
+# =============================================================================
+reversible_reactions:
+  - id: "S1"
+    type: "reversible"
+    reactants:
+      Cl2: 1
+    products:
+      H+: 1
+      Cl-: 1
+      HClO: 1
+    k_f: 22
+    k_b: 4.3e4
+    label: "S1: Cl2 + H2O <-> H+ + Cl- + HClO"
+
+  # S2 제거: HCl은 강산(pKa=-6~-7), 완전 해리 가정
+  # HCl <-> H+ + Cl- (k_f=8.6e16) - stiffness 원인
+
+  - id: "S3"
+    type: "reversible"
+    reactants:
+      HOCl-: 1
+      Cl-: 1
+    products:
+      Cl2-: 1
+      OH-: 1
+    k_f: 1.0e4
+    k_b: 4.5e7
+    label: "S3: HOCl- + Cl- <-> Cl2- + OH-"
+
+  - id: "S4"
+    type: "reversible"
+    reactants:
+      OH: 1
+      Cl-: 1
+    products:
+      HOCl-: 1
+    k_f: 4.3e9
+    k_b: 6.1e9
+    label: "S4: OH + Cl- <-> HOCl-"
+
+  - id: "S5"
+    type: "reversible"
+    reactants:
+      Cl: 1
+    products:
+      HOCl-: 1
+      H+: 1
+    k_f: 1.8e5
+    k_b: 2.1e10
+    label: "S5: Cl + H2O <-> HOCl- + H+"
+
+  - id: "S6"
+    type: "reversible"
+    reactants:
+      Cl: 1
+      Cl-: 1
+    products:
+      Cl2-: 1
+    k_f: 7.8e9
+    k_b: 5.7e4
+    label: "S6: Cl + Cl- <-> Cl2-"
+
+  - id: "S7"
+    type: "reversible"
+    reactants:
+      HOClH: 1
+    products:
+      HOCl-: 1
+      H+: 1
+    k_f: 1e8
+    k_b: 3.0e10
+    label: "S7: HOClH <-> HOCl- + H+"
+
+  - id: "S8"
+    type: "reversible"
+    reactants:
+      Cl2-: 1
+    products:
+      HOClH: 1
+      Cl-: 1
+    k_f: 1.3e3
+    k_b: 8e9
+    label: "S8: Cl2- + H2O <-> HOClH + Cl-"
+
+  - id: "S9"
+    type: "reversible"
+    reactants:
+      Cl2-: 1
+      OH-: 1
+    products:
+      HOCl-: 1
+      Cl-: 1
+    k_f: 4.0e6
+    k_b: 1.0e4
+    label: "S9: Cl2- + OH- <-> HOCl- + Cl-"
+
+  - id: "S10"
+    type: "reversible"
+    reactants:
+      Cl2: 1
+      OH-: 1
+    products:
+      HClO: 1
+      Cl-: 1
+    k_f: 1.0e8
+    k_b: 2.0e-3
+    label: "S10: Cl2 + OH- <-> HClO + Cl-"
+
+  - id: "S11"
+    type: "reversible"
+    reactants:
+      Cl2O: 1
+    products:
+      HClO: 2
+    k_f: 7.0
+    k_b: 0.08
+    label: "S11: Cl2O + H2O <-> 2HClO"
+
+  - id: "S12"
+    type: "reversible"
+    reactants:
+      Cl2O: 1
+      H+: 1
+    products:
+      HClO: 2
+      H+: 1
+    k_f: 270
+    k_b: 3.1
+    label: "S12: Cl2O + H+ + H2O <-> 2HClO + H+"
+
+  - id: "S13"
+    type: "reversible"
+    reactants:
+      ClO2-: 1
+      O3: 1
+    products:
+      ClO2: 1
+      O3-: 1
+    k_f: 8.2e6
+    k_b: 1.8e5
+    label: "S13: ClO2- + O3 <-> ClO2 + O3-"
+
+  - id: "S14"
+    type: "reversible"
+    reactants:
+      Cl2O2: 1
+      ClO2-: 1
+    products:
+      ClO2: 2
+      Cl-: 1
+    k_f: 1.5e3
+    k_b: 5.5e5
+    label: "S14: Cl2O2 + ClO2- <-> 2ClO2 + Cl-"
+
+  - id: "S15"
+    type: "reversible"
+    reactants:
+      Cl2O2: 1
+    products:
+      ClO2-: 1
+      HClO: 1
+      H+: 1
+    k_f: 0.1
+    k_b: 1.01e6
+    label: "S15: Cl2O2 + H2O <-> ClO2- + HClO + H+"
+
+  # S16 제거: HClO2 <-> H+ + ClO2- → algebraic speciation으로 처리 (pKa=1.95)
+  # S17 제거: HClO <-> H+ + ClO- → algebraic speciation으로 처리 (pKa=7.5)
+
+  - id: "S18"
+    type: "reversible"
+    reactants:
+      HClO2: 2
+    products:
+      Cl2O3: 1
+    k_f: 100
+    k_b: 1e4
+    label: "S18: 2HClO2 <-> Cl2O3 + H2O"
+
+# =============================================================================
+# Irreversible Reactions (19-96)
+# =============================================================================
+irreversible_reactions:
+  - id: "S19"
+    type: "irreversible"
+    reactants:
+      Cl-: 1
+      O3: 1
+    products:
+      ClO-: 1
+      O2: 1
+    k: 2e-3
+    label: "S19: Cl- + O3 -> ClO- + O2"
+
+  - id: "S20"
+    type: "irreversible"
+    reactants:
+      Cl-: 1
+      H2O2: 1
+    products:
+      ClO-: 1
+    k: 1.8e-9
+    label: "S20: Cl- + H2O2 -> ClO- + H2O"
+
+  - id: "S21"
+    type: "irreversible"
+    reactants:
+      Cl-: 1
+      H2O2: 1
+      H+: 1
+    products:
+      HClO: 1
+    k: 8.3e-7
+    label: "S21: Cl- + H2O2 + H+ -> HClO + H2O"
+
+  # S22 REMOVED: Double-counting with S4 (OH + Cl- <-> HOCl-).
+  # S22 is the net outcome of the S4->S5 pathway (same k=4.3e9, same reactants).
+  # Including both doubles OH consumption by Cl-. Confirmed by:
+  #   - Buxton 1988 / Jayson 1973: same experimental measurement
+  #   - Verlackt 2018, Heirman 2019: exclude S22, use only S4+S5
+  # - id: "S22"
+  #   type: "irreversible"
+  #   reactants:
+  #     Cl-: 1
+  #     OH: 1
+  #   products:
+  #     OH-: 1
+  #     Cl: 1
+  #   k: 4.3e9
+  #   label: "S22: Cl- + OH -> OH- + Cl"
+
+  - id: "S23"
+    type: "irreversible"
+    reactants:
+      Cl: 2
+    products:
+      Cl2: 1
+    k: 8.8e7
+    label: "S23: Cl + Cl -> Cl2"
+
+  - id: "S24"
+    type: "irreversible"
+    reactants:
+      Cl: 1
+      OH-: 1
+    products:
+      HOCl-: 1
+    k: 1.8e10
+    label: "S24: Cl + OH- -> HOCl-"
+
+  - id: "S25"
+    type: "irreversible"
+    reactants:
+      Cl: 1
+      HO2: 1
+    products:
+      Cl-: 1
+      H+: 1
+      O2: 1
+    k: 3.1e9
+    label: "S25: Cl + HO2 -> Cl- + H+ + O2"
+
+  - id: "S26"
+    type: "irreversible"
+    reactants:
+      Cl: 1
+      H2O2: 1
+    products:
+      Cl-: 1
+      H+: 1
+      HO2: 1
+    k: 2.0e9
+    label: "S26: Cl + H2O2 -> Cl- + H+ + HO2"
+
+  - id: "S27"
+    type: "irreversible"
+    reactants:
+      Cl: 1
+      H: 1
+    products:
+      HCl: 1
+    k: 1.03e8
+    label: "S27: Cl + H -> HCl"
+
+  - id: "S28"
+    type: "irreversible"
+    reactants:
+      Cl2: 1
+      HO2: 1
+    products:
+      Cl2-: 1
+      H+: 1
+      O2: 1
+    k: 1.0e9
+    label: "S28: Cl2 + HO2 -> Cl2- + H+ + O2"
+
+  - id: "S29"
+    type: "irreversible"
+    reactants:
+      Cl2: 1
+      O2-: 1
+    products:
+      Cl2-: 1
+      O2: 1
+    k: 1.0e9
+    label: "S29: Cl2 + O2- -> Cl2- + O2"
+
+  - id: "S30"
+    type: "irreversible"
+    reactants:
+      Cl2: 1
+      H2O2: 1
+    products:
+      Cl-: 2
+      H+: 2
+      O2: 1
+    k: 90
+    label: "S30: Cl2 + H2O2 -> 2Cl- + 2H+ + O2"
+
+  - id: "S31"
+    type: "irreversible"
+    reactants:
+      Cl2: 1
+      HO2-: 1
+    products:
+      Cl-: 2
+      H+: 1
+      O2: 1
+    k: 1.1e8
+    label: "S31: Cl2 + HO2- -> 2Cl- + H+ + O2"
+
+  - id: "S32"
+    type: "irreversible"
+    reactants:
+      Cl2-: 2
+    products:
+      Cl2: 1
+      Cl-: 2
+    k: 3.5e9
+    label: "S32: Cl2- + Cl2- -> Cl2 + 2Cl-"
+
+  - id: "S33"
+    type: "irreversible"
+    reactants:
+      Cl2-: 1
+      Cl: 1
+    products:
+      Cl2: 1
+      Cl-: 1
+    k: 2.1e9
+    label: "S33: Cl2- + Cl -> Cl2 + Cl-"
+
+  - id: "S34"
+    type: "irreversible"
+    reactants:
+      Cl2-: 2
+    products:
+      Cl3-: 1
+      Cl-: 1
+    k: 3.70e9
+    label: "S34: Cl2- + Cl2- -> Cl3- + Cl-"
+
+  - id: "S35"
+    type: "irreversible"
+    reactants:
+      Cl2-: 1
+      H2O2: 1
+    products:
+      Cl-: 2
+      H+: 1
+      HO2: 1
+    k: 1.4e6
+    label: "S35: Cl2- + H2O2 -> 2Cl- + H+ + HO2"
+
+  - id: "S36"
+    type: "irreversible"
+    reactants:
+      Cl2-: 1
+      H2O2: 1
+    products:
+      OH: 1
+      OH-: 1
+      Cl2: 1
+    k: 4.2e8
+    label: "S36: Cl2- + H2O2 -> OH + OH- + Cl2"
+
+  - id: "S37"
+    type: "irreversible"
+    reactants:
+      Cl2-: 1
+      HO2: 1
+    products:
+      Cl-: 2
+      H+: 1
+      O2: 1
+    k: 4.0e9
+    label: "S37: Cl2- + HO2 -> 2Cl- + H+ + O2"
+
+  - id: "S38"
+    type: "irreversible"
+    reactants:
+      Cl2-: 1
+      O2-: 1
+    products:
+      Cl-: 2
+      O2: 1
+    k: 6.0e9
+    label: "S38: Cl2- + O2- -> 2Cl- + O2"
+
+  - id: "S39"
+    type: "irreversible"
+    reactants:
+      Cl2-: 1
+      OH: 1
+    products:
+      HClO: 1
+      Cl-: 1
+    k: 1.0e9
+    label: "S39: Cl2- + OH -> HClO + Cl-"
+
+  - id: "S40"
+    type: "irreversible"
+    reactants:
+      Cl2-: 1
+      OH-: 1
+    products:
+      OH: 1
+      Cl-: 2
+    k: 7.3e6
+    label: "S40: Cl2- + OH- -> OH + 2Cl-"
+
+  - id: "S41"
+    type: "irreversible"
+    reactants:
+      Cl2-: 1
+      O3: 1
+    products:
+      ClO-: 1
+      Cl: 1
+      O2: 1
+    k: 9.0e7
+    label: "S41: Cl2- + O3 -> ClO- + Cl + O2"
+
+  - id: "S42"
+    type: "irreversible"
+    reactants:
+      Cl2-: 1
+      H: 1
+    products:
+      H+: 1
+      Cl-: 2
+    k: 7e9
+    label: "S42: Cl2- + H -> H+ + 2Cl-"
+
+  - id: "S43"
+    type: "irreversible"
+    reactants:
+      ClO-: 1
+      Cl: 1
+    products:
+      ClO: 1
+      Cl-: 1
+    k: 8.2e9
+    label: "S43: ClO- + Cl -> ClO + Cl-"
+
+  - id: "S44"
+    type: "irreversible"
+    reactants:
+      ClO-: 1
+      O3: 1
+    products:
+      Cl-: 1
+      O2: 2
+    k: 110
+    label: "S44: ClO- + O3 -> Cl- + 2O2"
+
+  - id: "S45"
+    type: "irreversible"
+    reactants:
+      ClO-: 1
+      O3: 1
+    products:
+      ClO2-: 1
+      O2: 1
+    k: 30
+    label: "S45: ClO- + O3 -> ClO2- + O2"
+
+  - id: "S46"
+    type: "irreversible"
+    reactants:
+      ClO-: 1
+      OH: 1
+    products:
+      ClO: 1
+      OH-: 1
+    k: 9e9
+    label: "S46: ClO- + OH -> ClO + OH-"
+
+  - id: "S47"
+    type: "irreversible"
+    reactants:
+      HClO: 1
+      O2-: 1
+    products:
+      Cl-: 1
+      OH: 1
+      O2: 1
+    k: 7.5e6
+    label: "S47: HClO + O2- -> Cl- + OH + O2"
+
+  - id: "S48"
+    type: "irreversible"
+    reactants:
+      HClO: 1
+      HO2: 1
+    products:
+      Cl: 1
+      O2: 1
+    k: 7.5e6
+    label: "S48: HClO + HO2 -> Cl + H2O + O2"
+
+  - id: "S49"
+    type: "irreversible"
+    reactants:
+      HClO: 1
+      HO2-: 1
+    products:
+      Cl-: 1
+      O2: 1
+    k: 4.4e7
+    label: "S49: HClO + HO2- -> Cl- + O2 + H2O"
+
+  - id: "S50"
+    type: "irreversible"
+    reactants:
+      HClO: 1
+      Cl: 1
+    products:
+      ClO: 1
+      H+: 1
+      Cl-: 1
+    k: 3e9
+    label: "S50: HClO + Cl -> ClO + H+ + Cl-"
+
+  - id: "S51"
+    type: "irreversible"
+    reactants:
+      HClO: 1
+      OH: 1
+    products:
+      ClO: 1
+    k: 1.4e8
+    label: "S51: HClO + OH -> ClO + H2O"
+
+  - id: "S52"
+    type: "irreversible"
+    reactants:
+      Cl3-: 1
+      H: 1
+    products:
+      H+: 1
+      Cl2-: 1
+      Cl-: 1
+    k: 6e10
+    label: "S52: Cl3- + H -> H+ + Cl2- + Cl-"
+
+  - id: "S53"
+    type: "irreversible"
+    reactants:
+      NO2-: 1
+      Cl: 1
+    products:
+      Cl-: 1
+      NO2: 1
+    k: 5.0e9
+    label: "S53: NO2- + Cl -> Cl- + NO2"
+
+  - id: "S54"
+    type: "irreversible"
+    reactants:
+      NO2-: 1
+      Cl2-: 1
+    products:
+      Cl-: 2
+      NO2: 1
+    k: 2.8e8
+    label: "S54: NO2- + Cl2- -> 2Cl- + NO2"
+
+  - id: "S55"
+    type: "irreversible"
+    reactants:
+      NO3: 1
+      Cl-: 1
+    products:
+      NO3-: 1
+      Cl: 1
+    k: 1.0e8
+    label: "S55: NO3 + Cl- -> NO3- + Cl"
+
+  - id: "S56"
+    type: "irreversible"
+    reactants:
+      N2O5: 1
+      Cl-: 1
+    products:
+      ClNO2: 1
+      NO3-: 1
+    k: 8.9e7
+    label: "S56: N2O5 + Cl- -> ClNO2 + NO3-"
+
+  - id: "S57"
+    type: "irreversible"
+    reactants:
+      ClNO2: 1
+      NO2-: 1
+    products:
+      N2O4: 1
+      Cl-: 1
+    k: 8.0e3
+    label: "S57: ClNO2 + NO2- -> N2O4 + Cl-"
+
+  - id: "S58"
+    type: "irreversible"
+    reactants:
+      ClNO2: 1
+    products:
+      NO3-: 1
+      H+: 2
+      Cl-: 1
+    k: 4.8
+    label: "S58: ClNO2 + H2O -> NO3- + 2H+ + Cl-"
+
+  - id: "S59"
+    type: "irreversible"
+    reactants:
+      Cl2: 1
+      NO2-: 1
+    products:
+      ClNO2: 1
+      Cl-: 1
+    k: 2.5e6
+    label: "S59: Cl2 + NO2- -> ClNO2 + Cl-"
+
+  - id: "S60"
+    type: "irreversible"
+    reactants:
+      HClO: 1
+      NO2-: 1
+    products:
+      ClNO2: 1
+      OH-: 1
+    k: 4.4e4
+    label: "S60: HClO + NO2- -> ClNO2 + OH-"
+
+  - id: "S61"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+    products:
+      O2: 1
+      Cl: 1
+    k: 6.7e9
+    label: "S61: ClO2 -> O2 + Cl"
+
+  - id: "S62"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      O3: 1
+    products:
+      O2: 1
+      ClO3: 1
+    k: 1.1e3
+    label: "S62: ClO2 + O3 -> O2 + ClO3"
+
+  - id: "S63"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      OH: 1
+    products:
+      H+: 1
+      ClO3-: 1
+    k: 4e9
+    label: "S63: ClO2 + OH -> H+ + ClO3-"
+
+  - id: "S64"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      HO2-: 1
+    products:
+      HO2: 1
+      ClO2-: 1
+    k: 1.3e5
+    label: "S64: ClO2 + HO2- -> HO2 + ClO2-"
+
+  - id: "S65"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      O-: 1
+    products:
+      ClO3-: 1
+    k: 2.7e9
+    label: "S65: ClO2 + O- -> ClO3-"
+
+  - id: "S66"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      O2-: 1
+    products:
+      O2: 1
+      ClO2-: 1
+    k: 3.2e9
+    label: "S66: ClO2 + O2- -> O2 + ClO2-"
+
+  - id: "S67"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      O3-: 1
+    products:
+      O2: 1
+      ClO3-: 1
+    k: 1.8e5
+    label: "S67: ClO2 + O3- -> O2 + ClO3-"
+
+  - id: "S68"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      NO2-: 1
+    products:
+      NO2: 1
+      ClO2-: 1
+    k: 1.3e2
+    label: "S68: ClO2 + NO2- -> NO2 + ClO2-"
+
+  - id: "S69"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      Cl2-: 1
+    products:
+      Cl2O2: 1
+      Cl-: 1
+    k: 1.0e9
+    label: "S69: ClO2 + Cl2- -> Cl2O2 + Cl-"
+
+  - id: "S70"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      OH: 1
+    products:
+      HClO: 1
+      O2: 1
+    k: 1.4e9
+    label: "S70: ClO2 + OH -> HClO + O2"
+
+  - id: "S71"
+    type: "irreversible"
+    reactants:
+      ClO2-: 1
+      OH: 1
+    products:
+      OH-: 1
+      ClO2: 1
+    k: 6.6e9
+    label: "S71: ClO2- + OH -> OH- + ClO2"
+
+  - id: "S72"
+    type: "irreversible"
+    reactants:
+      ClO2-: 1
+      ClO: 1
+    products:
+      ClO2: 1
+      ClO-: 1
+    k: 9.4e8
+    label: "S72: ClO2- + ClO -> ClO2 + ClO-"
+
+  - id: "S73"
+    type: "irreversible"
+    reactants:
+      ClO2-: 1
+      Cl2: 1
+    products:
+      Cl2O2: 1
+      Cl-: 1
+    k: 3.7e3
+    label: "S73: ClO2- + Cl2 -> Cl2O2 + Cl-"
+
+  - id: "S74"
+    type: "irreversible"
+    reactants:
+      ClO2-: 1
+      HClO: 1
+      H+: 1
+    products:
+      Cl2O2: 1
+    k: 1.1e6
+    label: "S74: ClO2- + HClO + H+ -> Cl2O2 + H2O"
+
+  - id: "S75"
+    type: "irreversible"
+    reactants:
+      ClO2-: 1
+      HClO: 2
+    products:
+      ClO3-: 1
+      Cl2: 1
+    k: 2.1e4
+    label: "S75: ClO2- + 2HClO -> ClO3- + Cl2 + H2O"
+
+  - id: "S76"
+    type: "irreversible"
+    reactants:
+      ClO: 1
+      O3-: 1
+    products:
+      ClO-: 1
+      O3: 1
+    k: 1e9
+    label: "S76: ClO + O3- -> ClO- + O3"
+
+  - id: "S77"
+    type: "irreversible"
+    reactants:
+      ClO: 2
+    products:
+      Cl2O2: 1
+    k: 1.5e10
+    label: "S77: 2ClO -> Cl2O2"
+
+  - id: "S78"
+    type: "irreversible"
+    reactants:
+      ClO: 1
+      ClO3: 1
+    products:
+      Cl2O4: 1
+    k: 7.5e9
+    label: "S78: ClO + ClO3 -> Cl2O4"
+
+  - id: "S79"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      ClO3: 1
+    products:
+      Cl2O5: 1
+    k: 7.5e9
+    label: "S79: ClO2 + ClO3 -> Cl2O5"
+
+  - id: "S80"
+    type: "irreversible"
+    reactants:
+      ClO3: 2
+    products:
+      Cl2O6: 1
+    k: 4.5e8
+    label: "S80: 2ClO3 -> Cl2O6"
+
+  - id: "S81"
+    type: "irreversible"
+    reactants:
+      Cl2O4: 1
+    products:
+      ClO3-: 1
+      ClO4-: 1
+      H+: 2
+    k: 180
+    label: "S81: Cl2O4 + H2O -> ClO3- + ClO4- + 2H+"
+
+  - id: "S82"
+    type: "irreversible"
+    reactants:
+      Cl2O5: 1
+    products:
+      ClO3-: 2
+      H+: 2
+    k: 180
+    label: "S82: Cl2O5 + H2O -> 2ClO3- + 2H+"
+
+  - id: "S83"
+    type: "irreversible"
+    reactants:
+      Cl2O6: 1
+    products:
+      HClO: 1
+      ClO4-: 1
+      H+: 1
+    k: 180
+    label: "S83: Cl2O6 + H2O -> HClO + ClO4- + H+"
+
+  - id: "S84"
+    type: "irreversible"
+    reactants:
+      Cl2O2: 1
+      HClO: 1
+    products:
+      ClO3-: 1
+      Cl2: 1
+      H+: 1
+    k: 5.0e8
+    label: "S84: Cl2O2 + HClO -> ClO3- + Cl2 + H+"
+
+  - id: "S85"
+    type: "irreversible"
+    reactants:
+      Cl2O2: 1
+    products:
+      ClO3-: 1
+      Cl-: 1
+      H+: 2
+    k: 9.3e3
+    label: "S85: Cl2O2 + H2O -> ClO3- + Cl- + 2H+"
+
+  - id: "S86"
+    type: "irreversible"
+    reactants:
+      Cl2O2: 1
+      ClO2-: 1
+    products:
+      HClO: 2
+      ClO3-: 1
+    k: 1.11e7
+    label: "S86: Cl2O2 + ClO2- + H2O -> 2HClO + ClO3-"
+
+  - id: "S87"
+    type: "irreversible"
+    reactants:
+      Cl2O: 1
+      ClO2-: 1
+    products:
+      ClO3-: 1
+      Cl2: 1
+    k: 1.8e5
+    label: "S87: Cl2O + ClO2- -> ClO3- + Cl2"
+
+  - id: "S88"
+    type: "irreversible"
+    reactants:
+      HClO2: 1
+      HClO: 1
+    products:
+      Cl2O2: 1
+    k: 2.1e4
+    label: "S88: HClO2 + HClO -> Cl2O2 + H2O"
+
+  - id: "S89"
+    type: "irreversible"
+    reactants:
+      HClO2: 1
+      Cl-: 1
+      H+: 1
+    products:
+      HClO: 2
+    k: 3.43e-3
+    label: "S89: HClO2 + Cl- + H+ -> 2HClO"
+
+  - id: "S90"
+    type: "irreversible"
+    reactants:
+      HClO2: 1
+    products:
+      OH: 1
+      ClO: 1
+    k: 1.63e-6
+    label: "S90: HClO2 -> OH + ClO"
+
+  - id: "S91"
+    type: "irreversible"
+    reactants:
+      Cl2O3: 1
+    products:
+      H+: 1
+      HClO: 1
+      ClO3-: 1
+    k: 0.175
+    label: "S91: Cl2O3 + H2O -> H+ + HClO + ClO3-"
+
+  - id: "S92"
+    type: "irreversible"
+    reactants:
+      Cl2O3: 1
+      Cl-: 1
+      H+: 1
+    products:
+      Cl2O2: 1
+      HClO: 1
+    k: 5.86
+    label: "S92: Cl2O3 + Cl- + H+ -> Cl2O2 + HClO"
+
+  - id: "S93"
+    type: "irreversible"
+    reactants:
+      Cl2O3: 1
+      HClO2: 1
+    products:
+      H+: 3
+      Cl-: 1
+      ClO3-: 2
+    k: 7.82
+    label: "S93: Cl2O3 + HClO2 + H2O -> 3H+ + Cl- + 2ClO3-"
+
+  - id: "S94"
+    type: "irreversible"
+    reactants:
+      ClO2-: 1
+      Cl2O2: 1
+    products:
+      Cl-: 1
+      ClO2: 2
+    k: 2.01e7
+    label: "S94: ClO2- + Cl2O2 -> Cl- + 2ClO2"
+
+  - id: "S95"
+    type: "irreversible"
+    reactants:
+      ClO2: 1
+      ClO: 1
+    products:
+      Cl2O3: 1
+    k: 1.4e9
+    label: "S95: ClO2 + ClO -> Cl2O3"
+
+  - id: "S96"
+    type: "irreversible"
+    reactants:
+      Cl-: 1
+      O2NOOH: 1
+    products:
+      HClO: 1
+      NO3-: 1
+    k: 1.4e-2
+    label: "S96: Cl- + O2NOOH -> HClO + NO3-"

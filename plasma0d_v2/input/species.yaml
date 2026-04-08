@@ -1,0 +1,292 @@
+# Species definitions for CH4/CO2/N2/O2 plasma chemistry
+# All species tracked in concentration basis [mol/m3]
+#
+# type: electron / neutral / radical / excited / ion_positive / ion_negative
+# mass: molar mass [kg/mol]
+# delta_hf_kj: standard formation enthalpy [kJ/mol] at 298K
+#   Sources: NIST-JANAF, ATcT, NIST WebBook
+#   Ions: computed from neutral + IP (positive) or - EA (negative)
+#   Excited states: ground state + excitation energy
+
+species:
+  # Electron
+  - name: e
+    type: electron
+    mass: 5.486e-07
+    delta_hf_kj: 0.0
+
+  # Feed gas molecules
+  - name: CH4
+    type: neutral
+    mass: 0.01604
+    delta_hf_kj: -74.8
+  - name: CO2
+    type: neutral
+    mass: 0.04401
+    delta_hf_kj: -393.5
+  - name: N2
+    type: neutral
+    mass: 0.02801
+    delta_hf_kj: 0.0
+  - name: O2
+    type: neutral
+    mass: 0.03200
+    delta_hf_kj: 0.0
+  - name: H2
+    type: neutral
+    mass: 0.00202
+    delta_hf_kj: 0.0
+  - name: H2O
+    type: neutral
+    mass: 0.01802
+    delta_hf_kj: -241.8
+
+  # Atoms & small radicals
+  - name: H
+    type: radical
+    mass: 0.00101
+    delta_hf_kj: 218.0
+  - name: O
+    type: radical
+    mass: 0.01600
+    delta_hf_kj: 249.2
+  - name: C
+    type: radical
+    mass: 0.01201
+    delta_hf_kj: 716.7
+  - name: N
+    type: radical
+    mass: 0.01401
+    delta_hf_kj: 472.7
+  - name: "N(2D)"
+    type: radical
+    mass: 0.01401
+    delta_hf_kj: 702.3
+  - name: OH
+    type: radical
+    mass: 0.01701
+    delta_hf_kj: 39.0
+  - name: CH
+    type: radical
+    mass: 0.01302
+    delta_hf_kj: 596.4
+  - name: CH2
+    type: radical
+    mass: 0.01403
+    delta_hf_kj: 391.2
+  - name: CH3
+    type: radical
+    mass: 0.01504
+    delta_hf_kj: 146.7
+
+   # Excited states
+  - name: "N2(A)"
+    type: excited
+    mass: 0.02801
+    delta_hf_kj: 595.3
+  - name: "N2(a1)"
+    type: excited
+    mass: 0.02801
+    delta_hf_kj: 810.5
+  - name: "O2(a1Dg)"
+    type: excited
+    mass: 0.03200
+    delta_hf_kj: 94.3       # 0.977 eV = 94.3 kJ/mol above O2 ground state
+
+  # C1 oxygenated species
+  - name: CO
+    type: neutral
+    mass: 0.02801
+    delta_hf_kj: -110.5
+  - name: HCO
+    type: radical
+    mass: 0.02902
+    delta_hf_kj: 43.5
+  - name: CH2O
+    type: neutral
+    mass: 0.03003
+    delta_hf_kj: -115.9
+  - name: CH2OH
+    type: radical
+    mass: 0.03103
+    delta_hf_kj: -16.4
+  - name: CH3O
+    type: radical
+    mass: 0.03104
+    delta_hf_kj: 21.8
+  - name: CH3OH
+    type: neutral
+    mass: 0.03204
+    delta_hf_kj: -200.9
+  - name: CH3O2
+    type: radical
+    mass: 0.04704
+    delta_hf_kj: 12.7
+  - name: CH3OOH
+    type: neutral
+    mass: 0.04805
+    delta_hf_kj: -127.9
+  - name: CH2CO
+    type: neutral
+    mass: 0.04204
+    delta_hf_kj: -47.5
+  - name: CH3CO
+    type: radical
+    mass: 0.04305
+    delta_hf_kj: -12.0
+  - name: CH3CHO
+    type: neutral
+    mass: 0.04405
+    delta_hf_kj: -170.7
+
+  # HOx species
+  - name: HO2
+    type: radical
+    mass: 0.03301
+    delta_hf_kj: 2.1
+  - name: H2O2
+    type: neutral
+    mass: 0.03401
+    delta_hf_kj: -136.1
+  - name: O3
+    type: neutral
+    mass: 0.04800
+    delta_hf_kj: 142.7
+
+  # NOx species
+  - name: "NO"
+    type: neutral
+    mass: 0.03001
+    delta_hf_kj: 90.3
+  - name: N2O
+    type: neutral
+    mass: 0.04401
+    delta_hf_kj: 82.0
+  - name: NO2
+    type: neutral
+    mass: 0.04601
+    delta_hf_kj: 33.2
+  - name: NO3
+    type: radical
+    mass: 0.06201
+    delta_hf_kj: 71.1
+
+  # C2 hydrocarbon species
+  - name: C2H2
+    type: neutral
+    mass: 0.02604
+    delta_hf_kj: 226.7
+  - name: C2H3
+    type: radical
+    mass: 0.02704
+    delta_hf_kj: 297.2
+  - name: C2H4
+    type: neutral
+    mass: 0.02805
+    delta_hf_kj: 52.5
+  - name: C2H4OH
+    type: radical
+    mass: 0.04506
+    delta_hf_kj: -23.5
+  - name: C2H5
+    type: radical
+    mass: 0.02905
+    delta_hf_kj: 120.6
+  - name: C2H6
+    type: neutral
+    mass: 0.03007
+    delta_hf_kj: -84.0
+  - name: C2HO
+    type: radical
+    mass: 0.04103
+    delta_hf_kj: 178.2
+  - name: C2H5O
+    type: radical
+    mass: 0.04506
+    delta_hf_kj: -8.9
+  - name: C2H5O2
+    type: radical
+    mass: 0.06106
+    delta_hf_kj: -28.4
+  - name: C2H5OH
+    type: neutral
+    mass: 0.04607
+    delta_hf_kj: -234.0
+  - name: C2H5OOH
+    type: neutral
+    mass: 0.07807
+    delta_hf_kj: -161.4
+
+  # Positive ions
+  - name: "N2+"
+    type: ion_positive
+    mass: 0.02801
+    delta_hf_kj: 1503.2
+  - name: "O2+"
+    type: ion_positive
+    mass: 0.03200
+    delta_hf_kj: 1164.6
+  - name: "CO2+"
+    type: ion_positive
+    mass: 0.04401
+    delta_hf_kj: 936.1
+  - name: "CH4+"
+    type: ion_positive
+    mass: 0.01604
+    delta_hf_kj: 1141.9
+  - name: "CH3+"
+    type: ion_positive
+    mass: 0.01504
+    delta_hf_kj: 1096.1
+  - name: "CH5+"
+    type: ion_positive
+    mass: 0.01705
+    delta_hf_kj: 912.0
+  - name: "N4+"
+    type: ion_positive
+    mass: 0.05602
+    delta_hf_kj: 1406.7
+  - name: "O4+"
+    type: ion_positive
+    mass: 0.06400
+    delta_hf_kj: 1087.6
+  - name: "NO+"
+    type: ion_positive
+    mass: 0.03001
+    delta_hf_kj: 983.7
+  - name: "H3O+"
+    type: ion_positive
+    mass: 0.01902
+    delta_hf_kj: 597.2
+
+  # Negative ions
+  - name: "O-"
+    type: ion_negative
+    mass: 0.01600
+    delta_hf_kj: 108.2
+  - name: "O2-"
+    type: ion_negative
+    mass: 0.03200
+    delta_hf_kj: -43.2
+
+  # C3+ species
+  - name: C3H5
+    type: radical
+    mass: 0.04107
+    delta_hf_kj: 171.0
+  - name: C3H6
+    type: neutral
+    mass: 0.04208
+    delta_hf_kj: 20.4
+  - name: C3H7
+    type: radical
+    mass: 0.04309
+    delta_hf_kj: 100.0
+  - name: C3H8
+    type: neutral
+    mass: 0.04410
+    delta_hf_kj: -104.7
+  - name: C4H10
+    type: neutral
+    mass: 0.05812
+    delta_hf_kj: -125.6

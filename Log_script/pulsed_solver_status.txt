@@ -1,0 +1,174 @@
+================================================================
+Pulsed 0D Plasma Solver — Status Report for External Review
+================================================================
+
+1. SYSTEM OVERVIEW
+------------------
+- 0D global model: sDBD reactor, CH4/CO2/N2/O2, atmospheric pressure (101325 Pa)
+- 65 state variables: 63 species [mol/m3] + ne*eps [eV/m3] + T_gas [K]
+- 207 reactions: 27 EI, 118 Arrhenius, 62 TE-dependent
+- BOLSIG+ LUT indexed by mean electron energy eps_bar
+- CSTR flow model, tau ~ 33.8s (V=250cm3, Q=0.4slm)
+- Continuous mode validated: 5W -> 5.10% CH4 conv (exp: 5.26%)
+
+Pulsed mode: PRF=10kHz, dc=20%, P_peak=8.1W (P_avg=1.62W)
+Pulse period=100us (ON=20us, OFF=80us)
+Need ~1.7M pulses (170s) for CSTR steady state
+
+
+2. ISSUES RAISED BY PREVIOUS AI ANALYSIS
+-----------------------------------------
+
+Issue A: "OFF-phase electron/ion chemistry disabled (physically wrong)"
+  - Previous AI said: rhs_off() freezes electrons during OFF, missing
+    DR/attachment/IIR afterglow chemistry.
+  - WHAT WE DID: Implemented unified RHS (no operator splitting).
+    The existing 3-stage afterglow transition in rhs() already handles
+    OFF phase correctly (EI off when eps < LUT range, DR/AT still active).
+  - RESULT: Unified RHS works but is 12x slower than operator-split
+    (10598 RHS/pulse vs 838). Stiffness at pulse edges is severe.
+
+Issue B: "n_e artificial floor is physically wrong"
+  - Previous AI said: _ne_seed=1e10 is arbitrary, should use 1e8 (cosmic ray bg).
+  - WHAT WE DID: Changed _ne_seed from 1.0 to 1e8.
+  - RESULT: n_e still crashes to 1e8 floor within ~60us of OFF phase.
+    The floor value doesn't matter much because AT1_KOSSYI attachment
+    destroys electrons in nanoseconds once Te drops to thermal.
+
+Issue C: "Computation time too long"
+  - Previous AI suggested: macro-timestep (resolve N detail cycles,
+    skip N_skip pulses with cycle-averaged source terms).
+  - WHAT WE DID: Implemented macro-timestep solver with:
+    - Operator-split detail cycles (ON: full RHS + analytical Jac,
+      OFF: frozen electrons, ~308ms/pulse)
+    - Fixed n_skip with exponential/CSTR-aware macro-step
+  - RESULT: Macro-step oscillates/overshoots. Forward Euler and
+    exponential integrator both unstable for large n_skip.
+    conv oscillates: 96% -> 82% -> 48% instead of converging to 1.44%.
+    Needs implicit macro-step (Newton iteration) which is not yet implemented.
+
+
+3. NEW DISCOVERY: AT1_KOSSYI DOMINANCE
+---------------------------------------
+
+Quantitative electron balance analysis reveals:
+
+AT STEADY STATE (continuous 5W, Te=2.24eV):
+  Process          Rate (m-3/s)    Fraction
+  EI production    +1.50e+22       (source)
+  AT1_KOSSYI loss  -1.50e+22       99.996%  <-- DOMINATES
+  DR loss          -1.23e+17       0.001%
+  Diffusion loss   -5.46e+17       0.004%
+
+AT PULSED ON PHASE (Te=1.89eV):
+  EI production    +8.57e+19       (source)
+  AT1_KOSSYI loss  -8.21e+19       96.1%    <-- DOMINATES
+  DR loss          -3.06e+18       3.6%
+  Diffusion loss   -9.52e+17       1.1%
+
+AT PULSED OFF PHASE (Te=0.026eV, t=20us):
+  AT1_KOSSYI loss  -4.36e+19       99.4%    <-- still dominates
+  DR loss          -2.66e+17       0.6%
+  Diffusion loss   -1.75e+14       0.0%
+
+The AT1_KOSSYI reaction: e + O2 + M -> O2- + M
+  k3_cgs = 1.1e-31 cm6/s (from Kossyi 1992)
+  Rate formula: k_eff = k3 * (300/Te_K)^2 * exp(-70/Tg) * exp(1500*(Te_K-Tg)/(Te_K*Tg)) * [M]
+
+At Te=2.24eV (25975K), Tg=303K:
+  (300/25975)^2     = 1.33e-4   (Te suppression)
+  exp(-70/303)      = 0.794     (Tg activation)
+  exp(1500*(25975-303)/(25975*303)) = 133  (Te-Tg enhancement)
+  [M] = 2.42e19 cm-3
+  k_eff = 3.76e-14 cm3/s
+
+For comparison: k_DR(O2+) = 8.59e-9 cm3/s (230,000x larger!)
+
+But AT dominates because [O2] >> [O2+]:
+  AT rate = k_eff * [e] * [O2] = 3.76e-14 * 4.22e8 * 3.63e18 = 5.76e13 cm-3/s
+  DR rate = k_DR * [e] * [O2+] = 8.59e-9 * 4.22e8 * ~small  = much smaller
+
+CONCERNS:
+  1. Single reaction dominates 99.996% of electron loss — physically suspicious?
+  2. exp(1500*(Te-Tg)/(Te*Tg)) factor gives 133x enhancement at Te=2eV.
+     Kossyi's formula may not be valid at Te >> 1eV (original derivation
+     assumes Te < few thousand K).
+  3. This one reaction controls n_e at steady state. If the rate is wrong
+     by even 2x, all results shift significantly.
+  4. No other literature source was checked for this rate.
+
+
+4. CURRENT SOLVER STATUS
+--------------------------
+
+What works:
+  - Continuous mode: fully validated (4 temps, exp match)
+  - Pulsed short-time (~10 cycles): individual pulse dynamics visible
+  - Analytical Jacobian: verified against FD (A22 bug fixed)
+  - LUT + reaction vectorization: 1.7x RHS, 12.8x Jacobian speedup
+  - PFR mode: implemented and compared to CSTR
+
+What doesn't work well:
+  - Pulsed long-time (steady state): too slow or unstable
+    a) Operator-split per-pulse: 29h (works but slow)
+    b) Unified RHS: 204h (too stiff)
+    c) Macro-timestep: oscillates (needs implicit scheme)
+  - n_e floor: physically questionable but numerically necessary
+  - AT1_KOSSYI: single reaction dominating all electron kinetics
+
+Performance summary:
+  RHS: 0.18 ms/call (vectorized)
+  Jacobian: 1.07 ms/call (analytical, A22-corrected)
+  Per-pulse cost: 308 ms (operator-split) or 800 ms (unified)
+  340k pulses ETA: 29h (op-split) or 204h (unified)
+
+
+5. KEY CODE LOCATIONS
+----------------------
+solver.py:
+  rhs()           — main RHS, L519-722
+  rhs_off()       — frozen-electron OFF RHS, L724-810
+  jacobian()      — analytical Jacobian, L155-517
+  solve_pulsed()  — macro-timestep solver, L1375-1470
+  _solve_constrained() — manual BDF stepper
+
+power.py:
+  _pulsed_power_density() — parametric pulse waveform
+  set_pulsed_power() — PRF, duty cycle, rise time config
+
+reactions.py:
+  compute_reaction_rates() — vectorized, all 207 reactions
+  AT1_KOSSYI handling — L388-398
+
+electron_kinetics.py:
+  compute_energy_rhs() — electron energy equation
+  compute_diffusion_rate() — D_a/Lambda^2
+
+flow.py:
+  FlowModel — CSTR/PFR, tau = V/Q
+
+
+6. QUESTIONS FOR REVIEW
+------------------------
+1. Is the AT1_KOSSYI rate formula valid at Te > 1eV?
+   The (300/Te)^2 * exp(1500*(Te-Tg)/(Te*Tg)) combination gives
+   very different behavior at Te=2eV vs Te=0.03eV. What is the
+   intended applicability range of Kossyi's formula?
+
+2. Should a single 3-body attachment reaction dominate 99.996% of
+   electron loss at atmospheric pressure? Or are we missing competing
+   processes (e.g., electron-impact detachment from O2-, which would
+   reduce net attachment)?
+
+3. For the pulsed solver: is an implicit macro-timestep the right
+   approach, or should we pursue a completely different strategy
+   (e.g., stationary solver for cycle-averaged CSTR, or CVODE in C)?
+
+4. The OFF-phase physics: with AT1_KOSSYI destroying electrons in
+   nanoseconds, is operator-splitting (frozen electrons) a reasonable
+   approximation? The afterglow chemistry (DR, IIR) happens on much
+   slower timescales and barely affects n_e.
+
+5. Should we add electron detachment reactions (O2- + e -> O2 + 2e,
+   or O2- + O -> O3 + e) to counterbalance the attachment? These
+   exist in the mechanism but may have different rate behavior.

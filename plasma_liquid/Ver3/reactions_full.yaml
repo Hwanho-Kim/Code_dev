@@ -1,0 +1,768 @@
+# ============================================================================
+# Complete Aqueous Reaction Set from Liu et al. 2015 J. Phys. D: Appl. Phys.
+# "Physicochemical processes in the indirect interaction between surface
+#  air plasma and deionized water"
+# DOI: 10.1088/0022-3727/48/49/495201
+#
+# Appendix A: 109 aqueous reactions (21 reversible + 88 irreversible)
+#
+# Note: Hydrolysis reactions R1-R8 are handled as algebraic acid-base
+# equilibria in config.py (ACID_BASE_PAIRS), not as ODE reactions.
+#
+# Units: Rate coefficients in M^-n s^-1 where n is reaction order - 1
+# ============================================================================
+
+# Reversible reactions (R9-R21)
+reversible_reactions:
+  # R9: HO3 ↔ O3- + H+
+  - type: reversible
+    reactants: {HO3: 1}
+    products: {O3-: 1, H+: 1}
+    k_f: 1.4e5
+    k_b: 5.0e10
+    label: "R9: HO3 ↔ O3- + H+"
+
+  # R10: O- + O2 ↔ O3-
+  - type: reversible
+    reactants: {O-: 1, O2: 1}
+    products: {O3-: 1}
+    k_f: 3.6e9
+    k_b: 3.3e3
+    label: "R10: O- + O2 ↔ O3-"
+
+  # R11: 2NO2 ↔ N2O4
+  - type: reversible
+    reactants: {NO2: 2}
+    products: {N2O4: 1}
+    k_f: 4.5e8
+    k_b: 6.9e3
+    label: "R11: 2NO2 ↔ N2O4"
+
+  # R12: NO2 + NO ↔ N2O3
+  - type: reversible
+    reactants: {NO2: 1, NO: 1}
+    products: {N2O3: 1}
+    k_f: 1.1e9
+    k_b: 8.4e4
+    label: "R12: NO2 + NO ↔ N2O3"
+
+  # R13: 2HNO2 ↔ NO + NO2 (+H2O)
+  # Note: Uses speciated HONO from HONO_total
+  - type: reversible
+    reactants: {HONO: 2}
+    products: {NO: 1, NO2: 1}
+    k_f: 13.4
+    k_b: 1.1e9
+    label: "R13: 2HONO ↔ NO + NO2"
+
+  # R14: ONOO- ↔ NO + O2-
+  - type: reversible
+    reactants: {ONOO-: 1}
+    products: {NO: 1, O2-: 1}
+    k_f: 0.020
+    k_b: 5.0e9
+    label: "R14: ONOO- ↔ NO + O2-"
+
+  # R15: ONOOH ↔ NO2 + OH
+  - type: reversible
+    reactants: {ONOOH: 1}
+    products: {NO2: 1, OH: 1}
+    k_f: 0.35
+    k_b: 4.5e9
+    label: "R15: ONOOH ↔ NO2 + OH"
+
+  # R16: ONOO- ↔ NO2 + O-
+  - type: reversible
+    reactants: {ONOO-: 1}
+    products: {NO2: 1, O-: 1}
+    k_f: 1.0e-6
+    k_b: 3.5e9
+    label: "R16: ONOO- ↔ NO2 + O-"
+
+  # R17: NO2 + O2- ↔ O2NOO-
+  - type: reversible
+    reactants: {NO2: 1, O2-: 1}
+    products: {O2NOO-: 1}
+    k_f: 4.5e9
+    k_b: 1.05
+    label: "R17: NO2 + O2- ↔ O2NOO-"
+
+  # R18: NO2 + HO2 ↔ O2NOOH
+  - type: reversible
+    reactants: {NO2: 1, HO2: 1}
+    products: {O2NOOH: 1}
+    k_f: 1.8e9
+    k_b: 0.026
+    label: "R18: NO2 + HO2 ↔ O2NOOH"
+
+  # R19: 2NO2 (+H2O) ↔ NO2- + NO3- + 2H+
+  - type: reversible
+    reactants: {NO2: 2}
+    products: {NO2-: 1, NO3-: 1, H+: 2}
+    k_f: 1.0e8
+    k_b: 4.1e1
+    label: "R19: 2NO2 → NO2- + NO3- + 2H+"
+
+  # R20: O + O2 ↔ O3
+  - type: reversible
+    reactants: {O: 1, O2: 1}
+    products: {O3: 1}
+    k_f: 4.0e9
+    k_b: 3.0e-6
+    label: "R20: O + O2 ↔ O3"
+
+  # R21: OH + OH- ↔ H2O + O-
+  # Note: H2O is solvent, not tracked
+  - type: reversible
+    reactants: {OH: 1, OH-: 1}
+    products: {O-: 1}
+    k_f: 1.3e10
+    k_b: 1.7e6
+    label: "R21: OH + OH- ↔ O-"
+
+
+# Irreversible reactions (R22-R109)
+irreversible_reactions:
+  # === O3 reactions ===
+  # R22: O3 + OH- → O2 + HO2-
+  - type: irreversible
+    reactants: {O3: 1, OH-: 1}
+    products: {O2: 1, HO2-: 1}
+    k: 40
+    label: "R22: O3 + OH- → O2 + HO2-"
+
+  # R23: O3 + OH- → O2- + HO2
+  - type: irreversible
+    reactants: {O3: 1, OH-: 1}
+    products: {O2-: 1, HO2: 1}
+    k: 70
+    label: "R23: O3 + OH- → O2- + HO2"
+
+  # R24: O3 + O- → O2- + O2
+  - type: irreversible
+    reactants: {O3: 1, O-: 1}
+    products: {O2-: 1, O2: 1}
+    k: 5.0e9
+    label: "R24: O3 + O- → O2- + O2"
+
+  # R25: O3 + O2- → O3- + O2
+  - type: irreversible
+    reactants: {O3: 1, O2-: 1}
+    products: {O3-: 1, O2: 1}
+    k: 1.6e9
+    label: "R25: O3 + O2- → O3- + O2"
+
+  # R26: O3 + HO2- → O2- + O2 + OH
+  - type: irreversible
+    reactants: {O3: 1, HO2-: 1}
+    products: {O2-: 1, O2: 1, OH: 1}
+    k: 5.5e6
+    label: "R26: O3 + HO2- → O2- + O2 + OH"
+
+  # R27: O3 + OH → HO2 + O2
+  - type: irreversible
+    reactants: {O3: 1, OH: 1}
+    products: {HO2: 1, O2: 1}
+    k: 3.0e9
+    label: "R27: O3 + OH → HO2 + O2"
+
+  # R28: O3 + HO2 → O2 + HO3
+  - type: irreversible
+    reactants: {O3: 1, HO2: 1}
+    products: {O2: 1, HO3: 1}
+    k: 5.0e8
+    label: "R28: O3 + HO2 → O2 + HO3"
+
+  # R29: O3 + HO2 → OH + 2O2
+  - type: irreversible
+    reactants: {O3: 1, HO2: 1}
+    products: {OH: 1, O2: 2}
+    k: 1.0e4
+    label: "R29: O3 + HO2 → OH + 2O2"
+
+  # R30: O3 + H2O2 → OH + HO2 + O2
+  - type: irreversible
+    reactants: {O3: 1, H2O2: 1}
+    products: {OH: 1, HO2: 1, O2: 1}
+    k: 6.5e-3
+    label: "R30: O3 + H2O2 → OH + HO2 + O2 (peroxone)"
+
+  # R31: O3 + H → HO3
+  - type: irreversible
+    reactants: {O3: 1, H: 1}
+    products: {HO3: 1}
+    k: 3.8e10
+    label: "R31: O3 + H → HO3"
+
+  # R32: O3 + NO2- → O2 + NO3-
+  - type: irreversible
+    reactants: {O3: 1, NO2-: 1}
+    products: {O2: 1, NO3-: 1}
+    k: 5.0e5
+    label: "R32: O3 + NO2- → O2 + NO3-"
+
+  # === O3- reactions ===
+  # R33: O3- (+H2O) → OH + O2 + OH-
+  - type: irreversible
+    reactants: {O3-: 1}
+    products: {OH: 1, O2: 1, OH-: 1}
+    k: 25
+    label: "R33: O3- → OH + O2 + OH-"
+
+  # R34: O3- + OH → O2- + HO2
+  - type: irreversible
+    reactants: {O3-: 1, OH: 1}
+    products: {O2-: 1, HO2: 1}
+    k: 6.0e9
+    label: "R34: O3- + OH → O2- + HO2"
+
+  # R35: O3- + OH → O3 + OH-
+  - type: irreversible
+    reactants: {O3-: 1, OH: 1}
+    products: {O3: 1, OH-: 1}
+    k: 2.5e9
+    label: "R35: O3- + OH → O3 + OH-"
+
+  # R36: O3- + H → O2 + OH-
+  - type: irreversible
+    reactants: {O3-: 1, H: 1}
+    products: {O2: 1, OH-: 1}
+    k: 1.0e10
+    label: "R36: O3- + H → O2 + OH-"
+
+  # R37: O3- + O- → 2O2-
+  - type: irreversible
+    reactants: {O3-: 1, O-: 1}
+    products: {O2-: 2}
+    k: 7.0e8
+    label: "R37: O3- + O- → 2O2-"
+
+  # R38: O3- + H+ → O2 + OH
+  - type: irreversible
+    reactants: {O3-: 1, H+: 1}
+    products: {O2: 1, OH: 1}
+    k: 9.0e10
+    label: "R38: O3- + H+ → O2 + OH"
+
+  # === OH reactions ===
+  # R39: OH + HO2 → O2 + H2O
+  - type: irreversible
+    reactants: {OH: 1, HO2: 1}
+    products: {O2: 1}
+    k: 7.0e9
+    label: "R39: OH + HO2 → O2"
+
+  # R40: OH + HO3 → H2O2 + O2
+  - type: irreversible
+    reactants: {OH: 1, HO3: 1}
+    products: {H2O2: 1, O2: 1}
+    k: 5.0e9
+    label: "R40: OH + HO3 → H2O2 + O2"
+
+  # R41: OH + H2O2 → HO2 + H2O
+  - type: irreversible
+    reactants: {OH: 1, H2O2: 1}
+    products: {HO2: 1}
+    k: 2.7e7
+    label: "R41: OH + H2O2 → HO2"
+
+  # R42: OH + HO2- → HO2 + OH-
+  - type: irreversible
+    reactants: {OH: 1, HO2-: 1}
+    products: {HO2: 1, OH-: 1}
+    k: 7.5e9
+    label: "R42: OH + HO2- → HO2 + OH-"
+
+  # R43: OH + O2- → O2 + OH-
+  - type: irreversible
+    reactants: {OH: 1, O2-: 1}
+    products: {O2: 1, OH-: 1}
+    k: 1.0e10
+    label: "R43: OH + O2- → O2 + OH-"
+
+  # R44: OH + O- → HO2-
+  - type: irreversible
+    reactants: {OH: 1, O-: 1}
+    products: {HO2-: 1}
+    k: 2.6e10
+    label: "R44: OH + O- → HO2-"
+
+  # R45: 2OH → H2O2
+  - type: irreversible
+    reactants: {OH: 2}
+    products: {H2O2: 1}
+    k: 5.0e9
+    label: "R45: 2OH → H2O2"
+
+  # R46: OH + H → H2O
+  - type: irreversible
+    reactants: {OH: 1, H: 1}
+    products: {}
+    k: 7.0e9
+    label: "R46: OH + H → H2O"
+
+  # === HO2 reactions ===
+  # R47: 2HO2 → H2O2 + O2
+  - type: irreversible
+    reactants: {HO2: 2}
+    products: {H2O2: 1, O2: 1}
+    k: 8.6e5
+    label: "R47: 2HO2 → H2O2 + O2"
+
+  # R48: HO2 + O- → O2 + OH-
+  - type: irreversible
+    reactants: {HO2: 1, O-: 1}
+    products: {O2: 1, OH-: 1}
+    k: 6.0e9
+    label: "R48: HO2 + O- → O2 + OH-"
+
+  # R49: HO2 + O2- → HO2- + O2
+  - type: irreversible
+    reactants: {HO2: 1, O2-: 1}
+    products: {HO2-: 1, O2: 1}
+    k: 8.0e7
+    label: "R49: HO2 + O2- → HO2- + O2"
+
+  # R50: HO2 + O3- → OH- + 2O2
+  - type: irreversible
+    reactants: {HO2: 1, O3-: 1}
+    products: {OH-: 1, O2: 2}
+    k: 6.0e9
+    label: "R50: HO2 + O3- → OH- + 2O2"
+
+  # R51: HO2 + HO2- → OH- + OH + O2
+  - type: irreversible
+    reactants: {HO2: 1, HO2-: 1}
+    products: {OH-: 1, OH: 1, O2: 1}
+    k: 0.5
+    label: "R51: HO2 + HO2- → OH- + OH + O2"
+
+  # R52: HO2 + H → H2O2
+  - type: irreversible
+    reactants: {HO2: 1, H: 1}
+    products: {H2O2: 1}
+    k: 1.8e10
+    label: "R52: HO2 + H → H2O2"
+
+  # R53: HO2 + HO3 → H2O2 + 1.5O2
+  - type: irreversible
+    reactants: {HO2: 1, HO3: 1}
+    products: {H2O2: 1, O2: 1}
+    k: 5.0e9
+    label: "R53: HO2 + HO3 → H2O2 + O2"
+
+  # R54: HO2 + H2O2 → OH + O2 + H2O
+  - type: irreversible
+    reactants: {HO2: 1, H2O2: 1}
+    products: {OH: 1, O2: 1}
+    k: 0.5
+    label: "R54: HO2 + H2O2 → OH + O2"
+
+  # === HO3 reactions ===
+  # R55: HO3 → O2 + OH
+  - type: irreversible
+    reactants: {HO3: 1}
+    products: {O2: 1, OH: 1}
+    k: 1.1e5
+    label: "R55: HO3 → O2 + OH"
+
+  # R56: 2HO3 → H2O2 + 2O2
+  - type: irreversible
+    reactants: {HO3: 2}
+    products: {H2O2: 1, O2: 2}
+    k: 5.0e9
+    label: "R56: 2HO3 → H2O2 + 2O2"
+
+  # R57: HO3 + O2- → OH- + 2O2
+  - type: irreversible
+    reactants: {HO3: 1, O2-: 1}
+    products: {OH-: 1, O2: 2}
+    k: 1.0e10
+    label: "R57: HO3 + O2- → OH- + 2O2"
+
+  # === H2O2 reactions ===
+  # R58: H2O2 + O2- → OH + O2 + OH-
+  - type: irreversible
+    reactants: {H2O2: 1, O2-: 1}
+    products: {OH: 1, O2: 1, OH-: 1}
+    k: 0.13
+    label: "R58: H2O2 + O2- → OH + O2 + OH-"
+
+  # R59: H2O2 + H → OH + H2O
+  - type: irreversible
+    reactants: {H2O2: 1, H: 1}
+    products: {OH: 1}
+    k: 9.0e7
+    label: "R59: H2O2 + H → OH"
+
+  # === O- reactions ===
+  # R60: O- + H2O2 → H2O + O2-
+  - type: irreversible
+    reactants: {O-: 1, H2O2: 1}
+    products: {O2-: 1}
+    k: 5.0e7
+    label: "R60: O- + H2O2 → O2-"
+
+  # R61: O- + H → OH-
+  - type: irreversible
+    reactants: {O-: 1, H: 1}
+    products: {OH-: 1}
+    k: 1.1e10
+    label: "R61: O- + H → OH-"
+
+  # R62: 2O- (+H2O) → OH- + HO2-
+  - type: irreversible
+    reactants: {O-: 2}
+    products: {OH-: 1, HO2-: 1}
+    k: 1.0e9
+    label: "R62: 2O- → OH- + HO2-"
+
+  # R63: O- + HO2- → OH- + O2-
+  - type: irreversible
+    reactants: {O-: 1, HO2-: 1}
+    products: {OH-: 1, O2-: 1}
+    k: 4.0e8
+    label: "R63: O- + HO2- → OH- + O2-"
+
+  # R64: O- + O2- (+H2O) → 2OH- + O2
+  - type: irreversible
+    reactants: {O-: 1, O2-: 1}
+    products: {OH-: 2, O2: 1}
+    k: 6.0e8
+    label: "R64: O- + O2- → 2OH- + O2"
+
+  # R65: O- + H2 → H + OH-
+  - type: irreversible
+    reactants: {O-: 1, H2: 1}
+    products: {H: 1, OH-: 1}
+    k: 8.0e7
+    label: "R65: O- + H2 → H + OH-"
+
+  # === O2- reactions ===
+  # R66: 2O2- (+2H2O) → H2O2 + O2 + 2OH-
+  - type: irreversible
+    reactants: {O2-: 2}
+    products: {H2O2: 1, O2: 1, OH-: 2}
+    k: 0.3
+    label: "R66: 2O2- → H2O2 + O2 + 2OH-"
+
+  # R67: O2- + H → HO2-
+  - type: irreversible
+    reactants: {O2-: 1, H: 1}
+    products: {HO2-: 1}
+    k: 1.8e10
+    label: "R67: O2- + H → HO2-"
+
+  # R68: O2- + HO2- → O- + O2 + OH-
+  - type: irreversible
+    reactants: {O2-: 1, HO2-: 1}
+    products: {O-: 1, O2: 1, OH-: 1}
+    k: 0.13
+    label: "R68: O2- + HO2- → O- + O2 + OH-"
+
+  # === H atom reactions ===
+  # R69: H + H2O → H2 + OH
+  - type: irreversible
+    reactants: {H: 1}
+    products: {H2: 1, OH: 1}
+    k: 11
+    label: "R69: H + H2O → H2 + OH"
+
+  # R70: H + HO2- → OH- + OH
+  - type: irreversible
+    reactants: {H: 1, HO2-: 1}
+    products: {OH-: 1, OH: 1}
+    k: 9.0e7
+    label: "R70: H + HO2- → OH- + OH"
+
+  # R71: H + H → H2
+  - type: irreversible
+    reactants: {H: 2}
+    products: {H2: 1}
+    k: 7.8e9
+    label: "R71: 2H → H2"
+
+  # R72: H + O2 → HO2
+  - type: irreversible
+    reactants: {H: 1, O2: 1}
+    products: {HO2: 1}
+    k: 2.1e10
+    label: "R72: H + O2 → HO2"
+
+  # === O atom reactions ===
+  # R73: O (+H2O) → 2OH
+  - type: irreversible
+    reactants: {O: 1}
+    products: {OH: 2}
+    k: 50
+    label: "R73: O + H2O → 2OH"
+
+  # === NO reactions ===
+  # R74: NO + OH → NO2- + H+
+  - type: irreversible
+    reactants: {NO: 1, OH: 1}
+    products: {NO2-: 1, H+: 1}
+    k: 2.0e10
+    label: "R74: NO + OH → NO2- + H+"
+
+  # R75: 2NO + O2 → 2NO2
+  - type: irreversible
+    reactants: {NO: 2, O2: 1}
+    products: {NO2: 2}
+    k: 2.3e6
+    label: "R75: 2NO + O2 → 2NO2"
+
+  # R76: NO + HO2 → ONOOH
+  - type: irreversible
+    reactants: {NO: 1, HO2: 1}
+    products: {ONOOH: 1}
+    k: 3.2e9
+    label: "R76: NO + HO2 → ONOOH"
+
+  # === NO2- reactions ===
+  # R77: OH + NO2- → OH- + NO2
+  - type: irreversible
+    reactants: {OH: 1, NO2-: 1}
+    products: {OH-: 1, NO2: 1}
+    k: 1.0e9
+    label: "R77: OH + NO2- → OH- + NO2"
+
+  # === HNO2/HONO reactions ===
+  # R78: OH + HNO2 → H2O + NO2
+  # Note: Uses speciated HONO
+  - type: irreversible
+    reactants: {OH: 1, HONO: 1}
+    products: {NO2: 1}
+    k: 1.0e9
+    label: "R78: OH + HONO → NO2"
+
+  # R79: OH + HNO3 → H2O + NO3
+  # Note: Uses speciated HONO2
+  - type: irreversible
+    reactants: {OH: 1, HONO2: 1}
+    products: {NO3: 1}
+    k: 5.3e7
+    label: "R79: OH + HONO2 → NO3"
+
+  # === Peroxynitrite reactions ===
+  # R80: OH + ONOO- → H+ + O2- + NO2-
+  - type: irreversible
+    reactants: {OH: 1, ONOO-: 1}
+    products: {H+: 1, O2-: 1, NO2-: 1}
+    k: 4.0e9
+    label: "R80: OH + ONOO- → H+ + O2- + NO2-"
+
+  # R81: OH + ONOO- → O2 + OH- + NO
+  - type: irreversible
+    reactants: {OH: 1, ONOO-: 1}
+    products: {O2: 1, OH-: 1, NO: 1}
+    k: 4.8e9
+    label: "R81: OH + ONOO- → O2 + OH- + NO"
+
+  # R82: N2O3 + ONOO- → 2NO2 + NO2-
+  - type: irreversible
+    reactants: {N2O3: 1, ONOO-: 1}
+    products: {NO2: 2, NO2-: 1}
+    k: 3.0e8
+    label: "R82: N2O3 + ONOO- → 2NO2 + NO2-"
+
+  # R83: H+ + ONOOH → 2H+ + NO3-
+  # Note: Acid-catalyzed decomposition
+  - type: irreversible
+    reactants: {H+: 1, ONOOH: 1}
+    products: {H+: 2, NO3-: 1}
+    k: 4.3
+    label: "R83: H+ + ONOOH → 2H+ + NO3-"
+
+  # R84: ONOOH → H+ + NO3-
+  - type: irreversible
+    reactants: {ONOOH: 1}
+    products: {H+: 1, NO3-: 1}
+    k: 0.9
+    label: "R84: ONOOH → H+ + NO3-"
+
+  # R85: ONOO- → NO3-
+  - type: irreversible
+    reactants: {ONOO-: 1}
+    products: {NO3-: 1}
+    k: 8.0e-6
+    label: "R85: ONOO- → NO3-"
+
+  # === NO2 reactions ===
+  # R86: NO2 + O2- → NO2- + O2
+  - type: irreversible
+    reactants: {NO2: 1, O2-: 1}
+    products: {NO2-: 1, O2: 1}
+    k: 1.0e9
+    label: "R86: NO2 + O2- → NO2- + O2"
+
+  # R87: O2NOO- → NO2- + O2
+  - type: irreversible
+    reactants: {O2NOO-: 1}
+    products: {NO2-: 1, O2: 1}
+    k: 1.35
+    label: "R87: O2NOO- → NO2- + O2"
+
+  # R88: NO2 + OH → NO3- + H+
+  - type: irreversible
+    reactants: {NO2: 1, OH: 1}
+    products: {NO3-: 1, H+: 1}
+    k: 1.3e9
+    label: "R88: NO2 + OH → NO3- + H+"
+
+  # === NO3 radical reactions ===
+  # R89: NO3 + HO2 → NO3- + H+ + O2
+  - type: irreversible
+    reactants: {NO3: 1, HO2: 1}
+    products: {NO3-: 1, H+: 1, O2: 1}
+    k: 4.5e9
+    label: "R89: NO3 + HO2 → NO3- + H+ + O2"
+
+  # R90: NO3 + O2- → NO3- + O2
+  - type: irreversible
+    reactants: {NO3: 1, O2-: 1}
+    products: {NO3-: 1, O2: 1}
+    k: 1.0e9
+    label: "R90: NO3 + O2- → NO3- + O2"
+
+  # R91: NO3 + H2O2 → NO3- + HO2 + H+
+  - type: irreversible
+    reactants: {NO3: 1, H2O2: 1}
+    products: {NO3-: 1, HO2: 1, H+: 1}
+    k: 1.0e6
+    label: "R91: NO3 + H2O2 → NO3- + HO2 + H+"
+
+  # R92: NO3 + NO2- → NO3- + NO2
+  - type: irreversible
+    reactants: {NO3: 1, NO2-: 1}
+    products: {NO3-: 1, NO2: 1}
+    k: 1.2e9
+    label: "R92: NO3 + NO2- → NO3- + NO2"
+
+  # R93: NO3 + OH- → NO3- + OH
+  - type: irreversible
+    reactants: {NO3: 1, OH-: 1}
+    products: {NO3-: 1, OH: 1}
+    k: 9.4e7
+    label: "R93: NO3 + OH- → NO3- + OH"
+
+  # === Nitrogen oxide hydrolysis ===
+  # R94: N2O3 (+OH-) → 2NO2- + H+
+  # Note: Base-catalyzed hydrolysis, simplified
+  - type: irreversible
+    reactants: {N2O3: 1}
+    products: {NO2-: 2, H+: 1}
+    k: 2.0e3
+    label: "R94: N2O3 + H2O → 2NO2- + H+"
+
+  # R95: N2O4 (+H2O) → NO2- + NO3- + 2H+
+  - type: irreversible
+    reactants: {N2O4: 1}
+    products: {NO2-: 1, NO3-: 1, H+: 2}
+    k: 1.0e3
+    label: "R95: N2O4 + H2O → NO2- + NO3- + 2H+"
+
+  # R96: HNO2 + H2O2 → ONOOH + H2O (acid-catalyzed)
+  # Rate = k × [HONO] × [H2O2] × [H+], k = 1.4e2 M⁻²s⁻¹
+  # H+ in both reactants/products → catalytic (net zero), auto pH-dependent
+  # Ref: Løgager & Sehested 1993, J. Phys. Chem. 97:6664
+  - type: irreversible
+    reactants: {HONO: 1, H2O2: 1, H+: 1}
+    products: {ONOOH: 1, H+: 1}
+    k: 1.4e2
+    label: "R96: HONO + H2O2 + H+ → ONOOH + H+ (acid-catalyzed)"
+
+  # R97: O2NOOH + HNO2 → 2H+ + 2NO3-
+  - type: irreversible
+    reactants: {O2NOOH: 1, HONO: 1}
+    products: {H+: 2, NO3-: 2}
+    k: 12
+    label: "R97: O2NOOH + HONO → 2H+ + 2NO3-"
+
+  # R98: N2O5 (+H2O) → 2H+ + 2NO3-
+  - type: irreversible
+    reactants: {N2O5: 1}
+    products: {H+: 2, NO3-: 2}
+    k: 5.0e6  # CORRECTED: was 5e9 (Liu 2015 typo, 1000x too fast). Consensus: ~5e6 s⁻¹ (Bertram & Thornton 2009, Kim et al. 2014 PNAS)
+    label: "R98: N2O5 + H2O → 2H+ + 2NO3-"
+
+  # === H atom with RNS ===
+  # R99: H + NO2 → HNO2
+  - type: irreversible
+    reactants: {H: 1, NO2: 1}
+    products: {HONO: 1}
+    k: 1.0e10
+    label: "R99: H + NO2 → HONO"
+
+  # R100: H + N2O → OH + N2
+  - type: irreversible
+    reactants: {H: 1, N2O: 1}
+    products: {OH: 1, N2: 1}
+    k: 2.1e6
+    label: "R100: H + N2O → OH + N2"
+
+  # R101: H + NO2- → OH- + NO
+  - type: irreversible
+    reactants: {H: 1, NO2-: 1}
+    products: {OH-: 1, NO: 1}
+    k: 7.1e8
+    label: "R101: H + NO2- → OH- + NO"
+
+  # R102: NO2 + NO3 → N2O5
+  - type: irreversible
+    reactants: {NO2: 1, NO3: 1}
+    products: {N2O5: 1}
+    k: 1.7e9
+    label: "R102: NO2 + NO3 → N2O5"
+
+  # R103: ONOOH + ONOO- → NO2- + O2NOOH
+  - type: irreversible
+    reactants: {ONOOH: 1, ONOO-: 1}
+    products: {NO2-: 1, O2NOOH: 1}
+    k: 1.3e3
+    label: "R103: ONOOH + ONOO- → NO2- + O2NOOH"
+
+  # === Singlet oxygen reactions ===
+  # R104: O2(a1Δ) → O2
+  # Note: Using O2 for singlet oxygen decay
+  - type: irreversible
+    reactants: {O2: 1}
+    products: {O2: 1}
+    k: 0
+    label: "R104: O2(1Δ) → O2 (deactivation, not tracked)"
+
+  # R105: O2(a1Δ) + OH → O2 + OH
+  # Note: Energy transfer, no net change
+  - type: irreversible
+    reactants: {O2: 1, OH: 1}
+    products: {O2: 1, OH: 1}
+    k: 0
+    label: "R105: O2(1Δ) + OH → O2 + OH (not tracked)"
+
+  # R106: O + OH- → HO2-
+  - type: irreversible
+    reactants: {O: 1, OH-: 1}
+    products: {HO2-: 1}
+    k: 4.2e8
+    label: "R106: O + OH- → HO2-"
+
+  # R107: O + H2O2 → OH + HO2
+  - type: irreversible
+    reactants: {O: 1, H2O2: 1}
+    products: {OH: 1, HO2: 1}
+    k: 1.6e9
+    label: "R107: O + H2O2 → OH + HO2"
+
+  # R108: O + HO2- → OH + O2-
+  - type: irreversible
+    reactants: {O: 1, HO2-: 1}
+    products: {OH: 1, O2-: 1}
+    k: 5.3e9
+    label: "R108: O + HO2- → OH + O2-"
+
+  # R109: 2O → O2
+  - type: irreversible
+    reactants: {O: 2}
+    products: {O2: 1}
+    k: 2.8e10
+    label: "R109: 2O → O2"

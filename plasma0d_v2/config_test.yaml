@@ -1,0 +1,42 @@
+Lambda: 0.001
+M_avg: 0.028
+P_input_W: 1.62
+T_wall: 300.0
+V_eff: 1.0e-06
+bolsig_files:
+- BOLSIG_parameter/Condition1_300K.txt
+cp_avg: 1040.0
+cross_section_dir: cross_sections
+eedf_files:
+- BOLSIG_EEDF/EEDF_300K.dat
+flow:
+  Q_slm: 1.0
+frequency_Hz: 1333.0
+initial:
+  T_gas: 300.0
+  Te_eV: 2.0
+  ne: 1000000000000.0
+inlet_composition:
+  CH4: 0.05
+  CO2: 0.05
+  N2: 0.78
+  O2: 0.12
+input_dir: input
+output_dir: output
+power_mode: vi_envelope
+qn_mode: A
+reactions_file: reactions.yaml
+reactor:
+  pressure: 101325.0
+  volume: 1.0e-06
+solver:
+  atol: 1.0e-10
+  constrained: true
+  max_step: 1.0e-06
+  method: BDF
+  n_points: 600
+  rtol: 1.0e-05
+  t_end: 0.0003
+species_file: species.yaml
+vi_curve_file: Pulsed_VI_curve.csv
+wall_loss_freq: 100.0

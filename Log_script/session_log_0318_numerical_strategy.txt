@@ -1,0 +1,103 @@
+================================================================
+Pulsed Solver — Numerical Strategy from External Analysis
+2026-03-18
+================================================================
+
+SOURCE: External AI analysis of the conditioning problem
+
+1. KEY DIAGNOSIS
+================
+Root cause: cond(I-hJ) ≈ 10^39 in double precision (16 digits)
+→ LU solution is pure noise → Newton never converges with analytical Jac
+→ FD Jac "accidentally" works because FD errors regularize ill-conditioned modes
+
+2. PRIORITY ACTIONS
+===================
+
+Priority 1: VARIABLE SCALING (1-2 days)
+  Transform ȳ_i = y_i / w_i with fixed physical scales
+  w = [28.0 (N2), 8.0 (O2), 1e-16 (e), 1e-12 (N2+), ...]
+  
+  Transformed Jacobian: J̄[i,j] = J[i,j] × w[j]/w[i]
+  Expected: κ(I-hJ̄) drops from 10^39 to ~10^20 or less
+  
+  If κ < ~10^16: analytical Jac works in double precision
+  → Eliminates 67× FD overhead → 14× speedup
+  
+  Implementation:
+    f_scaled(t, ȳ) = f_orig(t, w⊙ȳ) / w
+    jac_scaled(t, ȳ) = diag(1/w) × J_orig(t, w⊙ȳ) × diag(w)
+  
+  Two-step approach:
+    1. Short pre-integration to estimate max |y_i| per species
+    2. Use these as fixed w_i for full integration
+
+Priority 2: NEWTON-KRYLOV SHOOTING (2-4 days)
+  Find periodic steady state directly: G(y₀) = Φ(y₀, T) - y₀ = 0
+  scipy.optimize.newton_krylov with LGMRES
+  
+  Each GMRES iteration = one period integration
+  Expected: 5-10 Newton × 10-30 GMRES = 50-300 period integrations
+  vs. 340,000 brute-force periods
+  
+  Already available: scipy.optimize.newton_krylov, root(method='krylov')
+
+Priority 3: PHASE-BASED INTEGRATION (1 day)
+  Split pulse ON (ns, extreme stiffness) from OFF (ms, moderate)
+  Use Radau for ON, BDF for OFF
+  Already partially implemented in operator-split approach
+
+Priority 4: LOG/ASINH TRANSFORM (if scaling insufficient)
+  Selective log transform for always-positive species
+  asinh transform for species that cross zero
+  Expected: additional 10^15-10^35 condition reduction
+
+Priority 5: EXTENDED PRECISION (last resort)
+  Julia BigFloat via diffeqpy
+  Eliminates precision limit entirely but 10-100× slower
+
+3. SPECIFIC NUMBERS FOR OUR SYSTEM
+====================================
+State vector: 67 variables (65 species + ne_eps + T_gas)
+Concentration range: 1e-16 (c_e) to 28 (c_N2) mol/m³ → 17 orders
+Timescale range: 5ns (attachment) to 34s (flow) → 10 orders
+Jacobian nonzero: 570/4489 (13%) → sparse FD only 61 groups (useless)
+Current FD Jac cost: 67 RHS = 12ms per Jacobian evaluation
+
+4. IMPLEMENTATION PLAN FOR VARIABLE SCALING
+=============================================
+Step 1: Determine w_i from continuous steady state
+  Run continuous 5W to steady state → extract |y_ss|
+  w_i = max(|y_i_ss|, atol_i)
+
+Step 2: Create scaled RHS and Jacobian wrapper
+  f_bar(t, y_bar) = f_orig(t, w * y_bar) / w
+  jac_bar(t, y_bar) = diag(1/w) @ J_orig(t, w * y_bar) @ diag(w)
+
+Step 3: Verify condition number reduction
+  J_orig: κ ≈ 10^75, κ(I-hJ) ≈ 10^39
+  J_scaled: target κ(I-hJ) < 10^16
+
+Step 4: Test with constrained BDF + analytical scaled Jac
+  If Newton converges → problem solved
+  Expected speedup: 14× (eliminate 67× FD)
+
+Step 5: Full pulsed simulation
+  With scaling + analytical Jac: ~800 RHS/pulse → ~22h for 340k
+
+Step 6: Add shooting for PSS
+  With scaling + shooting: ~300 periods × 800 RHS = 240k RHS total
+  At 0.18ms/RHS: ~43s total computation time
+
+5. WHAT WE LEARNED
+====================
+- The problem is NOT the Jacobian accuracy (verified vs FD: exact match)
+- The problem IS the matrix conditioning
+- CVODE/scipy BDF do NOT scale the Newton matrix internally
+  (ewt vector only affects convergence test, not linear solve)
+- FD Jac works because FD errors accidentally regularize the matrix
+- Variable scaling is the standard industrial solution
+  (Robertson problem, combustion chemistry, etc.)
+- For 67 variables, Dense LU is optimal (no benefit from Krylov/sparse)
+- IMEX has limited benefit for 0D (all variables coupled)
+- Shooting method gives the biggest practical speedup for PSS problems

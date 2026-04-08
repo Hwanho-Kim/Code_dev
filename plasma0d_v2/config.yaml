@@ -1,0 +1,84 @@
+# plasma0d_v2 configuration file
+# CH4/CO2 dry reforming in DBD plasma (N2/O2 carrier)
+
+input_dir: input
+species_file: species.yaml
+reactions_file: reactions.yaml
+cross_section_dir: cross_sections
+output_dir: output
+
+# --- Power source ---
+# power_mode: 'constant' | 'vi_envelope' | 'vi_curve' | 'pulsed'
+#
+# constant     — flat P_dep = P_input_W / V_eff (time-independent)
+# vi_envelope  — |V(t)·I(t)| from CSV, scaled to P_input_W (needs vi_curve_file)
+# vi_curve     — signed V(t)·I(t) from CSV (needs vi_curve_file)
+# pulsed       — parametric pulse waveform (needs pulse: section below)
+
+power_mode: vi_envelope
+P_input_W: 1.62
+
+# V-I curve settings (for vi_envelope / vi_curve modes)
+vi_curve_file: Pulsed_VI_curve.csv
+frequency_Hz: 1333.0
+
+# Parametric pulse settings (for pulsed mode)
+# pulse:
+#   PRF_Hz: 1333.0           # pulse repetition frequency [Hz]
+#   duty_cycle: 0.20         # t_on / T_period
+#   P_peak_W: 8.1            # peak power during pulse [W]
+#   rise_time_s: 1.0e-7      # rise/fall time [s] (0 = hard switch)
+#   waveform: trapezoidal    # 'rectangular' or 'trapezoidal'
+
+# BOLSIG+ output files (one per gas-temperature condition)
+bolsig_files:
+  - BOLSIG_parameter/Condition1_300K.txt
+
+# BOLSIG+ EEDF files (matching bolsig_files, one per condition)
+eedf_files:
+  - BOLSIG_EEDF/EEDF_300K.dat
+
+# sDBD fitting parameters
+V_eff: 4.9e-6          # effective discharge volume [m³] (70mm×70mm×1mm sDBD)
+Lambda: 1.0e-3          # diffusion length [m]
+
+# Reactor geometry
+reactor:
+  volume: 5.0e-5       # reactor physical volume [m³] (50 cm³, realistic sDBD reactor)
+  pressure: 101325.0   # gas pressure [Pa]
+
+# Inlet gas composition (mole fractions) — actual experimental condition
+inlet_composition:
+  CH4: 0.01
+  CO2: 0.14
+  N2: 0.70
+  O2: 0.15
+
+# Flow
+flow:
+  Q_slm: 1.0    # standard liters per minute
+
+# Initial conditions
+initial:
+  T_gas: 300.0      # [K]
+  ne: 1.0e+12         # electron number density [m⁻³] (seed, ZDPlasKin style)
+  Te_eV: 2.0         # electron temperature [eV]
+
+# Solver settings
+solver:
+  t_end: 3000.0e-6
+  n_points: 6000
+  method: BDF
+  rtol: 1.0e-5
+  atol: 1.0e-10
+  max_step: 1.0e-6
+  constrained: true
+
+# Quasi-neutrality mode: 'A' = diagnostic only, 'B' = derive n_e from ions
+qn_mode: 'A'
+
+# Gas thermal model
+T_wall: 300.0          # wall temperature [K]
+M_avg: 0.028           # average molar mass [kg/mol]
+cp_avg: 1040.0         # average specific heat [J/(kg·K)]
+wall_loss_freq: 100.0  # wall cooling frequency [1/s]

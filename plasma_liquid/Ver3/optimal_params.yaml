@@ -1,0 +1,16 @@
+# Optimal Parameters from run_optimizer.py (constrained fit)
+# Fitted to: 3.2 kVpp, DI water, 6 min
+# Date: 2026-03-11 16:23
+# Fixed: δ_gas=10mm (Silsby 2021), δ_liq=100μm (Silsby 2021)
+# Constraint: HONO₂/N₂O₅ ∈ [0.01, 1.0] (Cimerman 2023)
+# HONO₂/N₂O₅ = 0.0544
+
+mass_transfer:
+  delta_x_gas: 0.010000    # 10 mm (FIXED)
+  delta_x_liq: 0.000100   # 100 μm (FIXED)
+  area_to_volume_ratio: 13.3050  # m⁻¹ (depth ≈ 75.2 mm)
+
+gas_phase_unmeasured:
+  HONO: 6.218806e+14    # molecules/cm³
+  HONO2: 6.760787e+14   # molecules/cm³
+  H2O2: 1.060952e+15    # molecules/cm³
