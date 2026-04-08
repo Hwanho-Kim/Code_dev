@@ -1,0 +1,227 @@
+================================================================
+Session Log — 2026-03-19 Final Summary
+plasma0d_v2 Pulsed Solver Development
+================================================================
+
+1. SESSION OVERVIEW
+===================
+Goal: Pulsed 0D plasma simulation to PFR steady state (tau=33.8s, 340k pulses)
+Status: Physics model complete + validated. CVODE ctypes achieves target speed
+        (11ms/pulse) but ne goes negative. scipy baseline is physically correct
+        but too slow (1750ms/pulse). Bridging this gap is the remaining task.
+
+
+2. PHYSICS MODEL CHANGES (ALL VALIDATED)
+=========================================
+
+2.1 AT1_KOSSYI replaced with cross-section (σ/N)
+  - Removed: R165 AT1_KOSSYI (e+O2+M→O2-+M, k3=1.1e-31)
+  - Added: R165 ELECTRON_IMPACT with O2_3body_attachment.txt (Phelps σ/N)
+  - boltzmann.py: _sigma_over_N_mask, N_gas_cm3 multiplication in get_rate_coefficients_conc
+  - Result: single-reaction 99.996% dominance → Diss.AT 82% + DR 18%
+
+2.2 O2(a1Dg) species + chemistry
+  - species.yaml: O2(a1Dg), mass=0.032, delta_hf=94.3 kJ/mol
+  - N2O species added (for N2(A)+O2 branching)
+  - New reactions R208-R218:
+    P1: e+O2→O2(a1Dg)+e (EI, O2_excitation_O2a1.txt)
+    P2: N2(A)+O2→N2+O2(a1Dg) (15% branching, k=2.29e5)
+    D1: O2(a1Dg)+O2→2O2 (quenching, k=9.64e-1)
+    D2: O2-+O2(a1Dg)→2O2+e (Penning detachment, k=3.97e8)
+    D3: O-+O2(a1Dg)→O3+e (k=6.62e7)
+    D4: O2(a1Dg)+O3→2O2+O (k=3.13e7, E=-2840)
+    D5: e+O2(a1Dg)→O-+O (shifted cross section, O2a1Dg_attachment.txt)
+    O2(a1Dg)+N2→O2+N2 (quenching, k=9.03e-2)
+    O-+NO→NO2+e (k=1.32e8)
+    O-+CO→CO2+e (k=3.31e8)
+    O-+H2→H2O+e (k=4.52e8)
+
+2.3 N2(A)+O2 branching split
+  - R54: N2(A)+O2→N2+O2 reduced to 28% (A=4.28e5)
+  - R55: N2(A)+O2→N2+2O changed to N2(A)+O2→N2O+O, 57% (A=8.72e5)
+
+2.4 Maxwellian fallback for afterglow EI rates
+  - boltzmann.py: get_rate_coefficients_maxwellian() with thermal cache
+  - solver.py: Stage 2/3 uses fallback_maxwellian=True
+  - Ensures 3-body attachment active at thermal Te (σ/N peaks at 0.08eV)
+
+2.5 YAML fixes
+  - "NO" quoted in reactions.yaml (YAML parses NO as boolean False)
+
+2.6 Cross section files added
+  - O2_3body_attachment.txt (user, Phelps σ/N)
+  - O2_excitation_O2a1.txt (user, Phelps)
+  - O2a1Dg_attachment.txt (code generated, shifted 0.977eV from ground O2)
+
+2.7 Validation
+  - PFR 4-temperature: 4.95/7.18/13.21/19.92% (exp 5.26/8.05/14.36/20.02%)
+  - Electron balance: Diss.AT 82%, DR 18%, detachment active
+  - Pulsed ON: ne=2.87e14, Te=2.504eV (matches continuous)
+  - Pulsed OFF: ne→4.22e8, Te=0.026eV (thermal)
+
+
+3. PULSE MODULE
+===============
+  - power.py: set_pulsed_power, _pulsed_power_density, get_pulse_edges
+  - config.yaml: pulse section (PRF_Hz, duty_cycle, P_peak_W, rise_time_s, waveform)
+  - config.py: power_mode='pulsed' parsing
+  - solver.py: solve() dispatch for pulsed modes
+
+
+4. PFR MODEL
+=============
+  - flow.py: flow_model='PFR', compute_flow_source returns zeros
+  - get_physical_residence_time for PFR t_end
+  - config.py: flow.model parsing
+
+
+5. VECTORIZATION (RHS/Jacobian speedup)
+========================================
+  - boltzmann.py: LUT interpolation vectorized (0.097→0.007ms, 14×)
+  - reactions.py: compute_reaction_rates vectorized (0.085→0.034ms, 2.5×)
+  - reactions.py: compute_gas_heating_split vectorized (0.038→0.007ms, 5.4×)
+  - Total: RHS 0.315→0.183ms (1.7×), Jacobian 13.7→1.07ms (12.8×)
+
+
+6. JACOBIAN FIXES
+=================
+  - A22-based P_inel derivatives in energy row (was using reaction-based, 9× mismatch)
+  - boltzmann.py: get_inelastic_power_deriv() for dA22/deps
+  - Verified: analytical Jac matches FD at ratio=1.0×
+
+
+7. VARIABLE SCALING
+===================
+  - scale_weights.npy: 67 weights from continuous steady state
+  - κ(I-hJ): 10^40 → 10^6
+  - Implemented in _solve_constrained (scaled RHS + scaled Jac)
+  - FD Jacobian works with scaling. Analytical Jac still causes Newton divergence.
+
+
+8. NUMBA RHS
+=============
+  - numba_core.py: 320 lines, 12 @njit functions + extract_numba_params
+  - rhs_numba: 21µs/call (vs 126µs Python, 6.6× speedup)
+  - Accuracy: 4.56e-16 relative error (machine precision)
+  - Integrated in solver.py: auto-detected, Python fallback maintained
+  - solver.py _setup_numba(), rhs() dispatches to numba path
+
+
+9. CVODE CTYPES DIRECT INTEGRATION
+====================================
+  - SUNDIALS libraries at /home/hawn/sundials_build/build/src/
+  - Working: CVodeCreate, CVodeInit, CVode, CVodeReInit, CVodeSetConstraints
+  - Achieved 11ms/pulse (167 RHS/pulse) with FD Jacobian
+  - Problem: ne goes negative without constraints
+  - With constraints: fails at t=20µs (ne_eps constraint unsatisfiable)
+  - With ONE_STEP + clamp: BDF history corrupted → wrong results
+  - With ONE_STEP + clamp + ReInit: too slow (order reset every clamp)
+
+
+10. BASELINE (PHYSICALLY CORRECT)
+==================================
+Config: scipy constrained BDF + scaled FD Jac + Numba RHS + max_step=0.5µs
+File: solver.py _solve_constrained (line ~1143)
+Detailed in: /home/hawn/work/pulsed_baseline.txt
+
+Results (2 periods):
+  ON: ne=2.87e14, Te=2.504eV
+  OFF: ne→4.22e8, Te=0.026eV
+  2nd pulse: reignition successful
+  ne_eps: positive (thermal floor)
+  clamp rate: 40%
+
+Performance: 1.75s/period, ETA 340k = 165 hours
+
+
+11. THE CORE PROBLEM (UNSOLVED)
+================================
+CVODE C loop = fast (11ms/pulse) but ne_eps goes negative.
+scipy Python loop = physically correct but slow (1750ms/pulse).
+
+The gap: per-step clamping of ne_eps and c_e.
+- scipy does it in Python loop after each BDF step
+- CVODE has no C-level hook for per-step user modification
+- Python callback (CFUNCTYPE) for CVODE adds enough overhead to negate C loop benefit
+- Numba @cfunc cannot capture closure (50+ array parameters)
+
+Approaches tried and failed:
+  a) CVODE CVodeSetConstraints: afterglow ne_eps decay too fast
+  b) CVODE ONE_STEP + Python clamp: same speed as scipy (callback overhead)
+  c) CVODE ONE_STEP + clamp + ReInit: BDF order reset kills dynamics
+  d) asinh transform: ne_eps still goes negative (sinh allows negative)
+  e) RHS structural guard (dydt=0 when ne_eps<floor): CVODE FD Jac ignores
+  f) Analytical Jacobian: Newton diverges even with κ=10^6 scaling
+  g) Semi-implicit Euler: order 1 insufficient, Te diverges
+  h) Julia diffeqpy: Python RHS callback negates Julia solver speed
+
+
+12. NEXT SESSION GOAL
+=====================
+Single goal: bridge the gap between CVODE speed and scipy correctness.
+
+Most promising paths:
+  a) Write RHS entirely in C (not Python/Numba) → CVODE calls C RHS directly
+     → no callback overhead, can add clamping in C
+  b) Modify SUNDIALS CVODE source to add per-step callback hook
+  c) Use numbalsoda (Numba-compiled LSODA) — solver loop in compiled code
+  d) Patankar scheme: production-destruction splitting guarantees positivity
+     without external clamping
+
+Key constraint: must reproduce baseline results exactly.
+
+
+13. FILES MODIFIED IN THIS SESSION
+====================================
+NEW FILES:
+  plasma0d_v2/numba_core.py — Numba @njit RHS (320 lines)
+  plasma0d_v2/scale_weights.npy — scaling weights
+  plasma0d_v2/input/cross_sections/O2a1Dg_attachment.txt — shifted cross section
+  pulsed_baseline.txt — baseline documentation
+  run_pulsed_baseline.py — nohup runner (165h)
+  run_cvode_pulsed.py — CVODE runner (ne negative issue)
+  run_pulsed_shooting.py — Newton-Krylov PSS finder
+  .sisyphus/plans/numba-rhs-rewrite.md — Numba plan
+
+MODIFIED:
+  solver.py (~1650 lines):
+    + _setup_numba(), numba RHS dispatch
+    + _solve_constrained: scaled coords, FD Jac (analytical removed)
+    + rhs_off() for operator splitting
+    + solve_pulsed() macro-timestep (not working well)
+    + A22 Jacobian fix, Maxwellian fallback in 3-stage afterglow
+    + _ne_seed=1e8, ne_init default=1e8
+
+  boltzmann.py (~782 lines):
+    + vectorized LUT interpolation
+    + sigma_over_N support
+    + get_inelastic_power_deriv
+    + get_rate_coefficients_maxwellian with thermal cache
+    + fallback_maxwellian parameter
+
+  reactions.py (~782 lines):
+    + vectorized rates, source terms, gas heating
+    + _build_vectorized_arrays, _build_gas_heating_arrays
+    + sigma_over_N attribute parsing
+
+  power.py (~556 lines):
+    + parametric pulse waveform
+
+  flow.py (~87 lines):
+    + PFR mode
+
+  config.py:
+    + pulsed/PFR parsing, ne_init=1e8, _setup_numba call
+
+  species.yaml: +O2(a1Dg), +N2O
+  reactions.yaml: R165 σ/N, R54-55 branching, R208-R218 new
+
+
+14. CONSTRAINTS
+===============
+  - Korean output, 존댓말
+  - No git, no sudo
+  - V_reactor = 250 cm³ fixed
+  - PFR as reference model
+  - d_gap not used
+  - Boltzmann solver = external (BOLSIG+ LUT)

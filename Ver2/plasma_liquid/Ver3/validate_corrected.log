@@ -1,0 +1,81 @@
+2026-03-11 16:23:40 - plasma_liquid - INFO - ======================================================================
+2026-03-11 16:23:40 - plasma_liquid - INFO - SIMULATION — Accumulated Liquid-Phase Chemistry
+2026-03-11 16:23:40 - plasma_liquid - INFO - ======================================================================
+2026-03-11 16:23:40 - plasma_liquid - INFO - Override: MASS_TRANSFER.delta_x_gas = 0.01
+2026-03-11 16:23:40 - plasma_liquid - INFO - Override: MASS_TRANSFER.delta_x_liq = 0.0001
+2026-03-11 16:23:40 - plasma_liquid - INFO - Override: MASS_TRANSFER.area_to_volume_ratio = 13.305
+2026-03-11 16:23:40 - plasma_liquid - INFO - Loaded 361 rows from 1kHz3.2kVpp.csv
+2026-03-11 16:23:40 - plasma_liquid - INFO - Gas species in CSV: ['O3', 'NO', 'NO2', 'NO3', 'N2O4', 'N2O5', 'HONO', 'HONO2']
+2026-03-11 16:23:40 - plasma_liquid - INFO - Loaded 101 reactions from /home/hawn/work/plasma_liquid/Ver3/reactions_full.yaml
+2026-03-11 16:23:40 - plasma_liquid - INFO - Loaded 101 aqueous reactions
+
+ Step   Time(s)      pH    NO2-(uM)    NO3-(uM)    H2O2(uM)   ONOO-(uM)   elapsed
+-------------------------------------------------------------------------------------
+    0       0.0    7.00       0.017       0.018       0.030       0.000      1.5s
+   30      30.0    5.72       0.466       2.411       0.945       0.000     52.4s
+   60      60.0    5.26       0.829       6.720       1.859       0.000    213.8s
+   90      90.0    5.01       1.148      11.590       2.773       0.000    272.0s
+  120     120.0    4.85       1.435      16.761       3.687       0.000    336.6s
+  150     150.0    4.73       1.694      22.160       4.601       0.000    385.1s
+  180     180.0    4.63       1.934      27.704       5.515       0.000    431.0s
+  210     210.0    4.55       2.156      33.378       6.429       0.000    478.5s
+  240     240.0    4.48       2.365      39.175       7.343       0.000    528.3s
+  270     270.0    4.41       2.562      45.098       8.256       0.000    572.5s
+  300     300.0    4.36       2.748      51.138       9.170       0.000    618.3s
+  330     330.0    4.31       2.924      57.224      10.084       0.000    677.0s
+  360     360.0    4.26       3.091      63.408      10.998       0.000    738.1s
+
+======================================================================
+BASELINE SIMULATION RESULTS (t = 360s)
+======================================================================
+
+  pH:        4.264
+  NO2-:      3.091 μM
+  NO3-:      63.408 μM
+  H2O2(aq):  10.998 μM
+  ONOO-:     0.000000 μM (peroxynitrite)
+
+--- Experimental Targets (3.2 kVpp, DI water, 6 min) ---
+  pH:        3.61 ± 0.04
+  NO2-:      ~3 μM
+  NO3-:      ~63 μM
+  H2O2(aq):  ~11 μM
+
+--- Deficit (target - baseline) ---
+  pH:        -0.654
+  NO2-:      -0.091 μM
+  NO3-:      -0.408 μM
+  H2O2(aq):  +0.002 μM
+
+Elapsed: 738.1 seconds
+
+--- Mass Transfer Config ---
+  δ_gas:     10.0 mm
+  δ_liq:     100 μm
+  A/V:       13 m⁻¹
+  depth:     10.0 mm
+
+--- Gas-Phase at t=360s (molecules/cm³) ---
+  O3      : 1.052e+17
+  NO      : 0.000e+00
+  NO2     : 2.993e+15
+  NO3     : 1.537e+14
+  N2O4    : 0.000e+00
+  N2O5    : 1.219e+16
+  HONO    : 0.000e+00
+  HONO2   : 0.000e+00
+
+--- Aqueous Concentrations at t=360s (mol/L) ---
+  O3             : 2.5231e-09 M  (0.003 μM)
+  NO2            : 1.7820e-09 M  (0.002 μM)
+  N2O4           : 1.8092e-13 M  (0.000 μM)
+  HONO_total     : 3.5134e-06 M  (3.513 μM)
+  HONO2_total    : 6.3409e-05 M  (63.409 μM)
+  H2O2_total     : 1.0998e-05 M  (10.998 μM)
+  HO2_total      : 7.4892e-13 M  (0.000 μM)
+  ONOOH_total    : 6.3255e-14 M  (0.000 μM)
+  OH             : 8.4464e-16 M  (0.000 μM)
+  H+             : 5.4471e-05 M  (54.471 μM)
+  OH-            : 1.8358e-10 M  (0.000 μM)
+
+Time-history saved to: /home/hawn/work/plasma_liquid/Ver3/baseline_results.csv

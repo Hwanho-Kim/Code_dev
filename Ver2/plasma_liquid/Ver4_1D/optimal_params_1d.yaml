@@ -1,0 +1,6 @@
+gas_phase_unmeasured:
+  HONO: 0
+  HONO2: 0
+  H2O2: 0
+mass_transfer:
+  delta_x_gas: 0.01

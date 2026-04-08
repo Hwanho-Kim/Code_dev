@@ -1,0 +1,313 @@
+================================================================
+Pulsed Solver — Numerical Issues Analysis
+2026-03-18 (Session End)
+================================================================
+
+1. PROBLEM SUMMARY
+==================
+Goal: Pulsed 0D plasma simulation to CSTR/PFR steady state
+      PRF=10kHz (or 1333Hz VI curve), 340k-1.7M pulses, ~170s simulation time
+Status: Physics model complete and validated, solver too slow for long-time pulsed
+
+Best achieved: 11,000 RHS/pulse, ~266 hours ETA for 340k pulses
+Target: <1,000 RHS/pulse, ~hours for 340k pulses
+
+
+2. THE STIFFNESS PROBLEM
+========================
+
+2.1 Root cause: n_e jumps 8 orders per pulse cycle
+
+  ON phase:  n_e peaks at ~1e16 (VI curve) or ~3e14 (parametric)
+  OFF phase: n_e decays to ~1e8 (floor) via 3-body attachment
+  Jump ratio: 1e8 → 1e16 = 8 orders (VI) or 1e8 → 3e14 = 6 orders (parametric)
+
+This jump creates extreme stiffness at every ON→OFF and OFF→ON transition.
+
+2.2 Why n_e decays so fast in afterglow
+
+  Primary loss: 3-body attachment e + O2 + M → O2- + M
+  Cross section (σ/N) peaks at 0.08 eV = near thermal Te
+  At thermal Te (0.026 eV), k_eff = k_raw × N_gas ≈ 5e-11 cm³/s
+  With [O2] = 3.6e18 cm⁻³: ν_att = k × [O2] ≈ 1.8e8 s⁻¹ → τ ≈ 5.5 ns
+
+  So n_e drops by factor e every ~5.5 ns after Te reaches thermal.
+  From 1e16 to 1e8 = 18.4 e-folds ≈ 100 ns of thermal decay.
+
+2.3 Te collapse timescale
+
+  Energy relaxation: τ_ε = ε̄ / (N_gas × A22) ≈ 17 ps at eps=3eV
+  But A22 decreases with eps, so actual cooling: ~1-50 ns
+  Literature confirms: Te collapses to thermal in 1-50 ns at atmospheric pressure
+  (Bieniek 2021, Lepikhin 2017, Jiang 2019)
+
+
+3. SOLVER APPROACHES TESTED
+============================
+
+3.1 Constrained BDF (manual stepping) — CURRENT DEFAULT
+
+  Method: scipy BDF stepper with per-step clamping of n_e and ne_eps
+  
+  WITHOUT analytical Jacobian (FD):
+    - Works but 67 RHS per Jacobian evaluation
+    - 11,000 RHS/pulse → 266 hours for 340k pulses
+    - Overflow warnings from FD Jacobian at large n_e gradients
+    
+  WITH analytical Jacobian:
+    - BDF takes 100 steps with ZERO progress (t stays at 0)
+    - Newton iteration never converges
+    - Root cause: Jacobian condition number ≈ 10^75
+    - I - h*J is near-singular for ANY step size h
+
+  VERDICT: FD works but slow. Analytical Jac doesn't work due to conditioning.
+
+3.2 solve_ivp(BDF) per pulse segment — OPERATOR SPLIT
+
+  ON phase: solve_ivp(BDF, jac=analytical) for 18µs
+  OFF phase: solve_ivp(BDF, FD) with frozen electrons for 82µs
+
+  Performance: 838 RHS/pulse (ON: 908 + OFF: 13), 308ms/pulse
+  ETA: 29 hours for 340k pulses
+  
+  Issues:
+    - BDF restart overhead: each solve_ivp call starts from order 1
+    - ON phase: 56 Jacobian evaluations per 18µs segment
+    - Frozen electrons: physically approximate (misses afterglow chemistry)
+
+  VERDICT: Fastest working approach but physically incomplete.
+
+3.3 Unified RHS (no operator splitting) — PHYSICALLY CORRECT
+
+  Single constrained BDF for entire pulse period
+  All chemistry active including afterglow
+  
+  Performance: 11,000 RHS/pulse, 266 hours
+  
+  VERDICT: Physically correct but impractically slow.
+
+3.4 solve_ivp(BDF) single call — UNBOUNDED
+
+  Single solve_ivp for many pulses, no clamping
+  
+  Issues:
+    - n_e goes negative (no constraint enforcement)
+    - "Required step size < machine epsilon" at pulse edges
+    - Works with rise_time=10µs but gives cycle-averaged result (3 RHS/pulse)
+    
+  VERDICT: Either fails or doesn't resolve pulses.
+
+3.5 CVODE (sksundae) with ReInit
+
+  Single CVODE instance, init_step at each pulse edge
+  Non-negativity constraints available
+  
+  Issues:
+    - init_step Python overhead: ~10ms per call × 680k calls = 2 hours overhead alone
+    - Without analytical Jac: even slower (FD)
+    - With analytical Jac: same Newton convergence failure as scipy BDF
+    
+  VERDICT: Python wrapper overhead kills performance.
+
+3.6 Macro-timestep solver
+
+  Resolve N_detail cycles, skip N_skip pulses with extrapolated source terms
+  
+  Issues:
+    - Forward Euler: overshoots (conv=96% instead of 1.44%)
+    - Exponential integrator: oscillates (conv=50%)
+    - CSTR-aware analytical: still oscillates
+    - Needs implicit macro-step (Newton on cycle-averaged equations)
+    
+  VERDICT: Infrastructure exists but needs implicit scheme.
+
+
+4. JACOBIAN CONDITIONING PROBLEM
+=================================
+
+4.1 The numbers
+
+  Jacobian J has shape (67, 67)
+  Nonzero entries: 570/4489 (13%) — dense enough that sparse FD gives only 1.1× speedup
+  Condition number: ~10^75
+  cond(I - h*J): ~10^39 at h=1e-9
+
+4.2 Why it's so poorly conditioned
+
+  The Jacobian couples:
+    - Electron density (c_e ~ 1e-16 mol/m³) with neutral species (c_N2 ~ 28 mol/m³)
+      → 17 orders of magnitude difference in concentrations
+    - Energy equation (ne_eps ~ 1e10 eV/m³) with species equations
+    - Fast processes (attachment τ~5ns) with slow processes (CSTR flow τ~34s)
+      → 10 orders of magnitude in timescales
+
+  The diagonal elements span:
+    - ∂(dc_e/dt)/∂c_e ≈ -1e8 (fast attachment loss)
+    - ∂(dc_N2/dt)/∂c_N2 ≈ -0.03 (slow flow loss)
+    - ∂(d(ne_eps)/dt)/∂c_e ≈ 1e34 (energy equation coupling)
+
+4.3 Why analytical Jacobian fails
+
+  Newton iteration solves: (I - h*J) × δy = -F(y)
+  With cond(I - h*J) ≈ 10^39, the solution δy has ~39 digits of error
+  Double precision (16 digits) → solution is pure noise
+  → Newton never converges → BDF halves step size indefinitely
+
+  FD Jacobian "works" because the FD errors happen to regularize the matrix:
+    - FD perturbation size ~ sqrt(ε_mach) × |y_i| ≈ 1e-8 × |y_i|
+    - This effectively smooths out the extreme off-diagonal entries
+    - The resulting J_FD is less accurate but better conditioned
+
+4.4 Potential solutions
+
+  a) Jacobian scaling (row/column equilibration):
+     D_r × J × D_c → D_r and D_c are diagonal scaling matrices
+     D_r[i] = 1/max(|J[i,:]|), D_c[j] = 1/max(|J[:,j]|)
+     Reduces condition number significantly
+     Used in SUNDIALS CVODE internally (SUNLinSolScaledSetup)
+     
+  b) Variable scaling:
+     Transform y_i → y_i / y_scale_i where y_scale_i is typical magnitude
+     e.g., scale c_e by 1e-16, c_N2 by 28, ne_eps by 1e10
+     Makes all scaled variables O(1) → Jacobian entries comparable
+     
+  c) Preconditioned Newton:
+     Instead of solving (I - hJ)δy = -F directly,
+     use P⁻¹(I - hJ)δy = -P⁻¹F where P is an approximate Jacobian
+     e.g., P = diagonal of (I - hJ)
+     
+  d) Semi-implicit methods:
+     Implicit only for stiff subsystem (electrons), explicit for slow (neutrals)
+     IMEX (Implicit-Explicit) Runge-Kutta methods
+     ARK methods in SUNDIALS
+
+
+5. ENERGY EQUATION BEHAVIOR IN PULSED MODE
+===========================================
+
+5.1 Current model: d(ne·ε̄)/dt = P_dep - losses
+
+  This is the same approach as GlobalKin (Stafford & Kushner 2004).
+  P_dep is externally prescribed from Lissajous/pulse waveform.
+  
+  During ON: P_dep > 0, energy balance → Te ≈ 2.5 eV, n_e determined by balance
+  During ramp-down: P_dep decreases, n_e decreases proportionally (Te stays ~constant)
+  At P_dep=0: losses drain ne_eps → Te collapses to thermal in ~1-50 ns
+  
+  This behavior is physically correct for atmospheric pressure
+  (Bieniek 2021, Lepikhin 2017).
+
+5.2 Afterglow EI rate handling
+
+  BEFORE fix: eps < eps_min_lut → k_ei = None → ALL EI rates = 0
+    → 3-body attachment (σ/N, peaks at 0.08eV thermal) was disabled
+    → Non-physical: detachment dominated, n_e recovered to 8.8e12
+
+  AFTER fix: Maxwellian fallback for eps < eps_min_lut
+    → 3-body attachment active at thermal Te
+    → Correct physics: n_e decays to ~1e8 (floor) via attachment
+    → Continuous mode unaffected (eps always in LUT range)
+
+5.3 E/N vs P_dep prescription
+
+  ZDPlasKin: E/N prescription → BOLSIG+ computes EEDF → Te is output
+  GlobalKin: P_dep prescription → energy balance → Te is output
+  Our model: P_dep prescription (same as GlobalKin)
+  
+  Both approaches are valid. P_dep allows direct use of Lissajous measurements.
+  E/N approach requires inferring E/N from P_dep iteratively (possible but adds complexity).
+  
+  The key requirement: ALL loss terms must remain active at ALL Te values.
+  This is now satisfied with the Maxwellian fallback.
+
+
+6. PERFORMANCE BENCHMARK
+=========================
+
+Single RHS call:  0.18 ms (vectorized)
+Single Jac call:  1.07 ms (analytical, verified correct)
+FD Jac:           67 × 0.18 = 12 ms (cannot be reduced by sparsity: 61 groups)
+
+Per pulse (constrained BDF, FD Jac):
+  Parametric (100µs period): ~11,000 RHS, ~160 Jac → ~44s/pulse
+  VI curve (750µs period):   ~800k RHS for 1 period → 138s/period
+
+For 340k pulses (5τ = 170s):
+  Current: 11,000 × 340k × 0.18ms = 673,000s ≈ 187 hours (RHS only)
+  Target:  <1,000 × 340k × 0.18ms = 61,200s ≈ 17 hours
+
+
+7. RECOMMENDED NEXT STEPS (PRIORITY ORDER)
+============================================
+
+7.1 Jacobian scaling (HIGH — immediate impact)
+    Scale state variables to O(1) → condition number drops from 10^75 to ~10^6
+    Enables analytical Jacobian in BDF → eliminates 67× FD overhead
+    Expected: 11,000 RHS/pulse → ~800 RHS/pulse (14× speedup)
+    Effort: ~1 day
+
+7.2 Macro-timestep with implicit scheme (HIGH — long-time enabler)
+    Replace forward Euler macro-step with implicit backward Euler
+    Solve cycle-averaged CSTR equations with Newton iteration
+    Expected: 340k pulses → ~1000 macro-steps × 5 detail cycles = 5000 cycles
+    Effort: ~2 days
+
+7.3 CVODE native with C-level callback (MEDIUM — ultimate performance)
+    Bypass sksundae Python wrapper, call CVODE via ctypes
+    Eliminates Python overhead per step
+    Combined with Jacobian scaling → <100 RHS/pulse possible
+    Effort: ~1 week
+
+7.4 Numba JIT for RHS (MEDIUM — 5-10× RHS speedup)
+    Currently RHS = 0.18ms (vectorized Python)
+    Numba @njit → ~0.01ms (compiled)
+    Multiplicative with solver improvements
+    Effort: ~1 week
+
+
+8. FILES MODIFIED (COMPLETE LIST — CURRENT SESSION)
+=====================================================
+
+species.yaml:
+  + O2(a1Dg), N2O
+
+reactions.yaml:
+  ~ R54: N2(A)+O2→N2+O2 rate reduced to 28% branching
+  ~ R55: N2(A)+O2→N2+2O → N2(A)+O2→N2O+O (57% branching)
+  ~ R165: AT1_KOSSYI → ELECTRON_IMPACT σ/N
+  + R208-R218: O2(a1Dg) chemistry + detachment reactions
+  ~ R216: "NO" quoted (YAML boolean fix)
+
+boltzmann.py:
+  + get_rate_coefficients_maxwellian() with thermal cache
+  + get_rate_coefficients_conc() fallback_maxwellian parameter
+  + _sigma_over_N_mask for 3-body attachment
+  + get_inelastic_power_deriv() for A22 Jacobian
+  + _bracket() helper, vectorized get_rate_coefficients/get_transport
+
+reactions.py:
+  + sigma_over_N attribute parsing
+  + _build_vectorized_arrays(), vectorized rate computation
+  + _build_gas_heating_arrays(), vectorized heating
+
+solver.py:
+  + Stage 2/3 Maxwellian EI rate fallback
+  + N_gas_cm3 passed to get_rate_coefficients_conc
+  + A22-based P_inel Jacobian (energy row fix)
+  + Analytical Jacobian in constrained BDF (added but doesn't converge)
+  + rhs_off(), solve_pulsed() macro-timestep infrastructure
+  + _ne_seed = 1e8
+
+config.py:
+  + flow_model parsing, power_mode='pulsed', ne_init default 1e8
+
+power.py:
+  + Parametric pulse waveform
+
+flow.py:
+  + PFR mode
+
+cross_sections/:
+  + O2_3body_attachment.txt (user added)
+  + O2_excitation_O2a1.txt (user added)
+  + O2a1Dg_attachment.txt (code generated, shifted by 0.977eV)

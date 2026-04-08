@@ -1,0 +1,57 @@
+================================================================================
+A22 Fix Results — CH4 Conversion Comparison (Updated)
+Date: 2025-03-13
+Conditions: P=5.0W, Q=0.4slm, V_reactor=250cm3
+Inlet: N2=0.70, O2=0.15, CO2=0.14, CH4=0.01
+Note: V_eff cancels analytically — results independent of V_eff choice
+================================================================================
+
+--- CH4 Conversion ---
+  T(C)   Exp(%)   Sim(%)    D(%p)
+-----------------------------------
+    30     5.26     5.10    -0.16
+   100     8.05     7.29    -0.76
+   180    14.36    12.01    -2.35
+   250    20.02    18.39    -1.63
+
+--- Plasma Parameters (steady state) ---
+  T(C)     n_e(m-3)   Te(eV)  eps(eV)    Tg(K)
+-----------------------------------------------
+    30    5.271e+13    2.238    3.358    303.0
+   100    6.919e+13    2.148    3.222    373.0
+   180    9.519e+13    1.971    2.957    453.0
+   250    1.156e+14    1.897    2.846    523.0
+  (n_e: discharge zone basis, V_eff=1.6cm3)
+
+--- CH4 Consumption Reaction Contributions (%) ---
+  Reactor-level basis (V_eff dilution applied to EI/TE/ion reactions)
+
+  T(C)    EI(%)  Arr(%)
+  ---    -----  ------
+    30    19.0    81.0
+   100    12.3    87.7
+   180     6.1    93.9
+   250     3.4    96.6
+
+Rxn    Formula                                     30C   100C   180C   250C
+--------------------------------------------------------------------------
+R23    CH4 + OH -> CH3 + H2O                      37.5   58.8   71.7   67.9
+R22    CH4 + O -> CH3 + OH                         0.0    0.7    8.0   20.4
+R1     e + CH4 -> CH3 + H + e                     12.2    7.9    3.9    2.2
+R49    CH4 + N2(a1) -> N2 + C + 2H2               11.1    7.3    3.8    2.2
+R51    CH4 + N2(a1) -> N2 + CH3 + H               11.1    7.3    3.8    2.2
+R52    CH4 + N2(a1) -> N2 + CH2 + H2              11.1    7.3    3.8    2.2
+R2     e + CH4 -> CH2 + H2 + e                     6.3    4.1    2.0    1.1
+R50    CH4 + N2(A) -> N2 + CH3 + H                 4.8    3.1    1.6    0.9
+R157   CO2+ + CH4 -> CH3+ + OH + CO                3.4    2.0    0.8    0.7
+R158   CH4+ + CH4 -> CH5+ + CH3                    1.2    0.7    0.4    0.3
+R161   N4+ + CH4 -> CH4+ + N2 + N2                 0.7    0.5    0.2    0.2
+
+--- Key Findings ---
+1. A22 (BOLSIG+ inelastic power) was missing from electron energy equation.
+   Adding A22 reduced over-prediction from 2-3x to within 2.4%p.
+2. Gas composition correction (CH4 5%->1%, CO2 5%->14%) was critical.
+3. V_eff cancels mathematically — P_dep*f = P/V_reactor regardless of V_eff.
+4. Plasma-thermal synergy: EI produces radicals (OH, O, N2*),
+   which drive Arrhenius CH4 consumption (81-97%).
+   Temperature sensitivity comes from Arrhenius pathway (R23, R22).
