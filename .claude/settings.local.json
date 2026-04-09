@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(chmod +x install.sh)",
+      "Bash(bash install.sh)",
+      "Bash(python -u -c ':*)",
+      "Read(//home/hawn93kr/work/plasma_liquid/Ver3/.venv/bin/**)",
+      "Read(//home/hawn/work/plasma_liquid/Ver3/.venv/bin/**)",
+      "Bash(python3 -u -c ':*)",
+      "Bash(Ver3/.venv/bin/python Ver4_1D/test_grid_convergence.py)",
+      "Bash(mv plasma0d_v2/scale_weights.npy plasma0d_v2/scale_weights.npy.bak)",
+      "Bash(python3:*)",
+      "Bash(conda info:*)",
+      "Bash(pip3 list:*)",
+      "Bash(/mnt/d/HH Kim/Opencode_backup/work/.venv/bin/python:*)",
+      "Bash(\"/mnt/d/HH Kim/Opencode_backup/work/.venv/bin/python\" Ver4_1D/test_grid_convergence.py)",
+      "Bash(unzip -l \"/mnt/d/HH Kim/Opencode_backup/work/Backup_plasma0d_v2.zip\")",
+      "Bash(\"/mnt/d/HH Kim/Opencode_backup/work/.venv/bin/python\" Ver4_1D/test_grid_convergence2.py)",
+      "Bash(git config:*)",
+      "Bash(sudo apt:*)",
+      "Bash(grep -v '\\\\.git$')",
+      "Bash(mkdir -p work _backup)",
+      "Bash(cp -r Ver1/plasma_liquid work/)",
+      "Bash(cp -r Ver2/plasma0d_v2 work/)",
+      "Bash(cp -r Ver1/plasma0d_v2 _backup/Ver1_plasma0d_v2)",
+      "Bash(cp -r Ver2/plasma_liquid _backup/Ver2_plasma_liquid)",
+      "Bash(cp:*)",
+      "Skill(update-config)"
+    ]
+  }
+}

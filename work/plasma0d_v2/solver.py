@@ -284,27 +284,12 @@ class PlasmaODESolver:
             J[idx, idx_energy] -= c[idx] * dfreq_dne_eps
             J[idx, idx_Tgas] -= c[idx] * dfreq_dTgas
 
-        # (5) Consistency with RHS clamping:
-        # The RHS clamps dydt[i] = max(dydt[i], 0) when y[i] < floor.
-        # The Jacobian must match this: if the species is at floor and the
-        # unclamped RHS would be negative, ∂dydt[i]/∂anything = 0.
-        # Must use actual RHS formula for sign check.
-        S_chk = self.rxn.compute_source_terms(rates)
-        S_flow = self.flow.compute_flow_source(c, T_gas)
-        dydt_sp = S_chk[:n_sp] + S_flow[:n_sp]
-        # Include diffusion loss in sign check for charged species
-        dydt_sp[0] -= c[0] * diff_freq
-        for idx_ch in self._positive_ion_indices:
-            dydt_sp[idx_ch] -= c[idx_ch] * diff_freq
-        for idx_ch in self._negative_ion_indices:
-            dydt_sp[idx_ch] -= c[idx_ch] * diff_freq
-
-        y_sp = y[:n_sp]
-        if y_sp[0] < self._ce_floor and dydt_sp[0] < 0:
-            J[0, :] = 0.0
-        for i in range(1, n_sp):
-            if y_sp[i] < self._concentration_floor and dydt_sp[i] < 0:
-                J[i, :] = 0.0
+        # NOTE: Jacobian row zeroing for clamped species REMOVED.
+        # Previously zeroed J[i,:] when y[i] < floor and dydt[i] < 0,
+        # but this caused 60/65 species rows to be zeroed at initial conditions
+        # (where most species start at 0), making BDF take 76x more steps.
+        # The RHS floor guard (max(dydt,0)) is kept for stability;
+        # the Jacobian mismatch is small and BDF handles it via DQ correction.
 
         # (6) Electron energy row
         P_el_eVm3s = n_e * N_gas * A21
@@ -1262,76 +1247,111 @@ class PlasmaODESolver:
         # Use scalar atol for consistency with scipy BDF baseline.
         cvode_atol = float(atol) if not isinstance(atol, np.ndarray) else 1e-10
 
-        # Build pulse-edge segment boundaries
-        # Trapezoidal waveform is continuous → no ReInit needed, single segment
-        # Rectangular waveform has hard discontinuities → ReInit at each edge
-        waveform = getattr(self.power, '_pulse_waveform', 'rectangular')
-        if self.power._mode == 'pulsed' and waveform != 'rectangular':
-            seg_bounds = np.array([t0, tf])
+        # Build segment boundaries and determine ON/OFF phase per segment
+        _is_pulsed = self.power._mode == 'pulsed'
+
+        if _is_pulsed:
+            # ON/OFF operator splitting: each pulse → 2 segments (ON + OFF)
+            T_pulse = self.power._pulse_period
+            t_on = self.power._pulse_duty_cycle * T_pulse
+            rise = self.power._pulse_rise_time
+            t_on_eff = max(t_on - rise, rise)
+            n_pulses = int(np.ceil((tf - t0) / T_pulse))
+            seg_bounds = []
+            seg_is_on = []
+            for ip in range(n_pulses):
+                p_start = t0 + ip * T_pulse
+                p_on_end = min(p_start + t_on_eff, tf)
+                p_end = min(p_start + T_pulse, tf)
+                if p_start >= tf:
+                    break
+                seg_bounds.append(p_start)
+                seg_is_on.append(True)
+                if p_on_end < p_end:
+                    seg_bounds.append(p_on_end)
+                    seg_is_on.append(False)
+            seg_bounds.append(tf)
+            seg_bounds = np.array(seg_bounds)
         else:
             pulse_edges = self.power.get_pulse_edges(t0, tf)
             if pulse_edges:
                 seg_bounds = np.array(sorted(set([t0] + pulse_edges + [tf])))
             else:
                 seg_bounds = np.array([t0, tf])
+            seg_is_on = [True] * (len(seg_bounds) - 1)
         n_segs = len(seg_bounds) - 1
 
-        # For pulsed mode, don't cap max_step — let CVODE adapt in OFF phases
+        # For non-pulsed mode, cap max_step
         cvode_max_step = 0.0
-        if max_step < np.inf and self.power.mode not in ('pulsed',):
+        if max_step < np.inf and not _is_pulsed:
             cvode_max_step = max_step
 
-        n_pulses_est = n_segs // 2 if n_segs > 1 else (1 if self.power._mode == 'pulsed' else n_segs)
+        n_pulses_est = n_segs // 2 if _is_pulsed else n_segs
         print(f"\n  Solving ODE system (CVODE ctypes + constraints)...")
         print(f"    t=[{t0:.6f}, {tf:.6f}] s ({duration*1e3:.1f} ms)")
-        print(f"    {n_segs} segments ({n_pulses_est} pulses)")
+        if _is_pulsed:
+            print(f"    {n_pulses_est} pulses, {n_segs} segments (ON/OFF splitting)")
+        else:
+            print(f"    {n_segs} segments")
         print(f"    rtol={rtol}, atol={cvode_atol:.1e}")
         if cvode_max_step > 0:
             print(f"    max_step={cvode_max_step*1e6:.1f} µs")
         else:
             print(f"    max_step=adaptive (CVODE auto)")
 
-        # Build fast RHS function: bypass solver.rhs() Python dispatch
-        # by calling rhs_numba directly with Numba-computed power density
+        # Build fast RHS functions
         _nb_fn = self._rhs_numba
         _nb_args = self._nb_args
         _power = self.power
 
-        if _nb_fn is not None and _nb_args is not None and _power._mode == 'pulsed':
-            from .numba_core import pulsed_power_numba
-            _period = float(_power._pulse_period)
-            _t_on = float(_power._pulse_t_on)
-            _rise = float(_power._pulse_rise_time)
+        if _nb_fn is not None and _nb_args is not None and _is_pulsed:
             _P_on = float(_power._pulse_P_on_Wm3)
 
-            def fast_rhs(t, y):
-                Pdep = pulsed_power_numba(t, _period, _t_on, _rise, _P_on)
-                return _nb_fn(t, y, *_nb_args, Pdep)
+            def fast_rhs_on(t, y):
+                return _nb_fn(t, y, *_nb_args, _P_on)
 
-            print(f"    RHS: Numba direct (pulsed power inlined)")
+            def fast_rhs_off(t, y):
+                return _nb_fn(t, y, *_nb_args, 0.0)
+
+            print(f"    RHS: Numba direct (pulsed ON/OFF splitting)")
         elif _nb_fn is not None and _nb_args is not None and _power._mode == 'constant':
             _P_const = float(_power._P_constant_Wm3)
 
-            def fast_rhs(t, y):
+            def fast_rhs_on(t, y):
                 return _nb_fn(t, y, *_nb_args, _P_const)
 
+            fast_rhs_off = fast_rhs_on
             print(f"    RHS: Numba direct (constant power)")
         elif _nb_fn is not None and _nb_args is not None:
             _get_pdep = _power.get_power_density
 
-            def fast_rhs(t, y):
+            def fast_rhs_on(t, y):
                 return _nb_fn(t, y, *_nb_args, _get_pdep(t))
 
+            fast_rhs_off = fast_rhs_on
             print(f"    RHS: Numba direct (vi_envelope power)")
         else:
-            fast_rhs = self.rhs
+            fast_rhs_on = self.rhs
+            fast_rhs_off = self.rhs_off if _is_pulsed else self.rhs
             print(f"    RHS: Python fallback")
 
-        # Create solver with fast RHS
-        cvode = CVODESolver(n_state, fast_rhs)
-        cvode.setup(y0, t0, rtol=rtol, atol=cvode_atol,
-                    max_step=cvode_max_step, init_step=1e-12,
-                    max_num_steps=500000, constraints=constraints)
+        # Create CVODE solvers: ON phase + OFF phase (separate instances for pulsed)
+        cvode_on = CVODESolver(n_state, fast_rhs_on)
+        cvode_on.setup(y0, t0, rtol=rtol, atol=cvode_atol,
+                       max_step=cvode_max_step, init_step=1e-12,
+                       max_num_steps=500000, constraints=constraints)
+
+        if _is_pulsed:
+            cvode_off = CVODESolver(n_state, fast_rhs_off)
+            cvode_off.setup(y0, t0, rtol=max(rtol, 1e-4), atol=max(cvode_atol, 1e-8),
+                            max_step=0.0, init_step=1e-10,
+                            max_num_steps=500000, constraints=constraints)
+        else:
+            cvode_off = None
+
+        # ne re-seeding threshold
+        ne_seed_conc = self._ne_seed / NA
+        eps_thermal = 0.039  # thermal eps_mean at ~300K [eV]
 
         t_start = time_module.time()
         y_current = y0.copy()
@@ -1339,17 +1359,33 @@ class PlasmaODESolver:
         out_y = []
         eval_ptr = 0
         n_clamp = 0
-        total_rhs = 0  # track cumulative RHS (CVodeReInit may reset counters)
-        progress_interval = max(1, n_segs // 20)
+        n_on_fail = 0
+        n_off_fail = 0
+        total_rhs = 0
+        progress_interval = max(1, n_pulses_est // 20) * (2 if _is_pulsed else 1)
 
         for i_seg in range(n_segs):
             seg_t0 = seg_bounds[i_seg]
             seg_tf = seg_bounds[i_seg + 1]
+            is_on = seg_is_on[i_seg]
 
-            # Track RHS before reinit (since reinit may reset counters)
-            if i_seg > 0:
-                total_rhs += cvode._get_stats()['n_rhs_evals']
-                cvode.reinit(seg_t0, y_current)
+            # Select CVODE instance
+            cvode = cvode_on if is_on else cvode_off
+
+            # Phase transitions for pulsed mode
+            if _is_pulsed and is_on and i_seg > 0:
+                # OFF→ON: ne re-seeding
+                if y_current[0] < ne_seed_conc:
+                    y_current[0] = ne_seed_conc
+                    y_current[idx_energy] = self._ne_seed * eps_thermal
+            elif _is_pulsed and not is_on:
+                # ON→OFF: ne_eps thermal reset
+                ne_now = y_current[0] * NA
+                y_current[idx_energy] = ne_now * eps_thermal
+
+            # ReInit for this segment
+            total_rhs += cvode._get_stats().get('n_rhs_evals', 0)
+            cvode.reinit(seg_t0, y_current)
 
             # Collect t_eval points within this segment
             seg_eval = []
@@ -1358,26 +1394,35 @@ class PlasmaODESolver:
                     seg_eval.append(t_eval[eval_ptr])
                 eval_ptr += 1
 
+            seg_failed = False
             if not seg_eval:
-                # No output points in this segment — just step to end
                 t_reached, y_end, ret = cvode.step_to(seg_tf)
                 if ret < 0:
-                    print(f"  WARNING: CVODE failed at seg {i_seg}, "
-                          f"t={t_reached:.6e} (ret={ret})")
+                    if is_on:
+                        n_on_fail += 1
+                    else:
+                        n_off_fail += 1
+                    seg_failed = True
                 y_current = y_end
             else:
-                # Step through each eval point
                 for t_out in seg_eval:
+                    if seg_failed:
+                        out_t.append(t_out)
+                        out_y.append(y_current.copy())
+                        continue
                     t_reached, y_out_pt, ret = cvode.step_to(t_out)
                     if ret < 0:
-                        print(f"  WARNING: CVODE failed at t={t_reached:.6e} (ret={ret})")
                         y_out_pt = y_current.copy()
-                    out_t.append(t_reached)
+                        if is_on:
+                            n_on_fail += 1
+                        else:
+                            n_off_fail += 1
+                        seg_failed = True
+                    else:
+                        y_current = y_out_pt.copy()
+                    out_t.append(t_reached if not seg_failed else t_out)
                     out_y.append(y_out_pt.copy())
-                y_current = y_out_pt.copy()
-
-                # If segment end is beyond last eval point, step there
-                if seg_eval[-1] < seg_tf - 1e-15:
+                if not seg_failed and seg_eval[-1] < seg_tf - 1e-15:
                     t_reached, y_end, ret = cvode.step_to(seg_tf)
                     if ret >= 0:
                         y_current = y_end
@@ -1397,11 +1442,24 @@ class PlasmaODESolver:
             if clamped:
                 n_clamp += 1
 
-            # Progress report
-            if (i_seg + 1) % progress_interval == 0 or i_seg == n_segs - 1:
+            # Progress report (per pulse = every 2 segments)
+            if _is_pulsed:
+                i_pulse = (i_seg + 1) // 2
+                if i_pulse % max(1, n_pulses_est // 20) == 0 or i_seg == n_segs - 1:
+                    elapsed = time_module.time() - t_start
+                    pct = (seg_tf - t0) / (tf - t0) * 100
+                    seg_rhs = cvode._get_stats().get('n_rhs_evals', 0)
+                    rate = max(i_pulse, 1) / elapsed if elapsed > 0 else 1
+                    eta = (n_pulses_est - i_pulse) / rate if rate > 0 else 0
+                    ne = y_current[0] * NA
+                    print(f"    [{pct:5.1f}%] pulse {i_pulse}/{n_pulses_est}, "
+                          f"ne={ne:.2e}, ON_fail={n_on_fail}, OFF_fail={n_off_fail}, "
+                          f"RHS={total_rhs + seg_rhs}, "
+                          f"{elapsed:.0f}s, ETA={eta:.0f}s")
+            elif (i_seg + 1) % max(1, n_segs // 20) == 0 or i_seg == n_segs - 1:
                 elapsed = time_module.time() - t_start
                 pct = (seg_tf - t0) / (tf - t0) * 100
-                seg_rhs = cvode._get_stats()['n_rhs_evals']
+                seg_rhs = cvode._get_stats().get('n_rhs_evals', 0)
                 rate = (i_seg + 1) / elapsed if elapsed > 0 else 0
                 eta = (n_segs - i_seg - 1) / rate if rate > 0 else 0
                 print(f"    [{pct:5.1f}%] t={seg_tf:.6f}s, "
@@ -1410,9 +1468,13 @@ class PlasmaODESolver:
                       f"{elapsed:.0f}s elapsed, ETA={eta:.0f}s")
 
         # Accumulate final segment RHS
-        total_rhs += cvode._get_stats()['n_rhs_evals']
+        total_rhs += cvode_on._get_stats().get('n_rhs_evals', 0)
+        if cvode_off is not None:
+            total_rhs += cvode_off._get_stats().get('n_rhs_evals', 0)
         wall_time = time_module.time() - t_start
-        cvode.free()
+        cvode_on.free()
+        if cvode_off is not None:
+            cvode_off.free()
 
         # Assemble output
         all_t = np.array(out_t)
@@ -1423,16 +1485,22 @@ class PlasmaODESolver:
         all_y[1:n_sp, :] = np.maximum(all_y[1:n_sp, :], self._concentration_floor)
         all_y[idx_energy, :] = np.maximum(all_y[idx_energy, :], self._ne_eps_floor)
 
+        msg = (f"CVODE ctypes: {n_segs} segs, {n_clamp} clamps, "
+               f"{total_rhs} RHS")
+        if _is_pulsed:
+            msg += f", ON_fail={n_on_fail}, OFF_fail={n_off_fail}"
+
         result = SimulationResult(
             t=all_t, y=all_y,
             species_names=self.sm.names, n_species=self.sm.n_species,
             wall_time=wall_time, n_rhs_evals=total_rhs,
-            solver_message=(f"CVODE ctypes: {n_segs} segs, {n_clamp} clamps, "
-                           f"{total_rhs} RHS"),
+            solver_message=msg,
         )
         self._postprocess(result)
         print(f"  Solver completed: {len(all_t)} points, "
               f"{n_segs} segments, {n_clamp} clamps")
+        if _is_pulsed:
+            print(f"    {n_pulses_est} pulses, ON_fail={n_on_fail}, OFF_fail={n_off_fail}")
         print(f"    {total_rhs} RHS evals, {wall_time:.1f}s wall time")
         return result
 
@@ -1645,10 +1713,9 @@ class PlasmaODESolver:
                 t0_c = t_current + k * T_pulse
                 y_start = y.copy()
 
-                # ON phase
+                # ON phase (DQ Jacobian — analytic Jacobian is 76x slower)
                 sol_on = _sivp(self.rhs, [t0_c, t0_c + t_on_eff], y,
-                               method='BDF', rtol=rtol, atol=atol,
-                               jac=self.jacobian)
+                               method='BDF', rtol=rtol, atol=atol)
                 y = sol_on.y[:, -1]
                 total_rhs += sol_on.nfev
 

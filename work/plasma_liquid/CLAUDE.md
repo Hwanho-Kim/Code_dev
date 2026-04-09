@@ -209,18 +209,23 @@ Custom backward Euler + Newton + Gummel solver with Numba JIT.
 - 종별 α_b 적용 (H₂O₂=0.1, O₃=0.01~0.1, NO/HNO₂=0.01~0.1)
 - Monolithic BDF saline 실행 (QSSA OFF, Cl stiffness를 BDF가 직접 처리)
 
-## Pending Tasks — 이번 주 (2026-04-01 갱신)
-1. ~~**측정종만 사용 forward simulation**~~ ✅ DIW+Saline 모두 완료
-2. ~~**Saline solver fix — QSSA 적용**~~ ✅ K_CAP 버그 수정 + 2-pass iteration → 질량 보존 완벽 (-12µM)
-3. ~~**NO3⁻ 과다 진단**~~ ✅ N2O5 99.3% 지배. liquid-side limited. δ_liq=1mm → 121µM (실험 근접)
-4. ~~**계면 BC 문헌 비교**~~ ✅ Film+α_b 모델 유효. α_b≈0.01~0.05에서 DIW 실험 교차
-5. ~~**O3/라디컬 농도 문헌 검증**~~ ✅ Liu 2016 + Heirman 2025 대비 물리적으로 정확 확인
-6. ~~**Monolithic BDF 구현**~~ ✅ Strang→monolithic 전환, dt 수렴 확인 (5% 변동)
-7. ~~**Fig 2 rate budget 불일치 디버깅**~~ ✅ 근본 원인: atol=1e-8 → 1e-12로 해결. Simpson+dense_output+단일BDF. H₂O₂ ratio 0.988, 속도 1.7min
-8. ~~**Fig 1~5 생성/갱신**~~ ✅ monolithic BDF + atol=1e-12 + dt_enforce=None으로 전 Figure 재생성 완료 (2026-04-01)
-9. **Monolithic BDF saline 실행** — run_saline_1d.py (Film+α_b=0.03, QSSA OFF)
-10. **종별 α_b 구현** — H₂O₂/O₃/NO/HNO₂ 각각 다른 α_b 적용
-11. **Saline with fitted parameters** — HONO/HONO2/H2O2 가스상 포함 시 pH/NO3 개선 확인
+## Pending Tasks — (2026-04-09 갱신)
+1. ~~**측정종만 사용 forward simulation**~~ ✅
+2. ~~**Saline solver fix — QSSA 적용**~~ ✅
+3. ~~**NO3⁻ 과다 진단**~~ ✅
+4. ~~**계면 BC 문헌 비교**~~ ✅
+5. ~~**O3/라디컬 농도 문헌 검증**~~ ✅
+6. ~~**Monolithic BDF 구현**~~ ✅
+7. ~~**Fig 2 rate budget 불일치 디버깅**~~ ✅
+8. ~~**Fig 1~5 생성/갱신**~~ ✅
+9. ~~**BC 이중 계산 문제 규명 + gas_alpha 구현**~~ ✅ (2026-04-09)
+10. ~~**종별 α_b 구현**~~ ✅ config_1d.py `alpha_b_species` + pde_solver.py 종별 적용. gas_alpha BC에서도 자동 적용됨. (2026-04-09)
+11. **δ_gas 결정** — 현재 10mm (gas gap 전체, 과대). 실험 조건(surface DBD)에서 적절한 값 결정 필요. ~1-3mm 추정.
+12. **α_b 민감도 재검증 (gas_alpha)** — gas_alpha + 종별 α_b에서 유의미한 영향 조건 확인. δ_gas 의존.
+13. **gas_alpha로 전체 Figure 재생성** — BC 전환 후 Fig 1~5 갱신
+14. **O₃ oscillation (t≈110s)** — BDF가 radical QSS 미해석. QSSA 시도 실패(radical chain 파괴). 미해결.
+15. **Monolithic BDF saline 실행** — gas_alpha BC 적용
+16. **Saline with fitted parameters** — HONO/HONO2/H2O2 가스상 포함
 
 ## Key Decisions (settled — 재논의 불필요)
 - Poisson OFF: Debye(0.8nm saline, 30nm DI) << grid(5um). 확정.
@@ -238,7 +243,8 @@ Custom backward Euler + Newton + Gummel solver with Numba JIT.
 - Rate capping 완전 제거 확정: 문헌 근거 없음 (BDF implicit solver에 불필요). 정량적 악화는 operator splitting artifact — BC/mass transfer 개선 시 해결 예정 (2026-03-25)
 - Cl 보존 projection 채택: Sturm & Silva 2024 (ACS EST Air) 기반. BDF 후 per-cell Cl 원자 보존 → Cl⁻에 투영 (2026-03-25)
 - Mass transfer BC → chemistry step 이동 확정: 확산 step에서 BC 제거, surface cell BDF RHS에 포함. dt 수렴 문제 해결 (2026-03-25)
-- Film+α_b BC 채택: Heirman 2025 Eq.7 기반. k_mt = α_b × D_l / δ_liq. α_b≈0.01~0.05 범위에서 DIW NO3⁻ 실험값 재현 (2026-03-26)
+- ~~Film+α_b BC 채택~~: **폐기 (2026-04-09)**. D_l/δ_liq가 PDE의 액상 확산과 이중 계산. Schwartz 1986, Zheng/Bruggeman 2020 근거.
+- **gas_alpha BC 채택 (2026-04-09)**: 기상+계면 저항만. 1/k_gi = δ_gas/D_g + 4/(α_b·v̄), k_mt = k_gi/H_cc. 액상 저항은 PDE가 처리. notes/bc_formulation.md 참조.
 - Monolithic BDF 채택 (Strang splitting 대체): 확산+반응+질량전달을 단일 BDF로 동시 implicit 처리. Strang은 `_use_strang=True`로 비교 가능하게 유지. QSSA는 monolithic에서 OFF (BDF가 Cl stiffness 직접 처리). (2026-03-30)
 - DIW에서 dt_enforce=None (단일 BDF) 권장: macro-step restart 불필요. 3× 가속, pH 차이 무시 가능(0.007). Saline은 Cl conservation 보정 때문에 dt_enforce=60s 유지. (2026-03-31)
 - ODE tolerances: atol=1e-12, rtol=1e-6 확정. 이전 atol=1e-8은 trace species(H₂O₂ ~1e-10M)에 대한 오차 제어 불능 → rate budget 65× 개선, 속도 2× 향상. atol=1e-14 수렴 확인. (2026-03-31)
@@ -267,6 +273,51 @@ Custom backward Euler + Newton + Gummel solver with Numba JIT.
 - 2026-03-30: **Fig 1/3/4 생성 완료** — collect_monolithic_data.py로 데이터 수집 (5 BC + 3 α_b + mass balance, ~60min). plot_bc_results.py 갱신 후 생성. Monolithic BDF 결과: Two-film pH=2.43/NO₃⁻=3748µM → Film+α_b=0.01 pH=4.27/NO₃⁻=53µM. α_b sensitivity: 0.01~0.05에서 NO₃⁻ 53~189µM. Mass balance: NO₃⁻ R98=99.6%, O₃ MT=100% source, H₂O₂ R45=88.5%.
 - 2026-03-31: **Fig 2 rate budget 완전 해결** — (1) dt_enforce=None(단일 BDF), 3× 가속. (2) Simpson 3-point 적분(dense_output). (3) **근본 원인: atol=1e-8 → H₂O₂(1e-10M)보다 100× 커서 BDF 오차 제어 불능**. atol=1e-12, rtol=1e-6으로 변경 → H₂O₂ ratio 2.569→0.988(65× 개선), 속도 10.5→1.7min. config_1d.py 기본값 영구 변경.
 - 2026-04-01: **Fig 2 개선** — net 선을 Σrate으로 교체, DT_SNAPSHOT=2s, 시간기반 smoothing(60s/120s). O₃ 2분 급변은 radical chain ignition(물리적). **Fig 5 공간분포** 추가. **Fig 1-2 MT flux 시계열** 생성(Dirichlet 제외). **Fig 1/3/4 갱신** — collect_monolithic_data.py 재실행(dt_enforce=None, atol=1e-12) 후 plot_bc_results.py 데이터+이미지 갱신 완료.
+- 2026-04-08~09: **물리적/수치적 문제점 분석 + Figure 재생성**
+  - Ver1 vs Ver2 비교: Ver1(선형보간+volume-weighted avg) vs Ver2(계단식+산술평균). Ver1이 수치적으로 정확. 동일 조건(Film+αb=0.03) 결과: Ver1 NO₃⁻=38.4µM vs Ver2 134.1µM — C_eq 보간 방식 차이.
+  - **작업 폴더 이동**: Ver1/Ver2는 backup, `work/work/` 기준으로 전환
+  - **통합 Figure 생성 스크립트**: `Figures/gen_all_figures.py` 신규 작성. 6개 unique 시뮬레이션 → Fig 1(BC비교), 1b(MT flux), 2(rate evolution), 3(radicals), 4(mass balance), 5(spatial) 전부 생성. npz 캐시 지원, `--fig`, `--rerun` 옵션.
+  - **Fig 2 smoothing 개선**: (1) `np.convolve(mode='same')` edge artifact → edge-aware MA로 교체. (2) BDF dense output spike → median filter. (3) net dC/dt를 Σrate → ΔC/Δt(finite-diff ground truth)로 교체. (4) MA 제거, median despike만 적용 (물리적 transient 보존).
+  - **atol 1e-12 → 1e-15**: 중간 시간대 R98 spike 해결. OH oscillation은 미해결 (atol과 무관).
+  - **OH oscillation 근본 원인 규명**: OH 농도 ~1e-12M, τ_OH ~ms. BDF step ~0.03-1s. atol을 줄여도 해결 안 됨 — BDF가 step 내 fast radical dynamics를 표현 못 함. QSSA 전환 필요.
+  - **Radical ignition trigger 규명**: t≈110s에서 O₃ autocatalytic chain이 아니라 **가스상 NO₂ 첫 출현(t≈106-108s)**이 trigger. NO₂ 유입 → R15_rev(NO₂+OH→ONOOH, k=4.5e9)가 기존 OH sink의 4.4배 → OH QSS 붕괴 → radical chain 재구성.
+  - **BDF step 분석**: 12,387 steps (median=31ms). t=110-130s에서 dt=0 (step rejection) 수십 회 — radical ignition transition에서 BDF 극심한 stiffness.
+  - **시뮬레이션 효율화**: 11 runs → 6 unique (bc_type, alpha_b) runs. 불필요한 dense_dt 분기 제거, 모든 run에 2s t_eval 통일.
+- 2026-04-09: **Grid convergence 완전 확인** — dz_min(1~20µm) 및 stretch_ratio(1.02~1.12) 변화에 bulk/surface 결과 수렴. Step log pH의 `np.mean` (cell-count avg)이 grid 의존적이나 물리량(`pH_avg`, volume-weighted)은 무관.
+- 2026-04-09: **종별 α_b 구현+테스트** — config_1d.py에 `alpha_b_species` dict 추가 (N₂O₅=0.03, O₃=0.05, H₂O₂=0.1, NO=0.001 등). O₃ +48% 외 pH/NO₃⁻ 변화 없음. H₂O₂는 가스상=0이라 α_b 무관.
+- 2026-04-09: **Gas onset noise filter** — `_filter_onset(n_consecutive=5)` 구현. NO₂ t=4-10s spike 제거. 모든 가스종에 자동 적용.
+- 2026-04-09: **atol 분석** — O₃⁻(2.1e-16), HO₃(5.7e-15), O⁻(8.2e-16), N₂O₅(aq)(6.3e-18) 등이 atol=1e-15 이하. R98(N₂O₅+H₂O) rate 오차가 NO₃⁻ budget의 10000%. 종별 atol 테스트: baseline과 동일 결과, 30% 느림.
+- 2026-04-09: **QSSA 시도+실패** — O₃⁻/HO₃/O⁻ analytical steady-state + relaxation. Radical chain 파괴 (O₃ 100배 축적, OH 80배 감소). 상호의존성+PDE coupling으로 단순 QSSA 부적합.
+- 2026-04-09: **O₃ oscillation 진단** — t=114-145s에서 surface O₃ 감쇠진동 (주기~6s). 0.1s 해상도로 확인. BDF가 radical QSS(ns~µs)를 미해석하여 발생하는 수치적 artifact. 물리적으로는 smooth 전이여야 함.
+- 2026-04-09: **BC 이중 계산 문제 규명** — film_alpha(α_b×D_l/δ_liq)가 PDE의 액상 확산과 중복. Schwartz 1986 저항 모델, Zheng/Bruggeman 2020, Liu 2021 근거. notes/bc_formulation.md 작성.
+- 2026-04-09: **gas_alpha BC 구현** — 1/k_gi = δ_gas/D_g + 4/(α_b·v̄), k_mt = k_gi/H_cc. 초기 단위 오류(H_cp vs H_cc) 수정. 테스트: δ_gas=10mm에서 α_b 무감(gas-side 지배). δ_gas=1mm에서 NO₃⁻=987µM(16배 과다). δ_gas 결정이 핵심 과제.
+- 2026-04-09: **gas_alpha BC 채택 결정** — 물리적으로 올바른 BC. δ_gas 결정 및 α_b 민감도 재검증은 pending.
+
+- 2026-04-09: **Radical chain ignition 심층 분석 + reference 조건 확정**
+  - **가스 데이터 전처리**: below-LOD 보간 6가지 비교 (Raw, LOD/2, Linear, Exp, Sigmoid, SG). NO₂/NO₃에 intermittent zeros. stable start 규칙(5연속 nonzero) 적용. **Linear interp 채택.**
+  - **OH oscillation 검증 (3 tests)**: (1) max_step=0.01s → oscillation 동일 (2) 0D 2cells → 동일 (3) dt=0.1s → aliasing 아님. **결론: 물리적 damped oscillation (BDF artifact 아님).**
+  - **atol 확정: 1e-15** — trace radical(OH ~1e-12M)의 정확한 오차 제어. 비용 +20%. 1e-12에서 R98 spike 발생.
+  - **Reference 조건 확정**: atol=1e-15, rtol=1e-6, max_step=1.0s, dt_snap=2.0s, linear interp 전처리, Film+αb=0.03, dz_min=5µm, stretch=1.12.
+  - **Fig 1b 수정**: HNO₃→NO₃으로 변경.
+  - **NO₂ trigger 가설 기각**: OH budget에서 R15_rev(NO₂+OH) <0.1%. 가스 전처리 후에도 transition 시점 불변.
+  - **전체 radical 동시 전환 확인**: t≈2.1min에 OH/HO₂/O₂⁻/O₃⁻/HO₃/ONOOH/NO₃(aq) 전부 10배 급증.
+  - **Bifurcation 분석 (Step 1~3)**:
+    - Step 1 (slow driver): O₃ 축적, pH 감소, NO₂/NO₃ gas 출현 확인
+    - Step 2 (Jacobian): radical subsystem 고유값 항상 음수 → bifurcation 아님
+    - Step 3 (perturbation): **결정적 결과**:
+      - O₃ x2/x0.5/=0: **효과 없음** (baseline과 동일) → O₃는 trigger 아님
+      - **NO₃ gas OFF: OH=0.3pM, 전환 완전 억제** → **NO₃ radical MT가 필수 조건**
+      - NO₂ gas OFF: OH 2.66배 증가, 전환 앞당겨짐 → NO₂는 radical 억제 역할
+      - O₃ gas OFF: OH 3.3배 증가 → O₃ 공급 중단 시 radical 더 활성화
+    - **이전 "O₃가 유일한 trigger" 결론은 철회**. perturbation 결과를 확증편향으로 잘못 해석했음.
+  - **NO₃ radical 경로**: gas NO₃(H=44) → liq NO₃ radical → R93(+OH⁻→OH, 45-59%) + R102(+NO₂→N₂O₅, 32-46%). OH budget 기여는 <5%이지만, NO₃ OFF 시 전환 자체가 억제됨 → 직접 OH 생산이 아닌 chain 활성화 촉매 역할 가능성.
+  - **전수조사**: 101 reactions × 25 species × 121 snapshots (0~4min). full_budget.csv 저장.
+  - **미해결**: NO₃가 OH budget에서 <5%인데 왜 전환의 필수 조건인지 — 직접 OH 생산이 아닌 간접 경로(chain 활성화) 규명 필요.
+
+### PENDING (2026-04-09 기준)
+1. **NO₃ radical의 chain 활성화 메커니즘 규명** — R93 외 간접 경로, NO₃→NO₂→ONOOH→OH 등
+2. **Monolithic BDF saline 실행**
+3. **종별 α_b 구현**
 
 ---
 <!-- UPDATE RULE:

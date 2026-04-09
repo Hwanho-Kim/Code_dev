@@ -45,6 +45,9 @@ BC_CASES = [
     ('Film+αb=0.05',  'film_alpha', 0.05),
     ('Film+αb=0.03',  'film_alpha', 0.03),
     ('Film+αb=0.01',  'film_alpha', 0.01),
+    ('Gas+αb=0.05',   'gas_alpha',  0.05),
+    ('Gas+αb=0.03',   'gas_alpha',  0.03),
+    ('Gas+αb=0.01',   'gas_alpha',  0.01),
 ]
 
 DT_SNAPSHOT = 10.0  # seconds
@@ -177,9 +180,11 @@ def plot_mt_figure(all_results):
     fig, axes = plt.subplots(2, n_species, figsize=(4.5 * n_species, 8),
                              sharex=True)
 
-    # Color cycle for BC types
-    bc_colors = ['#d62728', '#ff7f0e', '#2ca02c', '#1f77b4', '#9467bd', '#8c564b']
-    bc_styles = ['-', '--', '-.', '-', '-', '-']
+    # Color cycle for BC types (6 original + 3 gas_alpha)
+    bc_colors = ['#d62728', '#ff7f0e', '#2ca02c', '#1f77b4', '#9467bd', '#8c564b',
+                 '#1f77b4', '#9467bd', '#8c564b']
+    bc_styles = ['-', '--', '-.', '-', '-', '-',
+                 ':', ':', ':']
 
     for col, (gas_name, sp_label) in enumerate(MT_SPECIES):
         ax_inst = axes[0, col]

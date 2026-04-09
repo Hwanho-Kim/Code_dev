@@ -140,6 +140,22 @@ class MassTransfer1DConfig:
     bc_type: str = 'two_film'
     alpha_b: float = 1.0           # mass accommodation coefficient (film_alpha only)
 
+    # Species-specific α_b (overrides alpha_b when bc_type='film_alpha').
+    # Keys must match GAS_TO_AQUEOUS_MAP gas-side names.
+    # Sources: Kolb 2010, Davidovits 2006, IUPAC (Ammann 2013), Graves 2012,
+    #          Heirman 2012, Bruggeman 2016.  See notes/alpha_b_literature.md.
+    alpha_b_species: Dict[str, float] = field(default_factory=lambda: {
+        'N2O5':  0.03,   # Kolb 2010
+        'O3':    0.05,   # Davidovits 2006
+        'H2O2':  0.1,    # IUPAC / Kolb 2010
+        'NO':    0.001,  # Graves 2012 (poorly constrained)
+        'NO2':   0.03,   # Bruggeman 2016
+        'NO3':   0.03,   # assumed same as NO2
+        'N2O4':  0.03,   # assumed same as NO2
+        'HONO':  0.05,   # IUPAC / Davidovits 2006
+        'HONO2': 0.07,   # Davidovits 2006 / JPL
+    })
+
 
 # =============================================================================
 # 1D Grid Configuration
@@ -297,7 +313,7 @@ class ODESolverConfig:
     """ODE solver configuration for 1D PDE system."""
     method: str = 'BDF'          # Primary solver (stiff system)
     rtol: float = 1e-6           # Tight enough for trace species (O₃ ~nM, H₂O₂ ~0.1nM)
-    atol: float = 1e-12          # Must be << min(trace conc) for smooth rate budget
+    atol: float = 1e-15          # Must be << min(trace radical conc); OH/HO2 ~1e-12 M
     max_step: float = 1.0        # Max time step [s] (for time-varying BCs)
     max_rate: float = 1e8        # Maximum reaction rate clamp
     max_concentration: float = 1.0  # Maximum concentration [mol/L]

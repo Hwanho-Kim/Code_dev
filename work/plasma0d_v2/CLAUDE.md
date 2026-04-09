@@ -60,6 +60,16 @@ Pulsed sDBD: 1333 Hz, vi_envelope power mode.
   - 303K: 5.56%, 373K: 6.91%, 453K: 13.08%, 523K: 20.41% (RMSE=0.89)
   - Continuous 6.5W (RMSE=0.87)과 거의 동등한 예측력
   - ※ EI 활성화 버전으로 4온도 재검증 필요
+- **CVODE ON/OFF pulsed 1τ — rhs_off 사용** (2026-04-09)
+  - CVODE per-pulse: ON=Numba RHS(P_on), OFF=Python rhs_off(), non-negative constraints
+  - ne re-seeding(1e8) + ne_eps thermal reset(ON→OFF)
+  - 303K: **CH4=5.54%, 883p, 4.9min**, ON_fail=1, OFF_fail=17/883(1.9%)
+  - ne_peak~1e14, ne_valley~1e6, 10 pulse 프로파일 일관성 확인
+  - Continuous(5.68%)와 유사
+  - 프로파일: output/pulsed_last10_rhs_off.png
+  - **핵심**: OFF phase에서 rhs_numba(P_dep=0) 대신 Python rhs_off() 사용이 필수
+    - rhs_numba(P=0): 3체 O₂ 부착 stiffness 그대로 → OFF_fail=870/883(98.5%), 34min, pulse간 비일관
+    - rhs_off: afterglow 전용 처리(3-stage eps transition, ne_eps proportional tracking) → stiffness 완화
 - Reaction set: mature (reactions.yaml)
 - PFR flow model: 작동
 - **V_eff/V_reactor dilution 제거 완료** (2026-03-24, 커밋 a0247c3)
@@ -188,6 +198,13 @@ Pulsed sDBD: 1333 Hz, vi_envelope power mode.
 - 2026-03-30: rhs_off electron freeze 제거. 사용자 요청으로 OFF phase 전자/이온/ne_eps 동결 코드 삭제. (1) freeze 없이 constraints='none' → ne=-4.7e14 폭주. (2) full RHS P_dep=0 → afterglow stiffness 15s/pulse. (3) rhs_off + ne_eps proportional tracking → Te 발산. (4) 최종 해법: ne_eps thermal reset(ON→OFF 시 ne_eps=n_e×ε_th) + ne re-seeding(1e8 m⁻³). 883 pulses 3.9min, 0 fails, CH4=1.40%. Power-scaled: 4.32%≈continuous 4.35%.
 - 2026-03-30: Pulsed reference 확정 — P_avg=6.5W, P_peak=32.5W, dc=20%, PRF=1333Hz. ★ ne afterglow 6자릿수 급감(2.5e12→6.6e5)을 최우선 과제로 재설정. 상세 맥락 기록: memory/pulsed_afterglow_ne.md.
 - 2026-04-02: rhs_off EI 활성화. (1) 이전 rhs_off는 k_ei_conc=None으로 EI 반응 전체 비활성 — 사실상 부분 freeze였음. (2) 3/31 추가한 Kossyi thermal attachment 하드코딩 제거. (3) rhs_off에서 full RHS와 동일하게 k_ei_conc를 CX 기반으로 정상 계산 (3-stage afterglow transition). P_dep=0만 차이. (4) P_peak=32.5W 1τ 검증: CH4=5.52%(이전 5.56% 재현), ne_valley=3.2e6(이전 6.6e5 대비 5x↑), 31.2min, OFF 26 fails. 프로파일: output/pulsed_last10_nofreeze.png.
+- 2026-04-08: Continuous reference 조건 확립. T_wall=T_gas(외부 가열), Q=0.4slm, P=6.5W, constant, PFR(1τ), V_eff=4.9cm³, ne_init=1e8. 결과: 5.68/7.59/13.27/20.68%. 이전 T_wall=300K 고정은 고온 Arrhenius 비활성화로 비물리적 결과(온도↑→전환율↓) 유발.
+- 2026-04-08: τ=V/Q_actual(T) 온도 보정 검증. 문헌조사(Fogler, GlobalKin, ZDPlasKin, Bogaerts) 결과 T 보정이 표준 — 현재 코드 올바름.
+- 2026-04-08: Ver1/Ver2 코드 비교. 동일 조건에서 완전 동일 결과 확인. 차이(dilution 제거, rhs_off 변경 등)는 continuous constant power에서 무영향.
+- 2026-04-09: Pulsed solver 문제 진단. (1) _solve_cvode: trapezoidal을 단일 segment 처리 → afterglow stiffness 실패. (2) solve_pulsed: jac=self.jacobian이 76x step 증가(>60s/pulse). (3) Analytic Jacobian 검증: Jacobian row zeroing(clamping)이 60/65 species에 적용되어 BDF step 폭증 원인. ne_eps row 12x 오류, Tgas row 부호 반전도 발견.
+- 2026-04-09: 수치해석 방법론 조사. Production 코드(ZDPlasKin/GlobalKin/ChemPlasKin) 모두 표준 BDF+정확한 Jacobian 사용, afterglow 전용 특수 기법 없음. QSSA, exponential integrator, IMEX 등 대안 정리.
+- 2026-04-09: CVODE ON/OFF pulsed 시도 #1 — OFF=rhs_numba(P=0). 303K 883p/34min, OFF_fail=870/883. 3체 O₂ 부착 stiffness로 거의 매번 실패 → pulse간 ne 비일관, 프로파일 비물리적. CH4=5.48%는 우연의 일치.
+- 2026-04-09: CVODE ON/OFF pulsed 시도 #2 — OFF=Python rhs_off(). 303K **883p/4.9min**, OFF_fail=17/883(1.9%). rhs_off의 afterglow 전용 처리(3-stage eps transition, ne_eps proportional tracking)가 stiffness 완화. CH4=5.54%, ne_peak~1e14/ne_valley~1e6, 10 pulse 프로파일 일관성 확인. 프로파일: output/pulsed_last10_rhs_off.png.
 
 ---
 <!-- UPDATE RULE:

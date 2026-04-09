@@ -44,8 +44,47 @@ from chemistry_1d import AqueousChemistry1D
 
 
 # =============================================================================
+# Gas Data Utilities
+# =============================================================================
+
+def _filter_onset(arr: np.ndarray, n_consecutive: int = 5) -> np.ndarray:
+    """Zero out isolated early spikes in gas-phase time series.
+
+    Finds the first index where at least `n_consecutive` consecutive
+    points are nonzero and sets all values before that index to zero.
+    This removes instrument noise at startup (e.g. NO2 spikes at t<10s).
+    """
+    n = len(arr)
+    if n < n_consecutive:
+        return arr
+    onset = n  # default: no valid onset found → all zero
+    run = 0
+    for i in range(n):
+        if arr[i] > 0:
+            run += 1
+            if run >= n_consecutive:
+                onset = i - n_consecutive + 1
+                break
+        else:
+            run = 0
+    if onset > 0:
+        out = arr.copy()
+        out[:onset] = 0.0
+        return out
+    return arr
+
+
+# =============================================================================
 # Mass Transfer Utilities
 # =============================================================================
+
+# Molar mass [g/mol] for thermal velocity calculation
+MOLAR_MASS: Dict[str, float] = {
+    'O3': 48.0, 'NO': 30.0, 'NO2': 46.0, 'NO3': 62.0,
+    'N2O4': 92.0, 'N2O5': 108.0, 'HONO': 47.0, 'HONO2': 63.0,
+    'H2O2': 34.0, 'O': 16.0,
+}
+
 
 def compute_k_mt(species_gas: str, delta_gas: float, delta_liq: float,
                   bc_type: str = 'two_film', alpha_b: float = 1.0) -> float:
@@ -56,6 +95,9 @@ def compute_k_mt(species_gas: str, delta_gas: float, delta_liq: float,
       'dirichlet'  : 1.0 m/s        (stiff relaxation → C(0) ≈ C_eq)
       'film'       : D_l / δ_liq    (Heirman 2025 Eq.6, liquid-side only)
       'film_alpha' : α_b × D_l / δ_liq  (Heirman 2025 Eq.7)
+      'gas_alpha'  : gas-side + interfacial resistance only (no liquid film).
+                     1/k = 1/(H·D_g/δ_gas) + 1/(α_b·v̄/4)
+                     Correct for 1D models where PDE resolves liquid-side.
     """
     if bc_type == 'dirichlet':
         return 1.0
@@ -67,6 +109,31 @@ def compute_k_mt(species_gas: str, delta_gas: float, delta_liq: float,
 
     if bc_type == 'film_alpha':
         return alpha_b * D_l / delta_liq
+
+    if bc_type == 'gas_alpha':
+        import math
+        H_cp = HENRY_CONSTANTS.get(species_gas, 1.0)  # M/atm
+        # Convert to dimensionless H_cc = H_cp × R_Latm × T
+        R_Latm = 0.08206  # L·atm/(mol·K)
+        T = 298.15
+        H_cc = H_cp * R_Latm * T
+        D_g = GAS_DIFFUSIVITY.get(species_gas, D_GAS_DEFAULT)
+        M = MOLAR_MASS.get(species_gas, 48.0)  # g/mol
+        R = 8.314
+        # Mean thermal speed: v̄ = sqrt(8RT/(πM))  [m/s]  (M in kg/mol)
+        v_thermal = math.sqrt(8.0 * R * T / (math.pi * M * 1e-3))
+        # Gas-side film: k_g = D_g / δ_gas  [m/s, gas-phase units]
+        k_gas = D_g / delta_gas
+        # Interfacial kinetics: k_int = α_b × v̄/4  [m/s, gas-phase units]
+        k_int = alpha_b * v_thermal / 4.0
+        # Combined gas+interface resistance (gas-phase units):
+        # 1/k_gi = 1/k_gas + 1/k_int
+        k_gi_gas = 1.0 / (1.0 / max(k_gas, 1e-30) + 1.0 / max(k_int, 1e-30))
+        # Convert to liquid-phase concentration driving force:
+        # flux = k_gi_liq × (C_eq - C_surface), where C_eq = H_cc × c_gas
+        # k_gi_liq = k_gi_gas / H_cc
+        k_gi_liq = k_gi_gas / max(H_cc, 1e-30)
+        return k_gi_liq
 
     # Default: two_film (Lee 2023)
     H = HENRY_CONSTANTS.get(species_gas, 1.0)
@@ -124,6 +191,12 @@ class PDESolver1D:
         self.mass_transfer_eta = mass_transfer_eta  # η: scales all k_L values
         self.bc_type = bc_type or MASS_TRANSFER.bc_type
         self.alpha_b = alpha_b if alpha_b is not None else MASS_TRANSFER.alpha_b
+        # If alpha_b is explicitly set, use it uniformly for all species (ignore per-species).
+        # If alpha_b is not set, use config's per-species values.
+        if alpha_b is not None:
+            self.alpha_b_species = {}
+        else:
+            self.alpha_b_species = dict(MASS_TRANSFER.alpha_b_species)
 
         # Total ODE size
         self.N_total = self.N_s * self.N_z
@@ -140,8 +213,9 @@ class PDESolver1D:
         for gas_sp, aq_sp in GAS_TO_AQUEOUS_MAP.items():
             if aq_sp in self.species_idx:
                 aq_idx = self.species_idx[aq_sp]
+                ab = self.alpha_b_species.get(gas_sp, self.alpha_b)
                 k_mt = compute_k_mt(gas_sp, self.delta_gas, self.delta_liq,
-                                    bc_type=self.bc_type, alpha_b=self.alpha_b)
+                                    bc_type=self.bc_type, alpha_b=ab)
                 H = HENRY_CONSTANTS.get(gas_sp, 1.0)
                 # For _total species, get Ka from ACID_BASE_PAIRS
                 Ka = None
@@ -662,7 +736,7 @@ class PDESolver1D:
                 arr = np.maximum(gas_conc_molecules[gas_sp], 0.0) * conv
             else:
                 arr = np.zeros_like(times)
-            self._gas_conc_molar[gas_sp] = arr
+            self._gas_conc_molar[gas_sp] = _filter_onset(arr)
 
         self._hono_gas_molar = max(hono_gas, 0.0) * conv
         self._hono2_gas_molar = max(hono2_gas, 0.0) * conv
