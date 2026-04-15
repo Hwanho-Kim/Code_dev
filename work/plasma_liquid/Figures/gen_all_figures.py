@@ -35,34 +35,57 @@ from pde_solver import PDESolver1D
 # ═══════════════════════════════════════════════════════════════════════
 
 CACHE_DIR = _script_dir / 'cache'
-DEFAULT_CSV = (
-    _project_root / 'empty chamber' / 'empty chamber' / '1kHz3.2kVpp.csv'
+DEFAULT_GAS_XLSX = (
+    _project_root / 'OAS data' / 'Dry' / '(P-L) 가스활성종 농도.xlsx'
 )
+DEFAULT_GAS_SHEET = '3.2kV'  # overridden by --voltage
+
+# Output directory (set at runtime based on voltage)
+_output_dir = _script_dir
 
 # Grid
 DZ_MIN = 5e-6
 STRETCH = 1.12
 
-# Reference case
-REF_ALPHA = 0.03
-DT_SNAPSHOT = 2.0     # seconds, snapshot interval for all simulations
-MIN_STABLE_RUN = 5    # consecutive nonzero points to define stable detection
+# Reference case: gas_alpha + species-specific α_b, δ_gas=10mm
+REF_BC = 'gas_alpha'
+REF_ALPHA = None       # None → species-specific α_b from config
+REF_DELTA_GAS = 0.01   # 10 mm
+DT_SNAPSHOT = 2.0      # seconds, snapshot interval for all simulations
+MIN_STABLE_RUN = 5     # consecutive nonzero points to define stable detection
+
+# Gas-phase species ratios
+# 'Dry': all unmeasured = 0
+# 'Humid_median': literature median ratios (notes/unmeasured_gas_species.md)
+# 'Humid_fitting': RH 80% extrapolated ratios (notes/rh_extrapolation.md)
+#   Measured species scaled: O3 × 0.64, NO2 from NO2/O3 ratio, etc.
+#   Unmeasured: HNO3 = N2O5 × 0.83, H2O2 = O3 × 0.03
+
+# --- RH 80% fitting ratios (from test_rh_ratio_fit.py) ---
+# Voltage-dependent, but use 3.2kV as default (overridden per voltage)
+RH80_RATIOS = {
+    '2.6kV': {'O3_scale': 0.493, 'NO2_O3': 0.222, 'N2O5_NO2': 0.043, 'HONO_NO2': 0.00915, 'NO3_O3': 0.0179},
+    '3.2kV': {'O3_scale': 0.647, 'NO2_O3': 0.091, 'N2O5_NO2': 0.054, 'HONO_NO2': 0.00707, 'NO3_O3': 0.00442},
+    '3.6kV': {'O3_scale': 0.762, 'NO2_O3': 0.095, 'N2O5_NO2': 0.037, 'HONO_NO2': 0.00662, 'NO3_O3': 0.00337},
+}
+HONO2_RATIO = 0.83      # HNO₃/N₂O₅ (unmeasured, literature)
+H2O2_RATIO = 0.03       # H₂O₂/O₃ (unmeasured, literature)
+
+HONO_GAS = None
+HONO2_GAS = None
+H2O2_GAS = None
+CONDITION_LABEL = 'Humid_fitting'
 
 # BC comparison cases (Fig 1)
 BC_CASES = [
-    ('Two-film',      'two_film',   1.0),
-    ('Dirichlet',     'dirichlet',  1.0),
-    ('Film (ab=1)',   'film',       1.0),
-    ('Film+ab=0.05',  'film_alpha', 0.05),
-    ('Film+ab=0.01',  'film_alpha', 0.01),
+    ('One-film (gas)',    'one_film_gas',  1.0,  0.01),
+    ('Gas+\u03b1b',      'gas_alpha',     None, 0.01),
 ]
 
-# MT flux cases (Fig 1b) — subset of BCs with dense snapshots
+# MT flux cases (Fig 1b)
 MT_BC_CASES = [
-    ('Two-film',       'two_film',   1.0),
-    ('Film (ab=1)',    'film',       1.0),
-    ('Film+ab=0.03',   'film_alpha', 0.03),
-    ('Film+ab=0.01',   'film_alpha', 0.01),
+    ('One-film (gas)',    'one_film_gas',  1.0,  0.01),
+    ('Gas+\u03b1b',      'gas_alpha',     None, 0.01),
 ]
 
 # Species to track MT flux
@@ -73,8 +96,8 @@ MT_SPECIES = [
     ('NO3',  'NO\u2083'),
 ]
 
-# alpha_b sweep (Fig 3)
-ALPHA_CASES = [0.01, 0.03, 0.05]
+# Fig 3: radical/intermediate concentrations — single reference case
+ALPHA_CASES = [None]  # species-specific only
 
 # Experimental targets
 EXP = {'pH': 3.61, 'NO3': 63.0, 'NO2': 3.0, 'H2O2': 11.0}
@@ -125,12 +148,15 @@ def _uni(sp):
 # ═══════════════════════════════════════════════════════════════════════
 
 def _preprocess_below_lod(vals):
-    """Linear interpolation for below-LOD (zero) data points.
+    """Linear interpolation + Savitzky-Golay smoothing for gas data.
 
     1. Find stable detection start (MIN_STABLE_RUN consecutive nonzero).
-    2. Before stable start: linear ramp from 0 to first stable value.
-    3. After stable start: linear interp between nonzero points.
+    2. Before stable start: linear ramp from 0 to first smoothed stable value.
+    3. After stable start: fill intermittent zeros by linear interp, then SG smooth.
+    4. SG filter (window=15, poly=3) applied to stable region to remove LOD noise.
     """
+    from scipy.signal import savgol_filter
+
     out = vals.copy()
     n = len(vals)
 
@@ -151,11 +177,6 @@ def _preprocess_below_lod(vals):
     if stable_start >= n:
         return np.maximum(out, 0.0)
 
-    # Before stable start: linear ramp
-    first_val = vals[stable_start]
-    for i in range(stable_start):
-        out[i] = first_val * (i / max(stable_start, 1))
-
     # After stable start: fill intermittent zeros by linear interp
     nz_after = [(i, vals[i]) for i in range(stable_start, n) if vals[i] > 0]
     if len(nz_after) >= 2:
@@ -165,12 +186,25 @@ def _preprocess_below_lod(vals):
             if out[i] <= 0:
                 out[i] = np.interp(i, nz_idx, nz_vals)
 
+    # SG smoothing on stable region
+    sg_win = 15
+    stable_region = out[stable_start:]
+    if len(stable_region) >= sg_win:
+        w = sg_win if sg_win % 2 == 1 else sg_win + 1
+        stable_region = savgol_filter(stable_region, window_length=w, polyorder=3)
+        out[stable_start:] = np.maximum(stable_region, 0.0)
+
+    # Before stable start: linear ramp to first smoothed value
+    first_val = out[stable_start]
+    for i in range(stable_start):
+        out[i] = first_val * (i / max(stable_start, 1))
+
     return np.maximum(out, 0.0)
 
 
 def load_gas_data():
-    df = pd.read_csv(DEFAULT_CSV)
-    times = np.arange(len(df), dtype=float) * 2.0  # OAS 2-sec intervals
+    df = pd.read_excel(DEFAULT_GAS_XLSX, sheet_name=DEFAULT_GAS_SHEET)
+    times = df.iloc[:, 0].values.astype(float)  # first column = time (s)
     gas_conc = {}
     for col in ['O3', 'NO', 'NO2', 'NO3', 'N2O4', 'N2O5']:
         if col in df.columns:
@@ -178,8 +212,8 @@ def load_gas_data():
             gas_conc[col] = _preprocess_below_lod(raw)
         else:
             gas_conc[col] = np.zeros(len(df))
-    # Estimate N2O4 from preprocessed NO2
-    if 'N2O4' not in df.columns or np.all(df.get('N2O4', pd.Series([0])).values == 0):
+    # Estimate N2O4 from NO2 equilibrium
+    if 'N2O4' not in df.columns or np.all(gas_conc.get('N2O4', np.array([0])) == 0):
         no2 = gas_conc['NO2']
         T = 298.15
         Kp = math.exp(
@@ -187,6 +221,46 @@ def load_gas_data():
             + (N2O4_EQ.DELTA_H / PHYSICAL.R) * (1 / N2O4_EQ.REF_TEMP - 1 / T)
         )
         gas_conc['N2O4'] = Kp * PHYSICAL.KB_T_OVER_P * T * (no2 ** 2)
+
+    # Apply RH 80% fitting ratios if available
+    global HONO_GAS, HONO2_GAS, H2O2_GAS
+    r = RH80_RATIOS.get(DEFAULT_GAS_SHEET, None)
+    if r and CONDITION_LABEL == 'Humid_fitting':
+        # Compute SS values (last 100s avg) for each Dry species
+        mask_ss = times >= (times[-1] - 100)
+        def ss(arr):
+            return max(np.mean(arr[mask_ss]), 1e-30)
+
+        # RH 80% steady-state via ratio chain:
+        o3_ss_dry = ss(gas_conc['O3'])
+        o3_ss_80 = o3_ss_dry * r['O3_scale']
+        no2_ss_dry = ss(gas_conc['NO2'])
+        no2_ss_80 = o3_ss_80 * r['NO2_O3']
+        n2o5_ss_dry = ss(gas_conc['N2O5'])
+        n2o5_ss_80 = no2_ss_80 * r['N2O5_NO2']
+        no3_ss_dry = ss(gas_conc['NO3'])
+        no3_ss_80 = o3_ss_80 * r['NO3_O3']
+
+        # Scale each species: Dry shape × (SS_rh80 / SS_dry)
+        gas_conc['O3'] = gas_conc['O3'] * (o3_ss_80 / o3_ss_dry)
+        gas_conc['NO2'] = gas_conc['NO2'] * (no2_ss_80 / no2_ss_dry)
+        gas_conc['N2O5'] = gas_conc['N2O5'] * (n2o5_ss_80 / n2o5_ss_dry)
+        gas_conc['NO3'] = gas_conc['NO3'] * (no3_ss_80 / no3_ss_dry)
+
+        # HONO: Dry=0, so use NO2_rh80 shape × HONO/NO2 ratio
+        HONO_GAS = gas_conc['NO2'] * r['HONO_NO2']
+        HONO2_GAS = gas_conc['N2O5'] * HONO2_RATIO
+        H2O2_GAS = gas_conc['O3'] * H2O2_RATIO
+    elif CONDITION_LABEL == 'Dry':
+        HONO_GAS = 0.0
+        HONO2_GAS = 0.0
+        H2O2_GAS = 0.0
+    else:
+        # Humid_median fallback
+        HONO_GAS = gas_conc['NO2'] * 0.33
+        HONO2_GAS = gas_conc['N2O5'] * 0.83
+        H2O2_GAS = gas_conc['O3'] * 0.03
+
     return times, gas_conc
 
 
@@ -194,13 +268,16 @@ def load_gas_data():
 # Simulation Runner with Cache
 # ═══════════════════════════════════════════════════════════════════════
 
-def run_case(times, gas_conc, bc_type, alpha_b, label, rerun=False):
+def run_case(times, gas_conc, bc_type, alpha_b, label, rerun=False,
+             delta_gas=None):
     """Run one DIW case with 2s snapshots. Returns cached data dict.
 
     All simulations use the same t_eval (2s intervals).
-    Each unique (bc_type, alpha_b) runs once; figures extract what they need.
+    Each unique (bc_type, alpha_b, delta_gas) runs once.
     """
-    key = f"{bc_type}_ab{alpha_b:.4f}"
+    ab_str = f"{alpha_b:.4f}" if alpha_b is not None else "species"
+    dg_str = f"_dg{delta_gas:.4f}" if delta_gas is not None else ""
+    key = f"{bc_type}_ab{ab_str}{dg_str}"
     cache_file = CACHE_DIR / f"{key}.npz"
 
     if cache_file.exists() and not rerun:
@@ -217,10 +294,11 @@ def run_case(times, gas_conc, bc_type, alpha_b, label, rerun=False):
         saline_mode=False,
         bc_type=bc_type,
         alpha_b=alpha_b,
+        delta_gas=delta_gas,
     )
     solver.set_gas_data(
         times=times, gas_conc_molecules=gas_conc,
-        hono_gas=0, hono2_gas=0, h2o2_gas=0,
+        hono_gas=HONO_GAS, hono2_gas=HONO2_GAS, h2o2_gas=H2O2_GAS,
     )
     t_end = float(times[-1])
     t_eval = np.arange(DT_SNAPSHOT, t_end + 0.1, DT_SNAPSHOT)
@@ -281,15 +359,17 @@ def run_case(times, gas_conc, bc_type, alpha_b, label, rerun=False):
 # Rate Computation Utilities (for Fig 2 & 4)
 # ═══════════════════════════════════════════════════════════════════════
 
-def _get_solver(times, gas_conc, alpha_b=REF_ALPHA):
+def _get_solver(times, gas_conc, alpha_b=REF_ALPHA, bc_type=None,
+                delta_gas=None):
     """Create a solver instance (for rate evaluation, not simulation)."""
     chem = AqueousChemistry1D(saline_mode=False)
     solver = PDESolver1D(
         chemistry=chem, dz_min=DZ_MIN, stretch_ratio=STRETCH,
-        saline_mode=False, bc_type='film_alpha', alpha_b=alpha_b,
+        saline_mode=False, bc_type=bc_type or REF_BC,
+        alpha_b=alpha_b, delta_gas=delta_gas or REF_DELTA_GAS,
     )
     solver.set_gas_data(times=times, gas_conc_molecules=gas_conc,
-                        hono_gas=0, hono2_gas=0, h2o2_gas=0)
+                        hono_gas=HONO_GAS, hono2_gas=HONO2_GAS, h2o2_gas=H2O2_GAS)
     return solver
 
 
@@ -371,41 +451,47 @@ def species_contribution(rxn_rates, species_name, mt_flux):
 # ═══════════════════════════════════════════════════════════════════════
 
 def run_all_simulations(rerun=False):
-    """Run unique (bc_type, alpha_b) simulations, return collected data dict.
+    """Run unique simulations, return collected data dict.
 
-    6 unique runs: 5 BC cases + alpha_b=0.03 (if not already in BC_CASES).
-    All with 2s t_eval — each figure extracts what it needs.
+    BC_CASES tuples are (label, bc_type, alpha_b, delta_gas).
     """
     times, gas_conc = load_gas_data()
 
-    # Collect all unique (bc_type, alpha_b) combinations
-    all_cases = {}  # (bc_type, alpha_b) → label
-    for label, bc_type, ab in BC_CASES:
-        all_cases[(bc_type, ab)] = label
+    # Collect all unique (bc_type, alpha_b, delta_gas) combinations
+    all_cases = {}  # (bc_type, ab, dg) → label
+    for label, bc_type, ab, dg in BC_CASES:
+        all_cases[(bc_type, ab, dg)] = label
+    # Reference case for Fig 2-5
+    ref_key = (REF_BC, REF_ALPHA, REF_DELTA_GAS)
+    if ref_key not in all_cases:
+        all_cases[ref_key] = f'{REF_BC}(ref)'
+    # Fig 3 alpha sweep
     for ab in ALPHA_CASES:
-        key = ('film_alpha', ab)
+        key = (REF_BC, ab, REF_DELTA_GAS)
         if key not in all_cases:
-            all_cases[key] = f'Film+ab={ab}'
-    for label, bc_type, ab in MT_BC_CASES:
-        key = (bc_type, ab)
+            all_cases[key] = f'Gas+ab={ab}'
+    # MT flux cases
+    for label, bc_type, ab, dg in MT_BC_CASES:
+        key = (bc_type, ab, dg)
         if key not in all_cases:
             all_cases[key] = label
 
     print(f"\n=== Running {len(all_cases)} unique simulations ===")
     cache = {}
-    for (bc_type, ab), label in all_cases.items():
-        cache[(bc_type, ab)] = run_case(
-            times, gas_conc, bc_type, ab, label, rerun=rerun)
+    for (bc_type, ab, dg), label in all_cases.items():
+        cache[(bc_type, ab, dg)] = run_case(
+            times, gas_conc, bc_type, ab, label, rerun=rerun,
+            delta_gas=dg)
 
     # Build data dict with views for each figure
     data = {
-        'bc': [(label, cache[(bc_type, ab)])
-               for label, bc_type, ab in BC_CASES],
-        'alpha': [(ab, cache[('film_alpha', ab)])
+        'bc': [(label, cache[(bc_type, ab, dg)])
+               for label, bc_type, ab, dg in BC_CASES],
+        'alpha': [(ab, cache[(REF_BC, ab, REF_DELTA_GAS)])
                   for ab in ALPHA_CASES],
-        'ref': cache[('film_alpha', REF_ALPHA)],
-        'mt': [(label, bc_type, ab, cache[(bc_type, ab)])
-               for label, bc_type, ab in MT_BC_CASES],
+        'ref': cache[ref_key],
+        'mt': [(label, bc_type, ab, cache[(bc_type, ab, dg)])
+               for label, bc_type, ab, dg in MT_BC_CASES],
         'times': times,
         'gas_conc': gas_conc,
     }
@@ -433,7 +519,7 @@ def gen_fig1(data):
     panels = [
         ('pH', pH_vals, EXP['pH'], False, (1.5, 5.0)),
         ('NO\u2082\u207b (\u00b5M)', no2_vals, EXP['NO2'], False, None),
-        ('NO\u2083\u207b (\u00b5M)', no3_vals, EXP['NO3'], True, (20, 15000)),
+        ('NO\u2083\u207b (\u00b5M)', no3_vals, EXP['NO3'], False, None),
         ('H\u2082O\u2082 (\u00b5M)', h2o2_vals, EXP['H2O2'], False, None),
     ]
 
@@ -455,7 +541,7 @@ def gen_fig1(data):
             ax.text(bar.get_x() + bar.get_width() / 2, max(ypos, 0),
                     txt, ha='center', va='bottom', fontsize=8)
 
-    fig.suptitle('Effect of gas-liquid interface BC model (DIW, 3.2 kVpp, 12 min)',
+    fig.suptitle(f'Effect of gas-liquid interface BC model (DIW, {DEFAULT_GAS_SHEET}pp, {CONDITION_LABEL})',
                  fontsize=13, y=1.01)
     fig.tight_layout()
     _save(fig, 'fig1_bc_comparison')
@@ -486,15 +572,20 @@ def gen_fig1b(data):
             N_z = int(rdata['N_z'])
             N_s = int(rdata['N_s'])
 
-            solver = _get_solver(times, gas_conc, alpha_b=ab)
-            # Override bc_type for this solver
+            # Find delta_gas for this case from MT_BC_CASES
+            dg = REF_DELTA_GAS
+            for _, bt, a, d in MT_BC_CASES:
+                if bt == bc_type and a == ab:
+                    dg = d
+                    break
             solver_bc = PDESolver1D(
                 chemistry=AqueousChemistry1D(saline_mode=False),
                 dz_min=DZ_MIN, stretch_ratio=STRETCH,
                 saline_mode=False, bc_type=bc_type, alpha_b=ab,
+                delta_gas=dg,
             )
             solver_bc.set_gas_data(times=times, gas_conc_molecules=gas_conc,
-                                   hono_gas=0, hono2_gas=0, h2o2_gas=0)
+                                   hono_gas=HONO_GAS, hono2_gas=HONO2_GAS, h2o2_gas=H2O2_GAS)
 
             # Find MT mapping for this gas species
             idx_to_name = {v: k for k, v in solver_bc.species_idx.items()}
@@ -542,7 +633,7 @@ def gen_fig1b(data):
     axes[0, 0].set_ylabel('Instantaneous flux (M/s)')
     axes[1, 0].set_ylabel('Cumulative (\u00b5M)')
 
-    fig.suptitle('Mass transfer flux by BC type (DIW, 720 s)', fontsize=13, y=1.01)
+    fig.suptitle('Mass transfer flux by BC type (DIW, 600 s)', fontsize=13, y=1.01)
     fig.tight_layout()
     _save(fig, 'fig1b_mt_flux')
 
@@ -632,7 +723,7 @@ def gen_fig2(data):
     for ax in axes[1]:
         ax.set_xlabel('Time (min)')
 
-    fig.suptitle(f'Rate evolution (DIW, Film+\u03b1b, \u03b1b={REF_ALPHA})',
+    fig.suptitle(f'Rate evolution (DIW, {REF_BC}, \u03b4g={REF_DELTA_GAS*1e3:.0f}mm)',
                  fontsize=13, y=1.01)
     fig.tight_layout()
     _save(fig, 'fig2_rate_evolution')
@@ -660,29 +751,25 @@ def gen_fig3(data):
         ('N2O5',    'N\u2082O\u2085'),
     ]
 
-    # Gather data
+    # Gather data from reference case
+    r = data['ref']
     rows = []
     for sp_key, sp_label in rad_species:
-        vals = []
-        for ab, r in data['alpha']:
-            v = r.get(f'avg_{sp_key}', np.float64(0)).item()
-            vals.append(v)
-        if max(vals) > 0:
-            exp_order = int(math.floor(math.log10(max(vals))))
+        v = r.get(f'avg_{sp_key}', np.float64(0)).item()
+        if v > 0:
+            exp_order = int(math.floor(math.log10(v)))
             scale = 10 ** (-exp_order)
-            rows.append((sp_label, exp_order,
-                         [v * scale for v in vals]))
+            rows.append((sp_label, exp_order, v * scale, v))
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(6, 5))
     ax.axis('off')
 
-    ab_labels = [f'\u03b1b = {ab}' for ab in ALPHA_CASES]
-    col_labels = ['Species', 'Order (M)'] + ab_labels
+    col_labels = ['Species', 'Order (M)', 'Value', 'Conc (M)']
     cell_text = []
-    for sp_label, exp_order, scaled_vals in rows:
+    for sp_label, exp_order, scaled_val, raw_val in rows:
         order_str = f'1e{exp_order}'
         cell_text.append(
-            [sp_label, order_str] + [f'{v:.2f}' for v in scaled_vals]
+            [sp_label, order_str, f'{scaled_val:.2f}', f'{raw_val:.3e}']
         )
 
     table = ax.table(cellText=cell_text, colLabels=col_labels,
@@ -700,7 +787,7 @@ def gen_fig3(data):
             table[i + 1, j].set_facecolor(color)
         table[i + 1, 0].set_text_props(fontweight='bold')
 
-    ax.set_title('Radical and intermediate species (DIW, Film + \u03b1b BC, 720 s)',
+    ax.set_title(f'Radical and intermediate species (DIW, {REF_BC}, \u03b4g={REF_DELTA_GAS*1e3:.0f}mm, 600 s)',
                  fontsize=12, pad=20)
     fig.tight_layout()
     _save(fig, 'fig3_radicals')
@@ -807,7 +894,7 @@ def gen_fig4(data):
     snk_p = mpatches.Patch(facecolor=snk_color, edgecolor='black', lw=0.7, label='Sink')
     fig.legend(handles=[src_p, snk_p], loc='upper right', fontsize=11)
 
-    fig.suptitle(f'Mass balance (DIW, \u03b1b = {REF_ALPHA}, 720 s)',
+    fig.suptitle(f'Mass balance (DIW, {REF_BC}, \u03b4g={REF_DELTA_GAS*1e3:.0f}mm, 600 s)',
                  fontsize=13, y=1.01)
     fig.tight_layout()
     _save(fig, 'fig4_mass_balance')
@@ -884,10 +971,143 @@ def gen_fig5(data):
             ax.set_xlabel('Depth (mm)')
             ax.set_xlim(0, z_mm[-1])
 
-    fig.suptitle(f'Spatial profiles (DIW, Film+\u03b1b, \u03b1b={REF_ALPHA})',
+    fig.suptitle(f'Spatial profiles (DIW, {REF_BC}, \u03b4g={REF_DELTA_GAS*1e3:.0f}mm)',
                  fontsize=14, y=1.01)
     fig.tight_layout()
     _save(fig, 'fig5_spatial')
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Figure 6: Gas-phase input data visualization
+# ═══════════════════════════════════════════════════════════════════════
+
+def gen_fig6(data):
+    import matplotlib.pyplot as plt
+    from pde_solver import _filter_onset
+    print("\n--- Fig 6: Gas-phase input data ---")
+
+    df_raw = pd.read_excel(DEFAULT_GAS_XLSX, sheet_name=DEFAULT_GAS_SHEET)
+    df_raw = df_raw.dropna(subset=[df_raw.columns[0]])
+    times_raw = df_raw.iloc[:, 0].values.astype(float)
+    t_min_raw = times_raw / 60.0
+    conv = 1000.0 / PHYSICAL.AVOGADRO
+
+    measured_sp = [
+        ('O3',   'O\u2083',          '#1f77b4'),
+        ('NO2',  'NO\u2082',         '#ff7f0e'),
+        ('NO3',  'NO\u2083',         '#2ca02c'),
+        ('N2O5', 'N\u2082O\u2085',   '#d62728'),
+    ]
+
+    # (a) Raw data (cm⁻³)
+    fig, axes = plt.subplots(3, 1, figsize=(10, 10), sharex=True)
+
+    ax = axes[0]
+    for col, label, color in measured_sp:
+        if col in df_raw.columns:
+            vals = pd.to_numeric(df_raw[col], errors='coerce').values.copy()
+            vals = np.nan_to_num(vals, nan=0.0)
+            vals = np.maximum(vals, 0.0)
+            vals_plot = np.where(vals > 0, vals, np.nan)
+            ax.plot(t_min_raw, vals_plot, color=color, lw=1.2, label=label)
+    ax.set_yscale('log')
+    ax.set_ylabel('Concentration (cm\u207b\u00b3)')
+    ax.set_title('(a) Raw measured data (Dry)', fontweight='bold', loc='left')
+    ax.legend(loc='right')
+    ax.set_ylim(bottom=1e8)
+
+    # (b) Onset-filtered + linear interpolation (mol/L)
+    ax = axes[1]
+    dt_gas = float(times_raw[1] - times_raw[0]) if len(times_raw) > 1 else 2.0
+    n_times = len(times_raw)
+    t_dense = np.linspace(0, times_raw[-1], 2000)
+    t_dense_min = t_dense / 60.0
+
+    def interp_at(arr, t):
+        t_frac = t / dt_gas
+        i0 = int(t_frac)
+        if i0 >= n_times - 1: return arr[n_times - 1]
+        if i0 < 0: return arr[0]
+        frac = t_frac - i0
+        return arr[i0] * (1.0 - frac) + arr[i0 + 1] * frac
+
+    for col, label, color in measured_sp:
+        if col in df_raw.columns:
+            raw = pd.to_numeric(df_raw[col], errors='coerce').values.copy()
+            raw = np.nan_to_num(raw, nan=0.0)
+            raw = np.maximum(raw, 0.0)
+            filtered = _filter_onset(raw * conv)
+            interped = np.array([interp_at(filtered, t) for t in t_dense])
+            vals_plot = np.where(interped > 0, interped, np.nan)
+            ax.plot(t_dense_min, vals_plot, color=color, lw=1.2, label=label)
+
+    ax.set_yscale('log')
+    ax.set_ylabel('Concentration (mol/L)')
+    ax.set_title('(b) Measured species (onset-filtered + linear interpolation)',
+                 fontweight='bold', loc='left')
+    ax.legend(loc='right')
+    ax.set_ylim(bottom=1e-12)
+
+    # (c) RH-fitted + unmeasured species (mol/L)
+    ax = axes[2]
+    times_sim, gas_conc_sim = data['times'], data['gas_conc']
+
+    fitted_sp = [
+        ('O3',   'O\u2083',          '#1f77b4'),
+        ('NO2',  'NO\u2082',         '#ff7f0e'),
+        ('NO3',  'NO\u2083',         '#2ca02c'),
+        ('N2O5', 'N\u2082O\u2085',   '#d62728'),
+    ]
+    unmeasured_sp = [
+        ('HONO',  'HONO',              HONO_GAS,  '#9467bd'),
+        ('HONO2', 'HNO\u2083',        HONO2_GAS, '#8c564b'),
+        ('H2O2',  'H\u2082O\u2082',   H2O2_GAS,  '#e377c2'),
+    ]
+
+    dt_sim = float(times_sim[1] - times_sim[0]) if len(times_sim) > 1 else 2.0
+    n_sim = len(times_sim)
+    t_dense_sim = np.linspace(0, times_sim[-1], 2000)
+    t_dense_sim_min = t_dense_sim / 60.0
+
+    def interp_sim(arr, t):
+        t_frac = t / dt_sim
+        i0 = int(t_frac)
+        if i0 >= n_sim - 1: return arr[n_sim - 1]
+        if i0 < 0: return arr[0]
+        frac = t_frac - i0
+        return arr[i0] * (1.0 - frac) + arr[i0 + 1] * frac
+
+    for col, label, color in fitted_sp:
+        if col in gas_conc_sim:
+            arr = _filter_onset(gas_conc_sim[col] * conv)
+            interped = np.array([interp_sim(arr, t) for t in t_dense_sim])
+            vals_plot = np.where(interped > 0, interped, np.nan)
+            ax.plot(t_dense_sim_min, vals_plot, color=color, lw=1.2,
+                    label=f'{label} (fitted)')
+
+    for col, label, gas_arr, color in unmeasured_sp:
+        if isinstance(gas_arr, np.ndarray):
+            arr = _filter_onset(gas_arr * conv)
+            interped = np.array([interp_sim(arr, t) for t in t_dense_sim])
+            vals_plot = np.where(interped > 0, interped, np.nan)
+            ax.plot(t_dense_sim_min, vals_plot, color=color, lw=1.2,
+                    ls='--', label=f'{label} (est.)')
+        elif isinstance(gas_arr, (int, float)) and gas_arr > 0:
+            ax.axhline(y=gas_arr * conv, color=color, lw=1.5, ls='--',
+                       label=f'{label} (est.)')
+
+    ax.set_yscale('log')
+    ax.set_ylabel('Concentration (mol/L)')
+    ax.set_xlabel('Time (min)')
+    ax.set_title(f'(c) RH 80% fitted + unmeasured ({CONDITION_LABEL})',
+                 fontweight='bold', loc='left')
+    ax.legend(loc='right', fontsize=8)
+    ax.set_ylim(bottom=1e-12)
+
+    fig.suptitle(f'Gas-phase input data (DIW, {DEFAULT_GAS_SHEET}pp, {CONDITION_LABEL})',
+                 fontsize=14, y=1.01)
+    fig.tight_layout()
+    _save(fig, 'fig6_gas_data')
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -896,11 +1116,11 @@ def gen_fig5(data):
 
 def _save(fig, name):
     for ext in ('png', 'pdf'):
-        path = _script_dir / f'{name}.{ext}'
+        path = _output_dir / f'{name}.{ext}'
         fig.savefig(path)
     import matplotlib.pyplot as plt
     plt.close(fig)
-    print(f"  -> {name}.png/pdf saved")
+    print(f"  -> {name}.png/pdf saved → {_output_dir.name}/")
 
 
 def _setup_mpl():
@@ -928,24 +1148,39 @@ FIGURE_MAP = {
     '3':  gen_fig3,
     '4':  gen_fig4,
     '5':  gen_fig5,
+    '6':  gen_fig6,
 }
 
 
 def main():
+    global DEFAULT_GAS_SHEET, CACHE_DIR, _output_dir
+
     parser = argparse.ArgumentParser(description='Generate all figures')
     parser.add_argument('--rerun', action='store_true',
                         help='Force re-simulation (ignore cache)')
     parser.add_argument('--fig', nargs='+', default=list(FIGURE_MAP.keys()),
                         help='Which figures to generate (default: all)')
+    parser.add_argument('--voltage', default='3.2kV',
+                        choices=['2.6kV', '3.2kV', '3.6kV'],
+                        help='Voltage condition (default: 3.2kV)')
     args = parser.parse_args()
+
+    # Set voltage-specific paths
+    DEFAULT_GAS_SHEET = args.voltage
+    voltage_label = args.voltage.replace('kV', 'kV')
+    out_folder = _script_dir / 'OAS data' / f'{voltage_label}_{CONDITION_LABEL}_Dg_{REF_DELTA_GAS*1e3:.0f}mm'
+    out_folder.mkdir(parents=True, exist_ok=True)
+    _output_dir = out_folder
+    CACHE_DIR = out_folder / 'cache'
 
     os.chdir(_project_root)
     _setup_mpl()
 
     print("=" * 60)
     print("  Plasma-Liquid Figure Generator")
+    print(f"  Voltage: {args.voltage}")
     print(f"  Figures: {', '.join(args.fig)}")
-    print(f"  Cache: {CACHE_DIR}")
+    print(f"  Output: {_output_dir}")
     print(f"  Rerun: {args.rerun}")
     print("=" * 60)
 

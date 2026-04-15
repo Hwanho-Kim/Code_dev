@@ -33,12 +33,32 @@ Custom backward Euler + Newton + Gummel solver with Numba JIT.
 - Gas data: empty chamber/empty chamber/1kHz3.2kVpp.csv
 - Python: Ver3/.venv/bin/python
 
-## Experimental Targets (3.2 kVpp only)
-- DI water: pH=3.61, NO2-=3uM, NO3-=63uM, H2O2=11uM
-- Saline: pH=3.60, NO2-~0, NO3-=102uM, H2O2=5uM
+## Experimental Targets (OAS data, Dry, 10min treatment)
+Source: `OAS data/Dry/(P-L) 액체활성종 농도, pH, conductivity.xlsx`
+
+### DIW
+| Voltage | pH | NO₂⁻ (µM) | NO₃⁻ (µM) | H₂O₂ (µM) |
+|---------|-----|----------|----------|-----------|
+| 2.6 kVpp | 5.09 | 0 | 32.63 | 4.76 |
+| **3.2 kVpp** | **3.61** | **3.58** | **62.74** | **11.21** |
+| 3.6 kVpp | 3.25 | 20.74 | 70.42 | 16.25 |
+
+### Saline
+| Voltage | pH | NO₂⁻ (µM) | NO₃⁻ (µM) | H₂O₂ (µM) |
+|---------|-----|----------|----------|-----------|
+| 2.6 kVpp | 5.15 | 0 | 4.70 | 2.00 |
+| **3.2 kVpp** | **3.60** | **0** | **10.45** | **5.14** |
+| 3.6 kVpp | 3.43 | 0 | 16.92 | 7.73 |
+
+### Gas-phase data
+Source: `OAS data/Dry/(P-L) 가스활성종 농도.xlsx`
+- 전압별 시계열: 2.6/3.2/3.6 kVpp
+- 종: O₃, NO₂, NO₃, N₂O₅ (cm⁻³)
+- 시간: 0~600s, 2s 간격, 301 points
+- **이전 CSV(1kHz3.2kVpp.csv)와 차이**: 10분(600s) vs 12분(720s). 새 데이터가 정확한 reference.
 
 ## Active Constraints
-- 3.2kVpp 데이터만 사용. Multi-condition fitting 하지 않음.
+- 3.2kVpp 기준. Multi-voltage 데이터 확보됨 (2.6/3.6 kVpp).
 - Poisson OFF (Debye << grid).
 - S97/S98 반응 현재 disabled.
 - "말을 듣고 해 니 말대로 하지말" — 사용자 지시를 정확히 따를 것.
@@ -48,10 +68,22 @@ Custom backward Euler + Newton + Gummel solver with Numba JIT.
 ### WORKING
 - Ver3 (0D): DI water fitting 완료 (NO3- 0.6%, H2O2 0.0% 오차)
 - Ver4_1D (DI water): fitting 완료 (NO2- 0.2%, NO3- 0.1%, H2O2 0.2% 오차)
-- Ver4_1D (DIW forward, 측정종만): pH=3.389(6.1%), NO3-=424.6uM(574%), NO2-=0, H2O2=0.2uM
-- **Monolithic BDF solver** (Strang splitting 대체): DIW 720s 완료. Film+α_b=0.03: pH=3.869(7.4%), NO3⁻=29.5µM, O3=7.3nM, H₂O₂=0.14nM. **1.7min** (atol=1e-12, rtol=1e-6, dt_enforce=None)
+- **Monolithic BDF solver**: DIW 720s, atol=1e-15, rtol=1e-6, dt_enforce=None
+- **gas_alpha BC 채택** (Schwartz 저항 모델): k_gi = (δ_gas/D_g + 4/(α_b·v̄))⁻¹, k_mt = k_gi/H_cc. 이중 계산 없음.
+- **δ_gas=10mm** (잠정): gas gap 전체. 축소 필요할 수 있음 (pending task).
+- **비율 기반 HONO/HNO₃/H₂O₂ gas input**: HONO/NO₂=0.33, HNO₃/N₂O₅=0.83, H₂O₂/O₃=0.03
+- **현재 DIW 결과 (gas_alpha, δ_gas=10mm, 비율 gas input)**:
+  - pH=3.81 (실험 3.61, 약간 높음)
+  - NO₃⁻=155 µM (실험 63, **2.5배 과다**)
+  - **H₂O₂=13.2 µM (실험 11, 근접!)**
+  - NO₂⁻=0.003 µM (실험 3, **1000배 부족**)
+  - O₃=302 nM
 - Numba JIT 65x 가속, O(N) graph coloring
-- Geometric grid convergence 확인 (49 vs 188 cells ~15% 차이)
+- Grid convergence 완전 확인
+- 종별 α_b 구현 완료 (gas_alpha에서도 적용). 단 gas_alpha에서 α_b에 거의 무감 (gas-side 지배).
+- Gas onset filter + linear interpolation: noise spike 제거 + 0 구간 보간
+- `one_film_gas` BC 추가 (gas-side only, α_b 없이)
+- Fig 6 추가: Raw + Linear interpolation + Unmeasured ratio-based time series
 
 ### BROKEN
 - run_simulation.py: Strang split 경로에서 pH_surface KeyError (minor bug)
@@ -202,14 +234,20 @@ Custom backward Euler + Newton + Gummel solver with Numba JIT.
   - Row 1: instantaneous flux (M/s), Row 2: cumulative (µM)
   - Two-film N₂O₅ cumul=405µM vs Film+α_b=0.01 cumul=6.4µM (63× 차이)
 
+### TRIED (2026-04-09)
+- **종별 α_b (film_alpha)**: O₃ +48%, pH/NO₃⁻ 변화 없음. H₂O₂는 가스상=0이라 무관.
+- **종별 atol (1e-20 for trace)**: baseline과 동일 결과, 30% 느림. atol=1e-15 이미 충분.
+- **QSSA (O₃⁻/HO₃/O⁻)**: 3가지 시도 (dydt=0, relaxation, N₂O₅ instant). 전부 실패 — radical chain 파괴 (O₃ 100배 축적). 상호의존성 때문에 단순 analytical QSSA 부적합.
+- **gas_alpha BC (δ_gas=10mm)**: α_b 무감 (gas-side 1/k_gas=667 >> 1/k_int≈0.5). pH=3.99, NO₃⁻=101µM.
+- **gas_alpha BC (δ_gas=1mm)**: α_b 여전히 무감. NO₃⁻=987µM (16배 과다). gas-side 여전히 지배.
+
 ### NOT TRIED
 - Log-transform (C → ln(C)) for Newton conditioning
 - Saline with fitted parameters (HONO/HONO2/H2O2 nonzero)
-- BC 비교 saline 모드 (DIW 결과로 α_b 범위 확인 후)
-- 종별 α_b 적용 (H₂O₂=0.1, O₃=0.01~0.1, NO/HNO₂=0.01~0.1)
-- Monolithic BDF saline 실행 (QSSA OFF, Cl stiffness를 BDF가 직접 처리)
+- Monolithic BDF saline 실행 (gas_alpha BC)
+- δ_gas 민감도 sweep (0.1~10mm)
 
-## Pending Tasks — (2026-04-09 갱신)
+## Pending Tasks — (2026-04-10 갱신)
 1. ~~**측정종만 사용 forward simulation**~~ ✅
 2. ~~**Saline solver fix — QSSA 적용**~~ ✅
 3. ~~**NO3⁻ 과다 진단**~~ ✅
@@ -222,10 +260,14 @@ Custom backward Euler + Newton + Gummel solver with Numba JIT.
 10. ~~**종별 α_b 구현**~~ ✅ config_1d.py `alpha_b_species` + pde_solver.py 종별 적용. gas_alpha BC에서도 자동 적용됨. (2026-04-09)
 11. **δ_gas 결정** — 현재 10mm (gas gap 전체, 과대). 실험 조건(surface DBD)에서 적절한 값 결정 필요. ~1-3mm 추정.
 12. **α_b 민감도 재검증 (gas_alpha)** — gas_alpha + 종별 α_b에서 유의미한 영향 조건 확인. δ_gas 의존.
-13. **gas_alpha로 전체 Figure 재생성** — BC 전환 후 Fig 1~5 갱신
-14. **O₃ oscillation (t≈110s)** — BDF가 radical QSS 미해석. QSSA 시도 실패(radical chain 파괴). 미해결.
-15. **Monolithic BDF saline 실행** — gas_alpha BC 적용
-16. **Saline with fitted parameters** — HONO/HONO2/H2O2 가스상 포함
+13. ~~**gas_alpha로 전체 Figure 재생성**~~ ✅ (2026-04-10)
+14. **NO₃⁻ 과다 원인 규명** — O₃ MT 아님 (확인). N₂O₅ MT/Henry 상수 검토 필요.
+15. **NO₂⁻ 부족 (1000배)** — 소비 반응(R92, R32) 검토. HONO 비율 증가? 소비 속도 검토?
+16. **HONO/HNO₃/H₂O₂ 비율 sweep** — 현재 고정값 (0.33/0.83/0.03). 문헌 범위 내 로그 sweep.
+17. **δ_gas sweep** — 현재 10mm. 축소 테스트.
+18. **O₃ oscillation (t≈110s)** — QSSA 시도 실패. 미해결.
+19. **Monolithic BDF saline 실행** — gas_alpha BC 적용
+20. **Saline with fitted parameters**
 
 ## Key Decisions (settled — 재논의 불필요)
 - Poisson OFF: Debye(0.8nm saline, 30nm DI) << grid(5um). 확정.
@@ -292,6 +334,13 @@ Custom backward Euler + Newton + Gummel solver with Numba JIT.
 - 2026-04-09: **BC 이중 계산 문제 규명** — film_alpha(α_b×D_l/δ_liq)가 PDE의 액상 확산과 중복. Schwartz 1986 저항 모델, Zheng/Bruggeman 2020, Liu 2021 근거. notes/bc_formulation.md 작성.
 - 2026-04-09: **gas_alpha BC 구현** — 1/k_gi = δ_gas/D_g + 4/(α_b·v̄), k_mt = k_gi/H_cc. 초기 단위 오류(H_cp vs H_cc) 수정. 테스트: δ_gas=10mm에서 α_b 무감(gas-side 지배). δ_gas=1mm에서 NO₃⁻=987µM(16배 과다). δ_gas 결정이 핵심 과제.
 - 2026-04-09: **gas_alpha BC 채택 결정** — 물리적으로 올바른 BC. δ_gas 결정 및 α_b 민감도 재검증은 pending.
+- 2026-04-10: **Fig 1~5 gas_alpha BC로 재생성** — gen_all_figures.py 수정. BC_CASES: Dirichlet / One-film(gas) / Gas+αb(종별). 참조: δ_gas=1mm vs 10mm 비교 — 10mm에서 NO₃⁻=101µM(1.6배), 1mm에서 987µM(16배). 10mm가 더 합리적.
+- 2026-04-10: **one_film_gas BC 추가** — gas-side only, α_b 없음. `k_mt = (D_g/δ_gas) / H_cc`. Gas+α_b와 비교해 α_b가 무감임을 확인 (gas-side 지배).
+- 2026-04-10: **Gas onset filter 개선** — 이전: noise 제거 + 0을 그대로 유지 → 계단형 점프. 수정: noise 제거 + onset 전/사이 0 구간을 linear interpolation으로 채움 → smooth ramp-up. Ramp는 t=0(값 0)부터 첫 nonzero까지.
+- 2026-04-10: **비율 기반 HONO/HNO₃/H₂O₂ gas input 구현** — 이전: gas=0 → H₂O₂≈0 (실험 괴리). 이번: scalar 대신 array 허용. HONO=NO₂×0.33, HNO₃=N₂O₅×0.83, H₂O₂=O₃×0.03. 문헌 근거: notes/unmeasured_gas_species.md. 결과: **H₂O₂=13.2µM** (실험 11에 근접!), NO₃⁻=155µM(2.5배), pH=3.81.
+- 2026-04-10: **Fig 6 추가** — gen_fig6_gas_data.py. 3 패널: (a) Raw 측정값 (cm⁻³), (b) Measured species 시계열 (onset filter + linear interpolation, mol/L), (c) Unmeasured species 시계열 (비율 기반, mol/L).
+- 2026-04-10: **O₃ MT scaling 테스트** — Figures/test/test_o3_mt_scaling.py. O₃ k_mt × [1, 0.5, 0.1, 0.01]. 결과: NO₃⁻/pH 거의 무변화 (155→152µM), O₃/OH는 비례 감소. **NO₃⁻ 과다 원인은 O₃가 아니라 N₂O₅ MT** 확정. NO₂⁻는 모든 scale에서 ~0.003µM (실험 3의 1/1000).
+- 2026-04-10: **Fig 1에서 Dirichlet 제거** — One-film(gas)와 Gas+α_b만 표시. pH=3.8, NO₃⁻=155, H₂O₂=13.2 (두 케이스 거의 동일).
 
 - 2026-04-09: **Radical chain ignition 심층 분석 + reference 조건 확정**
   - **가스 데이터 전처리**: below-LOD 보간 6가지 비교 (Raw, LOD/2, Linear, Exp, Sigmoid, SG). NO₂/NO₃에 intermittent zeros. stable start 규칙(5연속 nonzero) 적용. **Linear interp 채택.**
@@ -312,12 +361,95 @@ Custom backward Euler + Newton + Gummel solver with Numba JIT.
     - **이전 "O₃가 유일한 trigger" 결론은 철회**. perturbation 결과를 확증편향으로 잘못 해석했음.
   - **NO₃ radical 경로**: gas NO₃(H=44) → liq NO₃ radical → R93(+OH⁻→OH, 45-59%) + R102(+NO₂→N₂O₅, 32-46%). OH budget 기여는 <5%이지만, NO₃ OFF 시 전환 자체가 억제됨 → 직접 OH 생산이 아닌 chain 활성화 촉매 역할 가능성.
   - **전수조사**: 101 reactions × 25 species × 121 snapshots (0~4min). full_budget.csv 저장.
-  - **미해결**: NO₃가 OH budget에서 <5%인데 왜 전환의 필수 조건인지 — 직접 OH 생산이 아닌 간접 경로(chain 활성화) 규명 필요.
+  - **개별 반응 knockout 테스트 (6개 NO₃ 반응 + R79)**:
+    - **R93 OFF (NO₃ + OH⁻ → NO₃⁻ + OH): OH@200s=0.30pM, 전환 완전 억제** → NO₃ gas OFF와 동일
+    - R102 OFF (NO₃ + NO₂ → N₂O₅): OH=148pM, 전환 정상 (1.07x)
+    - R92 OFF (NO₃ + NO₂⁻ → NO₃⁻ + NO₂): OH=174pM (1.25x)
+    - R89 OFF (NO₃ + HO₂ → NO₃⁻ + O₂): OH=192pM (1.38x)
+    - R90/R91/R79 OFF: baseline과 동일
+    - **결론: R93 (NO₃ + OH⁻ → NO₃⁻ + OH) 단독이 radical chain ignition의 필수 조건**
+  - **R93의 역할**: OH budget에서 0.003%이지만, 표면 cell에서 OH seed 공급. Baseline OH_surface=4.8pM vs R93 OFF OH_surface=0.46pM (10배 차이). 이 seed가 O₃ chain gain(>1)의 지수 성장 기반. seed 없으면 chain 시작 불가.
+  - **Radical ignition 메커니즘 최종 요약**:
+    1. 가스상 NO₃ radical이 용해 (H=44, k_mt=α_b×D/δ_liq)
+    2. R93 (NO₃ + OH⁻ → NO₃⁻ + OH)이 표면에서 OH radical seed 공급
+    3. OH seed가 O₃ chain (Staehelin-Hoigné: R27→R28/R25→R38/R55→OH) 구동
+    4. Chain gain > 1이므로 OH 지수 성장 (doubling ~µs)
+    5. O₃ MT 축적 → chain 소비가 MT 초과 시 O₃ peak → O₃↓↔OH↑ positive feedback → 급속 전환
+  - **OH surface oscillation (CV~9%) 추가 분석**:
+    - 종별 atol(OH 등 1e-17) 적용 → 개선 안 됨 (bulk OH noise가 원인 아님)
+    - 가스종별 perturbation: O₃/NO₂/N₂O₅ 개별 smooth/const → 효과 없음. **ALL gas constant → CV=0.9%** (oscillation 소멸). 단일 종이 아닌 복합 gas noise가 원인.
+    - NO₃ SG31 smooth → CV 9.3→6.8% (약간 감소). NO₃ gas noise가 일부 기여하나 단독 원인은 아님.
+  - **FUTURE WORK (닫음)**: 
+    - NO₃가 R93 (NO₃ + OH⁻ → NO₃⁻ + OH)을 통해 OH profile에 큰 영향. R93이 OH budget의 0.003%인데 radical chain ignition의 필수 조건인 amplification 메커니즘은 미규명.
+    - OH surface oscillation의 정확한 원인 (복합 gas noise vs 물리적 chain dynamics) 미규명.
+  - **생성/수정 파일**:
+    - `Figures/gen_all_figures.py` — 통합 Figure 생성 (Fig 1~5, 6 sims, npz cache, linear interp 전처리 포함)
+    - `Figures/test/run_oh_tests.py` — OH oscillation 3 tests
+    - `Figures/test/run_bifurcation_analysis.py` — Step 1~3 bifurcation 분석
+    - `Figures/test/run_full_budget.py` — 전수조사 (101 rxn × 25 sp)
+    - `Figures/test/full_budget.csv` — 전수조사 데이터
+    - `Figures/test/gen_fig_gas_interpolation.py` — 가스 데이터 전처리 비교
+    - `Ver4_1D/config_1d.py` — atol 1e-12 → 1e-15
+    - `run_comparison.py` (work root) — Ver1 vs Ver2 비교
 
-### PENDING (2026-04-09 기준)
-1. **NO₃ radical의 chain 활성화 메커니즘 규명** — R93 외 간접 경로, NO₃→NO₂→ONOOH→OH 등
-2. **Monolithic BDF saline 실행**
-3. **종별 α_b 구현**
+- 2026-04-10: **논문 전산모사 계획 수립 + Surrogate optimizer 개발 + pH/NO2⁻ 진단**
+  - **연구 방향 확정**: Dry OAS input → baseline 경향성 → HONO/HONO2/H2O2 문헌값 추정 → 살균 메커니즘 (3분/5분 threshold) 연결. Phase 1/2/3 계획 수립 (memory: `project_paper_plan.md`).
+  - **Surrogate 2-stage optimizer 개발**: `Ver4_1D/run_surrogate_opt.py`
+    - Stage 1: 0D FastSurrogate0D (gas_alpha BC, instant chemistry, R32 with reactive penetration depth correction)
+    - Stage 2: 1D PDE validation
+    - Feedback: 1D/0D bias로 0D target 보정 → 재최적화
+    - 4 free params: HONO, HONO2, H2O2, δ_gas (log space, DE)
+  - **단위 버그 발견/수정** (0D에서): (1) HENRY_CONSTANTS는 이미 dimensionless H_cc인데 1D code의 gas_alpha branch가 R×T 한번 더 곱함 — 0D도 동일하게 맞춰 일관성 유지. (2) k_mt[m/s]를 liquid depth L로 나눠야 bulk concentration rate [1/s] 됨.
+  - **수렴 결과** (3 iterations): HONO=1.4e15, HONO2≈0, H2O2=2.3e15, δ_gas=13-15mm. 1D 결과: pH=4.07, NO3⁻=84µM (실험 63, +33%), NO2⁻=0.003µM (실험 3, -99.9%), H2O2=9.4.
+  - **pH/NO2⁻ gap 진단 스크립트**: `Figures/test/diag_ph_no2_gap.py` — charge balance + NO2⁻ rate budget + HONO2 sensitivity sweep
+  - **pH gap 원인 규명 (결정적)**: 1D charge balance 완벽 닫힘 (+0.04%). pH는 NO3⁻에 의해 1:1 결정 ([H⁺]=84µM ≈ NO3⁻=84µM, 다른 음이온 모두 무시 가능). **실험 pH=3.61, NO3⁻=63µM은 charge balance 불가능** — [H⁺]=245µM 필요하나 NO3⁻+NO2⁻=66µM만 존재. **~180µM 음이온 gap**. HONO2 sweep (0→1e15 cm⁻³): pH 4.074→4.052만 변화, NO3⁻ 84→89. **HONO2로 gap 닫을 수 없음 확정**. 가능 원인: CO2 흡수(H2CO3), ionic strength electrode 오차, 미측정 음이온, plasma-off 후속 반응.
+  - **NO2⁻ rate budget 규명**: **R32 (O3+NO2⁻→NO3⁻) 단독이 97% sink**. 과거 "R92 지배"는 다른 조건. Source: R19 (2NO2 hydrolysis) 64% + R95 (N2O4 hydrolysis) 36%. **HONO gas 용해는 NO2⁻ source에 무의미 (R78 <0.1%)**. Net = -2.5e-9 M/s. Spatial segregation: source는 bulk 전역, R32 sink는 surface 34µm에 집중 → bulk steady-state 0.7µM 예상이지만 diffusion-sink coupling으로 실제 0.003µM.
+  - **논문 내러티브 시사점**:
+    1. pH를 fitting target에서 제외 or lower weight — 실험 자체가 charge balance 불합
+    2. NO3⁻가 primary validation target
+    3. NO2⁻ 3µM은 plasma-off 후 측정 아티팩트로 해석 가능 (O3 decay 후 R32 멈춤 → 축적)
+    4. HONO gas input은 NO2⁻ 결정 요인 아님 — NO2/N2O4 gas 농도가 핵심
+    5. HONO/HONO2/H2O2 중 H2O2만 gas 용해가 유효 (liquid H2O2에 직접 기여)
+  - **생성 파일**:
+    - `Ver4_1D/run_surrogate_opt.py` — 0D+1D feedback optimizer
+    - `Ver4_1D/optimal_params_surrogate.yaml` — 최적 파라미터 출력
+    - `Figures/test/diag_ph_no2_gap.py` — charge balance + NO2 budget 진단
+
+- 2026-04-13~14: **Gas-phase sweep + NO₂⁻ 진단 + 새 OAS data 적용**
+  - **HONO/HNO₃/H₂O₂ 개별 sweep (14 cases)**: Figures/test/sweep/test_gas_sweep.py. Dry baseline(gas=0) 대비 한 종씩. 결과: H₂O₂←H₂O₂gas(직접), pH←HNO₃(직접), NO₃⁻ 변화없음(N₂O₅ 지배), NO₂⁻ 변화없음(O₃ barrier). notes/gas_sweep_results.md.
+  - **NO₂⁻ R92/R32 knockout**: Figures/test/sweep/test_no2m_sensitivity.py. R92(NO₃+NO₂⁻) OFF → 변화없음. **R32(O₃+NO₂⁻) OFF → NO₂⁻=5.4µM (실험 3.58 근접!)**. R32가 진짜 소비원 확정. O₃가 표면에서 NO₂⁻를 즉시 산화 ("O₃ barrier"). 1D no-convection의 구조적 한계.
+  - **HONO×O₃ 2D sweep (20 cases)**: Figures/test/sweep/test_hono_o3_sweep.py. HONO/NO₂=[1,3,5,10]×O₃scale=[0.1~1.0]. ★HONO/NO₂=10,O₃×0.3: NO₂⁻=2.89µM, pH=3.62 (실험 근접). 단 HONO/NO₂=10은 비물리적, NO₃⁻=241(악화).
+  - **새 OAS data 수신**: `OAS data/Dry/` — 3전압(2.6/3.2/3.6kV), t=0~600s(10min), O₃/NO₂/NO₃/N₂O₅. **N₂O₅가 이전 CSV 대비 5배 감소** (1.24e16→2.55e15). notes/experimental_reference.md.
+  - **새 OAS data Dry baseline 전압별**: NO₃⁻=11/21/25µM (실험 33/63/70의 1/3). pH=4.9/4.7/4.6. H₂O₂/NO₂⁻≈0.
+  - **gen_all_figures.py 구조 변경**: --voltage 인자, CONDITION_LABEL, 전압별 output folder (`Figures/OAS data/{voltage}_{condition}_Dg_Xmm/`). xlsx 읽기. Fig 1 NO₃⁻ linear scale 수정.
+  - **Humid median 전압별 완료**: H₂O₂가 전압별 실험값과 잘 맞음 (2.6kV: 4.65 vs 4.76, 3.2kV: 10.6 vs 11.2). 비율 0.03 유효.
+- 2026-04-14~15: **RH 80% 비율 기반 외삽 + Humid fitting 시뮬레이션**
+  - **RH 경향 분석**: Humid OAS data (RH 25/55/65%) + Dry. 종별 경향: O₃↓, NO₂↑, N₂O₅↓↓, HONO↑. RH 25% 데이터 이상점 → 제외.
+  - **비율 기반 fitting (물리적 함수)**:
+    - N₂O₅/NO₂ = A/(1+B·RH²): 수증기 dimer 가수분해 정상상태. 전압 간 잘 겹침.
+    - HONO/NO₂ = A·RH: 표면 [H₂O] ∝ RH.
+    - NO₂/O₃ = A+B·RH: 경험적 mode 전환.
+    - NO₃/O₃ = A+B·RH: scatter 있으나 양의 경향.
+    - O₃: 직접 선형 (anchor 종).
+    - 스크립트: Figures/test/test_rh_ratio_fit.py. 문서: notes/rh_extrapolation.md.
+  - **RH 80% 예측 (3.2kV)**: O₃=6.66e16(-35%), NO₂=6.09e15(+3.4×), N₂O₅=3.57e14(-86%), HONO=4.72e13(1.9ppm).
+  - **Humid fitting 시뮬레이션**: Dry 시계열 shape 보존 × SS 비율 스케일링. 초기 shape 버그(O₃ shape을 NO₂에 사용) 발견 → 수정.
+  - **3조건 전압별 비교 (fig_voltage_comparison.png)**:
+    - Dry: NO₃⁻ 실험의 1/3, H₂O₂=0
+    - Humid median: H₂O₂ 전압별 실험 근접(비율 0.03 유효!), NO₃⁻ 실험의 ~50%
+    - Humid fitting: NO₃⁻ 더 감소(21µM, N₂O₅ -86%), H₂O₂ 부족(6.7 vs 11.2 — RH↑에서 H₂O₂/O₃ 비율 증가 필요)
+  - **gen_all_figures.py**: Fig 6 추가 (gas input 3패널), RH80_RATIOS 전압별 dict, CONDITION_LABEL 시스템, shape 보존 스케일링.
+  - **output 구조**: `Figures/OAS data/{voltage}_{Dry|Humid_median|Humid_fitting}_Dg_10mm/`
+
+### PENDING (2026-04-15 기준)
+1. **H₂O₂/O₃ 비율의 RH 의존성** — 현재 고정 0.03이지만 RH↑에서 증가해야 함. Humid fitting에서 H₂O₂ 부족(6.7 vs 11.2)의 원인. 비율을 RH 함수로 만들거나 별도 추정 필요.
+2. **NO₂⁻ 문제** — O₃ barrier (R32). 1D no-convection 구조적 한계. 미해결.
+3. **pH gap** — ~180µM 음이온 gap. 미해결.
+4. **δ_gas 최종 결정** — 현재 10mm.
+5. **Saline 실행** — 새 OAS data + gas_alpha BC.
+6. **Phase 3: 살균 threshold 분석** — 3분/5분 critical species.
+7. **Saline 실행** — gas_alpha BC + 새 OAS data.
+8. *(future)* R93 amplification, OH oscillation.
 
 ---
 <!-- UPDATE RULE:

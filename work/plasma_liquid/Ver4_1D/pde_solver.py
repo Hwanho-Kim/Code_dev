@@ -48,16 +48,18 @@ from chemistry_1d import AqueousChemistry1D
 # =============================================================================
 
 def _filter_onset(arr: np.ndarray, n_consecutive: int = 5) -> np.ndarray:
-    """Zero out isolated early spikes in gas-phase time series.
+    """Remove early noise spikes, then fill zeros with linear interpolation.
 
-    Finds the first index where at least `n_consecutive` consecutive
-    points are nonzero and sets all values before that index to zero.
-    This removes instrument noise at startup (e.g. NO2 spikes at t<10s).
+    1. Find onset: first run of `n_consecutive` consecutive nonzero points.
+    2. Zero out everything before onset (noise removal).
+    3. Fill remaining zeros (between nonzero values) with linear interpolation.
     """
     n = len(arr)
     if n < n_consecutive:
         return arr
-    onset = n  # default: no valid onset found → all zero
+
+    # Step 1: find onset
+    onset = n
     run = 0
     for i in range(n):
         if arr[i] > 0:
@@ -67,11 +69,34 @@ def _filter_onset(arr: np.ndarray, n_consecutive: int = 5) -> np.ndarray:
                 break
         else:
             run = 0
-    if onset > 0:
-        out = arr.copy()
-        out[:onset] = 0.0
+
+    out = arr.copy()
+    if onset >= n:
+        return out  # no valid onset → return as-is
+
+    # Step 2: zero before onset (remove noise)
+    out[:onset] = 0.0
+
+    # Step 3: linear interpolation for ALL zeros between/before nonzero values
+    # Include t=0 (value=0) as anchor so that pre-onset ramps up smoothly.
+    nz_idx = [i for i in range(n) if out[i] > 0]
+    if not nz_idx:
         return out
-    return arr
+
+    # Prepend index 0 with value 0 as ramp start
+    if nz_idx[0] > 0:
+        nz_idx = [0] + nz_idx
+        # out[0] is already 0
+
+    for k in range(len(nz_idx) - 1):
+        i0, i1 = nz_idx[k], nz_idx[k + 1]
+        if i1 - i0 > 1:  # gap exists
+            v0, v1 = out[i0], out[i1]
+            for j in range(i0 + 1, i1):
+                frac = (j - i0) / (i1 - i0)
+                out[j] = v0 * (1.0 - frac) + v1 * frac
+
+    return out
 
 
 # =============================================================================
@@ -109,6 +134,16 @@ def compute_k_mt(species_gas: str, delta_gas: float, delta_liq: float,
 
     if bc_type == 'film_alpha':
         return alpha_b * D_l / delta_liq
+
+    if bc_type == 'one_film_gas':
+        import math
+        H_cp = HENRY_CONSTANTS.get(species_gas, 1.0)
+        R_Latm = 0.08206
+        T = 298.15
+        H_cc = H_cp * R_Latm * T
+        D_g = GAS_DIFFUSIVITY.get(species_gas, D_GAS_DEFAULT)
+        k_gas = D_g / delta_gas
+        return k_gas / max(H_cc, 1e-30)
 
     if bc_type == 'gas_alpha':
         import math
@@ -720,11 +755,15 @@ class PDESolver1D:
         self,
         times: np.ndarray,
         gas_conc_molecules: Dict[str, np.ndarray],
-        hono_gas: float = 0.0,
-        hono2_gas: float = 0.0,
-        h2o2_gas: float = 0.0,
+        hono_gas=0.0,
+        hono2_gas=0.0,
+        h2o2_gas=0.0,
     ):
-        """Set gas-phase boundary conditions."""
+        """Set gas-phase boundary conditions.
+
+        hono_gas, hono2_gas, h2o2_gas: scalar (constant, molecules/cm³)
+            or ndarray (time-varying, molecules/cm³, same length as times).
+        """
         conv = 1000.0 / PHYSICAL.AVOGADRO
 
         self._gas_times = times
@@ -738,24 +777,21 @@ class PDESolver1D:
                 arr = np.zeros_like(times)
             self._gas_conc_molar[gas_sp] = _filter_onset(arr)
 
-        self._hono_gas_molar = max(hono_gas, 0.0) * conv
-        self._hono2_gas_molar = max(hono2_gas, 0.0) * conv
-        self._h2o2_gas_molar = max(h2o2_gas, 0.0) * conv
+        # HONO/HONO2/H2O2: accept scalar or array
+        for gas_sp, val in [('HONO', hono_gas), ('HONO2', hono2_gas),
+                            ('H2O2', h2o2_gas)]:
+            if isinstance(val, np.ndarray):
+                self._gas_conc_molar[gas_sp] = _filter_onset(
+                    np.maximum(val, 0.0) * conv)
+            else:
+                self._gas_conc_molar[gas_sp] = np.full_like(
+                    times, max(float(val), 0.0) * conv)
 
         # Pre-compute C_eq time series: C_eq = H × C_gas
         self._n_times = len(times)
         self._ceq_lookup = {}
         for aq_idx, k_g_val, gas_sp, H, Ka in self._interface_species:
-            if gas_sp == 'HONO':
-                ceq = H * self._hono_gas_molar  # scalar
-                self._ceq_lookup[gas_sp] = ('const', ceq)
-            elif gas_sp == 'HONO2':
-                ceq = H * self._hono2_gas_molar
-                self._ceq_lookup[gas_sp] = ('const', ceq)
-            elif gas_sp == 'H2O2':
-                ceq = H * self._h2o2_gas_molar
-                self._ceq_lookup[gas_sp] = ('const', ceq)
-            elif gas_sp in self._gas_conc_molar:
+            if gas_sp in self._gas_conc_molar:
                 ceq_arr = H * self._gas_conc_molar[gas_sp]
                 self._ceq_lookup[gas_sp] = ('array', ceq_arr)
             else:
@@ -939,9 +975,21 @@ class PDESolver1D:
 
         n_macro = len(t_macro) - 1
 
+        # Build per-variable atol array: tighter for trace radicals
+        atol_base = ODE_CONFIG.atol
+        atol_arr = np.full(self.N_total, atol_base)
+        _tight_species = ['OH', 'O-', 'O3-', 'HO3', 'NO3']
+        for sp_name in _tight_species:
+            if sp_name in self.species_idx:
+                si = self.species_idx[sp_name]
+                for j in range(self.N_z):
+                    atol_arr[j * self.N_s + si] = atol_base * 0.01  # 100x tighter
+
         if verbose:
             print(f"  BDF + electroneutrality: {n_macro} macro steps, "
                   f"dt_enforce={dt_enforce:.1f}s")
+            print(f"  atol: base={atol_base:.0e}, tight={atol_base*0.01:.0e} "
+                  f"for {_tight_species}")
 
         self._E_half_frozen = np.zeros(max(self.N_z - 1, 0))
 
@@ -975,7 +1023,7 @@ class PDESolver1D:
                 method='BDF',
                 t_eval=t_eval_k,
                 rtol=ODE_CONFIG.rtol,
-                atol=ODE_CONFIG.atol,
+                atol=atol_arr,
                 max_step=ODE_CONFIG.max_step,
                 jac=lambda t, yy: self._compute_jac_fd(t, yy),
                 vectorized=False,

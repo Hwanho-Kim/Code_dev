@@ -1,0 +1,13 @@
+# Surrogate-assisted optimization result
+# Date: 2026-04-10 12:58
+# δ_gas bounds: 5-50 mm
+# Iterations: 3
+
+gas_phase_unmeasured:
+  HONO: 1.400792e+15
+  HONO2: 2.082052e+09
+  H2O2: 2.257612e+15
+
+mass_transfer:
+  delta_x_gas: 0.013073  # 13.1 mm
+  bc_type: gas_alpha
