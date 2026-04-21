@@ -46,9 +46,11 @@ Source: `OAS data/Dry/(P-L) 액체활성종 농도, pH, conductivity.xlsx`
 ### Saline
 | Voltage | pH | NO₂⁻ (µM) | NO₃⁻ (µM) | H₂O₂ (µM) |
 |---------|-----|----------|----------|-----------|
-| 2.6 kVpp | 5.15 | 0 | 4.70 | 2.00 |
-| **3.2 kVpp** | **3.60** | **0** | **10.45** | **5.14** |
-| 3.6 kVpp | 3.43 | 0 | 16.92 | 7.73 |
+| 2.6 kVpp | 5.15 | 0 | 32.44 | 2.00 |
+| **3.2 kVpp** | **3.60** | **0** | **101.30** | **5.14** |
+| 3.6 kVpp | 3.43 | 0 | 112.77 | 7.73 |
+<!-- 2026-04-20: xlsx Saline sheet 재확인, 이전 기록(4.70/10.45/16.92)은 인접 컬럼(다른 단위) 오독 -->
+
 
 ### Gas-phase data
 Source: `OAS data/Dry/(P-L) 가스활성종 농도.xlsx`
@@ -67,17 +69,17 @@ Source: `OAS data/Dry/(P-L) 가스활성종 농도.xlsx`
 
 ### WORKING
 - Ver3 (0D): DI water fitting 완료 (NO3- 0.6%, H2O2 0.0% 오차)
-- Ver4_1D (DI water): fitting 완료 (NO2- 0.2%, NO3- 0.1%, H2O2 0.2% 오차)
-- **Monolithic BDF solver**: DIW 720s, atol=1e-15, rtol=1e-6, dt_enforce=None
-- **gas_alpha BC 채택** (Schwartz 저항 모델): k_gi = (δ_gas/D_g + 4/(α_b·v̄))⁻¹, k_mt = k_gi/H_cc. 이중 계산 없음.
-- **δ_gas=10mm** (잠정): gas gap 전체. 축소 필요할 수 있음 (pending task).
-- **비율 기반 HONO/HNO₃/H₂O₂ gas input**: HONO/NO₂=0.33, HNO₃/N₂O₅=0.83, H₂O₂/O₃=0.03
-- **현재 DIW 결과 (gas_alpha, δ_gas=10mm, 비율 gas input)**:
-  - pH=3.81 (실험 3.61, 약간 높음)
-  - NO₃⁻=155 µM (실험 63, **2.5배 과다**)
-  - **H₂O₂=13.2 µM (실험 11, 근접!)**
-  - NO₂⁻=0.003 µM (실험 3, **1000배 부족**)
-  - O₃=302 nM
+- **Monolithic BDF solver**: DIW 600s, atol=1e-15, rtol=1e-6, dt_enforce=None
+- **gas_alpha BC 채택** (Schwartz 저항 모델): k_gi = (δ_gas/D_g + 4/(α_b·v̄))⁻¹, k_mt = k_gi/H_cc.
+- **Henry 상수 버그 수정 완료 (2026-04-20)**: H_cc 직접 사용. R×T 재곱 제거.
+- **δ_gas=10mm**, α_b 종별 (N₂O₅=0.03, O₃=0.05, H₂O₂=0.1 등)
+- **Humid fitting 조건**: RH80 스케일링 + HONO/NO₂=0.0071, HONO₂/N₂O₅=0.83, H₂O₂/O₃=0.03
+- **Henry 수정 후 DIW 결과 (3.2kV, Humid fitting, δ_gas=10mm)**:
+  - pH=3.40 (실험 3.61)
+  - NO₃⁻=396 µM (실험 63, **6.3× 과다**)
+  - NO₂⁻=5.0 µM (실험 3.58, **근접**)
+  - H₂O₂=193 µM (실험 11, **17× 과다** — 비율 불확실성)
+- **NO₃⁻ 과다 비율 전 전압 일정 (~7×)**: 2.6kV=7.4×, 3.2kV=7.3×, 3.6kV=7.7×
 - Numba JIT 65x 가속, O(N) graph coloring
 - Grid convergence 완전 확인
 - 종별 α_b 구현 완료 (gas_alpha에서도 적용). 단 gas_alpha에서 α_b에 거의 무감 (gas-side 지배).
@@ -441,15 +443,100 @@ Source: `OAS data/Dry/(P-L) 가스활성종 농도.xlsx`
   - **gen_all_figures.py**: Fig 6 추가 (gas input 3패널), RH80_RATIOS 전압별 dict, CONDITION_LABEL 시스템, shape 보존 스케일링.
   - **output 구조**: `Figures/OAS data/{voltage}_{Dry|Humid_median|Humid_fitting}_Dg_10mm/`
 
-### PENDING (2026-04-15 기준)
-1. **H₂O₂/O₃ 비율의 RH 의존성** — 현재 고정 0.03이지만 RH↑에서 증가해야 함. Humid fitting에서 H₂O₂ 부족(6.7 vs 11.2)의 원인. 비율을 RH 함수로 만들거나 별도 추정 필요.
-2. **NO₂⁻ 문제** — O₃ barrier (R32). 1D no-convection 구조적 한계. 미해결.
-3. **pH gap** — ~180µM 음이온 gap. 미해결.
-4. **δ_gas 최종 결정** — 현재 10mm.
-5. **Saline 실행** — 새 OAS data + gas_alpha BC.
-6. **Phase 3: 살균 threshold 분석** — 3분/5분 critical species.
-7. **Saline 실행** — gas_alpha BC + 새 OAS data.
-8. *(future)* R93 amplification, OH oscillation.
+- 2026-04-20: **TPA→hTPA OH 정량 비교 (1 세션 완료, ultraplan 7 phase)** — 2026-04-17 실험(TPA 2mM + NaOH 10mM, pH~11.5, 10min) 3전압 데이터와 1D 시뮬 비교.
+  - 구현: `reactions_tpa.yaml`(3 rxn, R_TPA1/2/3), `config_1d.py`(TPA/hTPA species, Z=-2), `chemistry_1d.py`(`tpa_mode` flag), `pde_solver.py`(전하 병합), `run_tpa_alkaline.py` runner, `Figures/gen_fig_oh_tpa.py` 6-panel figure.
+  - 결과 (gas_alpha BC, δ_gas=10mm, α_b 종별, RH80 ratios, 10min): 2.6kV hTPA=4.89µM (exp 12.66, −61%), 3.2kV=13.92 (exp 57.72, −76%), 3.6kV=16.38 (exp 43.26, −62%).
+  - **Sim rank 3.6>3.2>2.6 단조** vs 실험 3.2>3.6>2.6 비단조 — 가스-side 단조 확인, 실험 비단조성은 inner filter effect(측정 artifact) 가능성.
+  - 정량 2.7–4× 낮음: **OH⁻ 10mM이 TPA 2mM보다 강한 scavenger** (k[OH⁻]=1.2e8 s⁻¹ vs k[TPA]=8e6 s⁻¹, 15배 차이). 시뮬 TPA 포획률 ~6%.
+  - pH 11.99–12.01 유지, TPA 소모 1.4–1.9%, wall 125s/run(TPA-on). notes/{ultraplan_tpa_oh_comparison,tpa_chemistry_literature,oh_tpa_comparison}.md 작성.
+  - **다음 단계 후보**: α_b(O₃)×H₂O₂비율 2D sweep (P1+P2), TPA k/branching 민감도, 1D geometry limitation 확정.
+
+- 2026-04-20: **Henry 버그 수정 + 전압별 재실행 + 파라미터 sweep + 과다 원인 분석**
+  - **Henry 상수 R×T 재곱 버그 수정**: gas_alpha/one_film_gas에서 H_cp→H_cc 변환 제거. k_mt 24.5× 증가.
+  - **Dry 3전압 재실행**: 2.6kV NO₃⁻=243(exp 33, 7.4×), 3.2kV=458(exp 63, 7.3×), 3.6kV=540(exp 70, 7.7×). **전 전압 ~7× 일정 과다**. pH: 3.2kV 3.34(exp 3.61, -7.5%), 3.6kV 3.27(exp 3.25, +0.5%). 2.6kV pH=3.62(exp 5.09, 대폭 괴리).
+  - **Humid fitting 3전압 Fig 1~6 재생성**: `Figures/DIW results/{V}_Henry_Dry_Dg_10mm/`, `{V}_Henry_Humid_fitting_Dg_10mm/`. fig_voltage_comparison.png 재생성.
+  - **Humid fitting 3.2kV 결과**: pH=3.40, NO₃⁻=396µM(6.3×), NO₂⁻=5.0µM(실험 3.58 근접!), H₂O₂=193µM(17×).
+  - **NO₂⁻ 매칭 시도 (Henry 수정 전)**: R32 속도상수 ×[1, 0.1, 0.01] → NO₂⁻ 불변(0.0038µM). Post-treatment(gas=0) → NO₂⁻ 감소. HONO/NO₂=1.0 → NO₂⁻=0.011µM. **물리적 파라미터로 3.58µM 도달 불가** 확인.
+  - **대규모 파라미터 sweep (31 sims)**: δ_gas=[10~100mm], H₂O₂/O₃=[0.001~0.03], HONO₂/N₂O₅=[0~0.83], HONO/NO₂=[0.007~1.0], 조합 10개.
+    - δ_gas: NO₃⁻에 반비례. 70mm에서 70.8µM(실험 근접). 하지만 70mm는 비물리적.
+    - H₂O₂/O₃=0.01: H₂O₂=12.1µM(실험 11.2 근접). NO₃⁻ 무관.
+    - HONO₂/N₂O₅: 0.83→0.0에서 NO₃⁻ 7% 감소만. **무영향**.
+    - HONO/NO₂ 증가: NO₃⁻ **증가**(역방향).
+  - **3-skill 동시 분석 (deep-research + council + verification)**:
+    - **Gas depletion 가설 (최우선)**: OAS가 empty-chamber 측정 → 실제 처리 시 액면 uptake로 gas 농도 낮음. depletion factor 0.3~0.5 추정.
+    - **η (유효면적) 가설**: plasma patch < petri dish. mass_transfer_eta가 dead code (rhs에 미적용) → 1줄 수정 필요.
+    - **Henry double-counting 기각**: gas_alpha에서 C_surface=0 → J=k_gi×C_gas, H cancel. H 변경 무효.
+    - **Penetration theory 기각**: stagnant film보다 k_mt 높음(역방향).
+    - **HONO₂ 비율 기각**: NO₃⁻에 7% 영향만.
+    - **핵심 결론**: δ_gas 또는 η만이 N₂O₅ flux 조절 가능. 전 전압 ~7× 일정 과다 → 체계적 보정 필요.
+  - **생성 파일**: `Figures/test/test_hono_ratio_1.py`, `test_no2m_matching.py`, `test_no2m_matching_v2.py`, `test_voltage_dry.py`, `test_param_sweep.py`.
+
+- 2026-04-20: **Saline 파이프라인 구축 + 6 cases 전체 생성**
+  - **초기 test run (예전 설정)**: `run_saline_1d.py` 그대로 실행 → 예전 CSV `1kHz3.2kVpp.csv` + `film_alpha` BC + α_b=0.03 uniform. 45.1min 완료. pH=2.05(exp 3.60), NO₃⁻=**6659µM(65× 과다)**, H₂O₂=0, Cl⁻ +896µM. Henry R×T 버그 + 이전 CSV(N₂O₅ 5× 높음) + film_alpha BC 복합 문제로 폐기.
+  - **실험값 교정**: xlsx `OAS data/Dry/(P-L) 액체활성종 농도...xlsx` Saline sheet 재확인. **NO₃⁻ 32.44/101.30/112.77 µM (2.6/3.2/3.6 kVpp)**. 이전 CLAUDE.md 기록(4.70/10.45/16.92)은 인접 컬럼 오독. 표 수정 완료.
+  - **α_b species-specific 재확인**: `pde_solver.py:244` `alpha_b=None`일 때만 config dict 사용(N₂O₅ 0.03, O₃ 0.05, H₂O₂ 0.1, NO₂ 0.03, HONO 0.05, HONO2 0.07). run_saline_1d.py는 0.03 하드코딩이라 species 무시됨.
+  - **gen_all_figures.py 확장**: `--saline` flag + `--condition {Dry,Humid_median,Humid_fitting}` 추가. 전역 IS_SALINE/SOLUTION_LABEL/FIXED_CATION_CONC/EXP_*_ALL 도입, saline_mode=IS_SALINE를 run_case/_get_solver/fig1b solver_bc 4곳 반영. Output 분기: DIW `Figures/OAS data/...`, Saline `Figures/Saline results/{V}_{condition}_Dg_10mm/`.
+  - **Saline 6 cases 결과** (3전압 × Dry/Humid_fitting, Grid 49 cells, monolithic BDF single step, 각 ~6min):
+
+| Case | pH sim/exp | NO₃⁻ µM sim/exp | NO₂⁻ sim | H₂O₂ µM sim/exp |
+|---|---|---|---|---|
+| 2.6kV Dry | 3.65 / 5.15 | 241 / 32 (7.5×) | 0 | 0 / 2.00 |
+| 3.2kV Dry | 3.36 / 3.60 | 457 / 101 (4.5×) | 0 | 0 / 5.14 |
+| 3.6kV Dry | 3.28 / 3.43 | 539 / 113 (4.8×) | 0 | 0 / 7.73 |
+| 2.6kV Humid_fit | 3.51 / 5.15 | 308 / 32 (9.5×) | **3.42** | **2.03 / 2.00** ✓ |
+| 3.2kV Humid_fit | 3.41 / 3.60 | 410 / 101 (4.1×) | 0 | 7.25 / 5.14 (+41%) |
+| 3.6kV Humid_fit | 3.28 / 3.43 | 547 / 113 (4.8×) | 0 | 10.4 / 7.73 (+34%) |
+
+  - **핵심 관찰**: (1) **H₂O₂ Humid_fit에서 양호** — 2.6kV 완벽(2.03/2.00), 3.2/3.6kV +35~40%. DIW의 H₂O₂=193µM(17×)와 달리 Saline은 적정 — Cl⁻ scavenger 효과로 H₂O₂ 추가 생성 억제된 듯. (2) **pH 3.2/3.6kV 근접** — 0.15~0.25 unit. (3) **NO₃⁻ 구조적 4.5~9.5× 과다** — DIW(7×)와 유사한 크기. 같은 gas depletion/η 문제 동일 적용 가능. (4) **2.6kV 저전압 pH 크게 빗나감** — sim 3.5~3.65 vs exp 5.15(−1.5 unit). Saline+저전압 조합 특성. (5) **Humid_fit 2.6kV NO₂⁻ 3.4µM** — 저전압 O₃ barrier 약화(O₃ 작으면 R32 sink 감소).
+  - **변경 파일**: `Figures/gen_all_figures.py` (IS_SALINE 글로벌, argparse 확장, EXP voltage-specific dict, out_folder 분기).
+  - **생성 산출물**: `Figures/Saline results/{2.6|3.2|3.6}kV_{Dry|Humid_fitting}_Dg_10mm/` 각 폴더에 fig1/1b/2/3/4/5/6 (png+pdf) + cache npz.
+  - **memory feedback 추가**: `feedback_plasma_liquid_new_setup.md` — 모든 실행은 새 OAS data(xlsx) + gas_alpha BC(δ_gas=10mm) 필수, 예전 CSV/film_alpha 금지.
+
+### PENDING (2026-04-20 기준)
+0. **★ NO₃⁻ 7× 과다 해결** — 최우선. gas depletion (empty-chamber artifact) + η (유효면적) 검토. mass_transfer_eta dead code 수정 필요.
+1. **η sweep** — pde_solver.py rhs() 1줄 수정 후 η=[0.05~1.0] sweep. 3전압 동시 검증.
+2. **H₂O₂/O₃ 비율 재조정** — Henry 수정 후 0.03에서 17× 과다. ~0.01이 적정.
+3. **NO₂⁻ 문제** — O₃ barrier (R32). Henry 수정 후 5.0µM으로 개선(실험 3.58 근접). 구조적 한계 잔존.
+4. **pH gap** — ~180µM 음이온 gap. 미해결.
+5. **TPA Phase 5 sweep** — α_b(O₃)×H₂O₂/O₃ 2D sweep.
+6. **Saline 실행** — 새 OAS data + gas_alpha BC.
+7. **Phase 3: 살균 threshold 분석** — 3분/5분 critical species.
+
+- 2026-04-20 (TPA 후속, 3차 세션): **Henry 수정 후 TPA 3조건 × k_R3 3값 감도 분석**.
+  - **Dry + Henry fix (k_R3=1e9)**: 2.6kV 23.6(+86% overshoot), 3.2kV 19.1(−67%), 3.6kV 19.0(−56%). rank 2.6>3.2≈3.6 역전. pH 3.6kV 11.48 저하 과도. HO₂⁻/H₂O₂ 100× 증가(~5µM).
+  - **Humid_fitting + Henry fix (k_R3=1e9)**: 2.6kV 13.77(+9%), 3.2kV 22.30(−61%), 3.6kV 21.40(−51%). **rank 3.2>3.6>2.6 첫 실험 재현**. pH 11.98 유지(N₂O₅ gas 7.6× 축소).
+  - **R_TPA3 근거 deep research** (`deep-research` skill): Page 2010(J. Environ. Monit. 12:1658)이 **k(hTPA+OH)=6.3×10⁹ 직접 측정한 유일한 논문**. Tampieri 2021(Anal. Chem.) 등은 kinetic model 대신 <90s data truncation으로 회피. notes/tpa_secondary_reaction_research.md.
+  - **k_R3=6.3×10⁹ (Page 2010)**: 2.6kV 9.13, 3.2kV 6.53, 3.6kV 5.77. **rank 2.6>3.2>3.6 재역전**. Surface [TPA] 87-89% 고갈(2.6kV 33%) + hTPA 수명 τ=1/(k_R3·[OH]): 2.6kV 21s / 3.6kV 2.8s. 생성된 hTPA 90%가 즉시 분해 → 저전압 축적 우세.
+  - **k_R3=0 (Tampieri 관행, 최종 채택)**: 2.6kV 15.30(+21%), **3.2kV 41.40(−28%), 3.6kV 43.53(+1%)**. **실험과 가장 일치**. rank 3.6≈3.2>2.6. Figure: `Figures/fig_oh_tpa_humidfitting.png`.
+  - **k_R3 문헌 한계**: Page 2010 single-lab + pH 5-7 측정. pH 12에서 hTPA(phenoxide, pKa~9.5) 반응성 ±50% 불확실. Salicylate 5×10⁹, phenol 6-14×10⁹ 비교로 합리적 범위이나 독립 검증 無.
+  - **경향 역전 정정**: (a) surface TPA diffusion-limited 고갈 → 고전압에서 local [TPA] drop, (b) hTPA 수명이 [OH]에 반비례. 단순 "OH↑→hTPA↑"는 **TPA 충분 공급 전제하에서만** 성립.
+  - 변경: `reactions_tpa.yaml` R_TPA3 k=0 주석처리, `run_tpa_alkaline.py` --condition 플래그 추가, `gen_fig_oh_tpa.py` CONDITION 선택. `notes/tpa_secondary_reaction_research.md`, `notes/oh_tpa_comparison.md` 업데이트.
+
+- 2026-04-20 (코드 리뷰 + Paper storyline 세션): **Ver4_1D CRITICAL 3건 검증 + A/B/C 전략 수립**
+  - **Ultrareview**: 1 file diff (+1/-9), findings 0.
+  - **Ver3/Ver4_1D 코어 병렬 리뷰** (general-purpose agent × 2): 파일별 CRITICAL/HIGH/MEDIUM 분류.
+  - **Ver4_1D CRITICAL 3건 코드 실제 검증**:
+    1. **gas_alpha/one_film_gas R×T 재곱** — 확정. (이미 같은 날 별도 세션에서 수정됨.)
+    2. **Interface BC Ka asymmetry (pde_solver.py:901-911)** — **리뷰 오류, 취소**. `C_eq = H_cc × c_gas` (분자형 평형), `c_eff = f_mol × c_total` (분자형 표면). flux `k × (C_eq − c_eff)`는 질량 수지상 올바름. `set_gas_data:797`이 H_cc 직접 사용 확인.
+    3. **apply_qssa in-place 변이 (chemistry_1d.py:991, 1135-1138)** — **MEDIUM 강등**. 호출자 `compute_rates:689`의 `np.clip(y_cell, ...)` (out= 없음)이 새 배열 반환 → caller state 보호. Monolithic BDF에서 QSSA OFF (2026-03-30 결정) 상태라 현재 경로 미호출. 향후 QSSA 재활성화 시 footgun.
+  - **Ver3 (legacy) 주요 지적** (참조): mass-balance rate capping 미제거, `reaction_rates` RHS side-effect (contributions.clear()), `chemistry_utils.py` D_adj Henry 이중곱, `trace=1e-30`/`atol=1e-10` 충돌. Ver4_1D는 대응 완료.
+  - **교훈**: 리뷰 에이전트 결과 "찾았다"와 "맞다"는 다름 — 코드 실제 검증 필수.
+  - ---
+  - **Paper storyline 재설정 (A+B+C)**:
+    - **A (Council, 4 voices)**: Architect/Skeptic/Pragmatist/Critic 병렬 논의.
+      - 3/4 voices가 "soft-sensing" 프레임 drop 권고. Skeptic + Pragmatist 독립적으로 **"saline vs DIW electrolyte-selective RONS delivery"를 실제 novelty hook**으로 지목 (real signal).
+      - Critic: Henry-fix 직후 재현성 + NO₂⁻ 1000× gap이 "predictive soft sensor" 주장 desk-reject 유발 가능.
+    - **B (deep research, general-purpose agent, 12편)**: "Radical chain ignition bifurcation"은 plasma-liquid 문헌에 **named concept 없음** → 정말 novel. 4-way integration (sDBD patch + OAS + 1D + live cell)도 **현재 발표 논문 없음** → gap. Target journal: **PSST (IF~4.4) / J.Phys.D 1순위**, PNAS/Nat Comm은 cell biology 강할 때만.
+    - **C (synthesis — outline 확정)**:
+      - 제안 title: "Electrolyte-selective RONS delivery in surface DBD plasma patches: gas-phase diagnostics resolve DIW-vs-saline sterilization divergence"
+      - 메인 hook: **saline vs DIW divergence** (F3 central novelty figure)
+      - Sim 언어: "semi-quantitative mechanism interpreter" 고정. "predictive" 금지.
+      - Ignition bifurcation: "chemistry transition" 완곡 표현 → Discussion 4.2. Formal bifurcation은 follow-up 논문 예고만.
+      - 6 main figures (F1 overview / F2 gas OAS / F3 liquid DIW vs saline / F4 spatial / F5 cell viability / F6 mechanism cartoon) + S1 parity + S2 transition.
+      - 4 claim 문장: C1 divergence, C2 inference, C3 transition, C4 Cl pathway.
+      - Ship: Henry-fix 재실행 + 3/5/12min 액상 1-2주 + 세포 RONS + 작성 3주 = **6-8주**.
+    - **전략 변경**: 사용자 초안 "soft-sensing + gas-liquid-cell 체인 + 3/5분 threshold" → 수정 "saline vs DIW electrolyte selectivity (main) + semi-quantitative inference (보조) + chemistry transition (완전 demote)".
+  - **변경 파일**: `memory/feedback_henry_constants_convention.md` (버그 수정 반영), `memory/MEMORY.md:10` (description 갱신).
 
 ---
 <!-- UPDATE RULE:
