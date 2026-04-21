@@ -74,7 +74,12 @@ H2O2_RATIO = 0.03       # H₂O₂/O₃ (unmeasured, literature)
 HONO_GAS = None
 HONO2_GAS = None
 H2O2_GAS = None
-CONDITION_LABEL = 'Humid_fitting'
+CONDITION_LABEL = 'Henry_Humid_fitting'
+
+# Solution mode (set by --saline)
+IS_SALINE = False
+SOLUTION_LABEL = 'DIW'
+FIXED_CATION_CONC = 0.0  # Na+ [M] when saline (0.9% NaCl = 0.154M)
 
 # BC comparison cases (Fig 1)
 BC_CASES = [
@@ -99,8 +104,18 @@ MT_SPECIES = [
 # Fig 3: radical/intermediate concentrations — single reference case
 ALPHA_CASES = [None]  # species-specific only
 
-# Experimental targets
-EXP = {'pH': 3.61, 'NO3': 63.0, 'NO2': 3.0, 'H2O2': 11.0}
+# Experimental targets (voltage-specific, from OAS data xlsx)
+EXP_DIW_ALL = {
+    '2.6kV': {'pH': 5.09, 'NO3': 32.63, 'NO2': 0.0,   'H2O2': 4.76},
+    '3.2kV': {'pH': 3.61, 'NO3': 62.74, 'NO2': 3.58,  'H2O2': 11.21},
+    '3.6kV': {'pH': 3.25, 'NO3': 70.42, 'NO2': 20.74, 'H2O2': 16.25},
+}
+EXP_SALINE_ALL = {
+    '2.6kV': {'pH': 5.15, 'NO3': 32.44,  'NO2': 0.0, 'H2O2': 2.00},
+    '3.2kV': {'pH': 3.60, 'NO3': 101.30, 'NO2': 0.0, 'H2O2': 5.14},
+    '3.6kV': {'pH': 3.43, 'NO3': 112.77, 'NO2': 0.0, 'H2O2': 7.73},
+}
+EXP = EXP_DIW_ALL['3.2kV']  # set in main() by --voltage/--saline
 
 # Species for Fig 2 rate evolution
 TARGET_SPECIES = ['NO3-', 'O3', 'NO2-', 'H2O2']
@@ -225,7 +240,7 @@ def load_gas_data():
     # Apply RH 80% fitting ratios if available
     global HONO_GAS, HONO2_GAS, H2O2_GAS
     r = RH80_RATIOS.get(DEFAULT_GAS_SHEET, None)
-    if r and CONDITION_LABEL == 'Humid_fitting':
+    if r and 'Humid_fitting' in CONDITION_LABEL:
         # Compute SS values (last 100s avg) for each Dry species
         mask_ss = times >= (times[-1] - 100)
         def ss(arr):
@@ -251,7 +266,7 @@ def load_gas_data():
         HONO_GAS = gas_conc['NO2'] * r['HONO_NO2']
         HONO2_GAS = gas_conc['N2O5'] * HONO2_RATIO
         H2O2_GAS = gas_conc['O3'] * H2O2_RATIO
-    elif CONDITION_LABEL == 'Dry':
+    elif 'Dry' in CONDITION_LABEL:
         HONO_GAS = 0.0
         HONO2_GAS = 0.0
         H2O2_GAS = 0.0
@@ -285,13 +300,14 @@ def run_case(times, gas_conc, bc_type, alpha_b, label, rerun=False,
         return dict(np.load(cache_file, allow_pickle=True))
 
     print(f"  [{label}] running simulation...")
-    chem = AqueousChemistry1D(saline_mode=False)
+    chem = AqueousChemistry1D(saline_mode=IS_SALINE)
     solver = PDESolver1D(
         chemistry=chem,
         dz_min=DZ_MIN,
         stretch_ratio=STRETCH,
         mass_transfer_eta=1.0,
-        saline_mode=False,
+        saline_mode=IS_SALINE,
+        fixed_cation_conc=FIXED_CATION_CONC,
         bc_type=bc_type,
         alpha_b=alpha_b,
         delta_gas=delta_gas,
@@ -362,10 +378,11 @@ def run_case(times, gas_conc, bc_type, alpha_b, label, rerun=False,
 def _get_solver(times, gas_conc, alpha_b=REF_ALPHA, bc_type=None,
                 delta_gas=None):
     """Create a solver instance (for rate evaluation, not simulation)."""
-    chem = AqueousChemistry1D(saline_mode=False)
+    chem = AqueousChemistry1D(saline_mode=IS_SALINE)
     solver = PDESolver1D(
         chemistry=chem, dz_min=DZ_MIN, stretch_ratio=STRETCH,
-        saline_mode=False, bc_type=bc_type or REF_BC,
+        saline_mode=IS_SALINE, fixed_cation_conc=FIXED_CATION_CONC,
+        bc_type=bc_type or REF_BC,
         alpha_b=alpha_b, delta_gas=delta_gas or REF_DELTA_GAS,
     )
     solver.set_gas_data(times=times, gas_conc_molecules=gas_conc,
@@ -541,7 +558,7 @@ def gen_fig1(data):
             ax.text(bar.get_x() + bar.get_width() / 2, max(ypos, 0),
                     txt, ha='center', va='bottom', fontsize=8)
 
-    fig.suptitle(f'Effect of gas-liquid interface BC model (DIW, {DEFAULT_GAS_SHEET}pp, {CONDITION_LABEL})',
+    fig.suptitle(f'Effect of gas-liquid interface BC model ({SOLUTION_LABEL}, {DEFAULT_GAS_SHEET}pp, {CONDITION_LABEL})',
                  fontsize=13, y=1.01)
     fig.tight_layout()
     _save(fig, 'fig1_bc_comparison')
@@ -579,9 +596,10 @@ def gen_fig1b(data):
                     dg = d
                     break
             solver_bc = PDESolver1D(
-                chemistry=AqueousChemistry1D(saline_mode=False),
+                chemistry=AqueousChemistry1D(saline_mode=IS_SALINE),
                 dz_min=DZ_MIN, stretch_ratio=STRETCH,
-                saline_mode=False, bc_type=bc_type, alpha_b=ab,
+                saline_mode=IS_SALINE, fixed_cation_conc=FIXED_CATION_CONC,
+                bc_type=bc_type, alpha_b=ab,
                 delta_gas=dg,
             )
             solver_bc.set_gas_data(times=times, gas_conc_molecules=gas_conc,
@@ -1154,6 +1172,7 @@ FIGURE_MAP = {
 
 def main():
     global DEFAULT_GAS_SHEET, CACHE_DIR, _output_dir
+    global IS_SALINE, SOLUTION_LABEL, FIXED_CATION_CONC, CONDITION_LABEL, EXP
 
     parser = argparse.ArgumentParser(description='Generate all figures')
     parser.add_argument('--rerun', action='store_true',
@@ -1163,12 +1182,32 @@ def main():
     parser.add_argument('--voltage', default='3.2kV',
                         choices=['2.6kV', '3.2kV', '3.6kV'],
                         help='Voltage condition (default: 3.2kV)')
+    parser.add_argument('--saline', action='store_true',
+                        help='Saline mode (0.9%% NaCl, saline chemistry, NO3- exp targets)')
+    parser.add_argument('--condition', default='Humid_fitting',
+                        choices=['Dry', 'Humid_median', 'Humid_fitting'],
+                        help='Gas-phase condition (default: Humid_fitting)')
     args = parser.parse_args()
+
+    # Solution mode
+    IS_SALINE = args.saline
+    if IS_SALINE:
+        SOLUTION_LABEL = 'Saline'
+        FIXED_CATION_CONC = 0.154
+        CONDITION_LABEL = args.condition
+        EXP = EXP_SALINE_ALL[args.voltage]
+        base_folder = 'Saline results'
+    else:
+        SOLUTION_LABEL = 'DIW'
+        FIXED_CATION_CONC = 0.0
+        CONDITION_LABEL = f'Henry_{args.condition}'
+        EXP = EXP_DIW_ALL[args.voltage]
+        base_folder = 'OAS data'
 
     # Set voltage-specific paths
     DEFAULT_GAS_SHEET = args.voltage
-    voltage_label = args.voltage.replace('kV', 'kV')
-    out_folder = _script_dir / 'OAS data' / f'{voltage_label}_{CONDITION_LABEL}_Dg_{REF_DELTA_GAS*1e3:.0f}mm'
+    voltage_label = args.voltage
+    out_folder = _script_dir / base_folder / f'{voltage_label}_{CONDITION_LABEL}_Dg_{REF_DELTA_GAS*1e3:.0f}mm'
     out_folder.mkdir(parents=True, exist_ok=True)
     _output_dir = out_folder
     CACHE_DIR = out_folder / 'cache'
@@ -1178,7 +1217,9 @@ def main():
 
     print("=" * 60)
     print("  Plasma-Liquid Figure Generator")
+    print(f"  Solution: {SOLUTION_LABEL} (cation={FIXED_CATION_CONC} M)")
     print(f"  Voltage: {args.voltage}")
+    print(f"  Condition: {CONDITION_LABEL}")
     print(f"  Figures: {', '.join(args.fig)}")
     print(f"  Output: {_output_dir}")
     print(f"  Rerun: {args.rerun}")
