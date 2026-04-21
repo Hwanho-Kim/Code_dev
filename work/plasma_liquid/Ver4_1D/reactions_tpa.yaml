@@ -1,0 +1,36 @@
+# TPA (Disodium terephthalate) + OH → hTPA (2-hydroxyterephthalate) fluorescence probe
+#
+# Literature:
+#   k(TPA + OH)_total = 4.0 × 10⁹ M⁻¹s⁻¹  (Matthews 1980; Charbouillot 2011; Page 2010)
+#   branching → hTPA  = 0.35               (Page 2010; Saran 1999; Fang 1996)
+#   k(hTPA + OH)      ≈ 1.0 × 10⁹           (conservative estimate, Fang 1996)
+#
+# TPA²⁻ pKa₁=3.51, pKa₂=4.82 → pH≥6 전역에서 100% dianion. 단일 species `TPA` 처리.
+# hTPA²⁻도 추가 phenol hydroxyl이 있으나 pKa≈9.5 → pH 11.5에서 대부분 (h)TPA³⁻.
+# 여기선 양자화한 단일 `hTPA` species로 근사 (전하 효과는 charge balance에만 반영).
+
+irreversible_reactions:
+  # R_TPA1: TPA + OH → hTPA   (35% branching, fluorescent product)
+  - type: irreversible
+    reactants: {TPA: 1, OH: 1}
+    products: {hTPA: 1}
+    k: 1.4e9
+    label: "R_TPA1: TPA + OH → hTPA (branching 0.35)"
+
+  # R_TPA2: TPA + OH → non-fluorescent products (65% branching)
+  # products empty → OH and TPA consumed, no downstream tracking
+  - type: irreversible
+    reactants: {TPA: 1, OH: 1}
+    products: {}
+    k: 2.6e9
+    label: "R_TPA2: TPA + OH → non-fluorescent (branching 0.65)"
+
+  # R_TPA3: hTPA + OH → decomposition  — DISABLED (k=0 case, 2026-04-20)
+  # Page 2010 k=6.3e9은 single-lab 측정 + pH 5-7 측정. pH 12 조건 불확실.
+  # Tampieri 2021 등 대부분 plasma 논문은 이 반응 무시 (short-time truncation 관행).
+  # k=0 sensitivity case로 lower-bound hTPA prediction 생성.
+  # - type: irreversible
+  #   reactants: {hTPA: 1, OH: 1}
+  #   products: {}
+  #   k: 6.3e9
+  #   label: "R_TPA3: hTPA + OH → decomposition"

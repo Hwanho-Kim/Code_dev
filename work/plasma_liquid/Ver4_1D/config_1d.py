@@ -98,6 +98,8 @@ LIQUID_DIFFUSIVITY: Dict[str, float] = {
     'OH': 2.0e-9,
     'HO2': 1.0e-9,
     'Cl-': 2.03e-9,       # textbook
+    'TPA': 7.5e-10,       # Stokes-Einstein, disodium terephthalate dianion
+    'hTPA': 7.0e-10,      # 2-hydroxyterephthalate
 }
 
 # Default diffusivities for species not in the tables above
@@ -255,6 +257,13 @@ SPECIES_CHARGE: Dict[str, int] = {
     'OH-': -1,
     'O-': -1,
     'O3-': -1,
+}
+
+# TPA alkaline scenario — TPA²⁻ / hTPA²⁻ dianions. Na⁺ handled via fixed_cation_conc.
+TPA_SPECIES: List[str] = ['TPA', 'hTPA']
+TPA_SPECIES_CHARGE: Dict[str, int] = {
+    'TPA': -2,
+    'hTPA': -2,
 }
 
 SALINE_SPECIES: List[str] = [

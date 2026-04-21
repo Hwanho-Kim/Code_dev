@@ -23,6 +23,7 @@ from config_1d import (
     WATER, ACID_BASE_PAIRS, AQUEOUS_SPECIES,
     DEFAULTS, ODE_CONFIG,
     SALINE_SPECIES, SALINE_ACID_BASE_PAIRS,
+    TPA_SPECIES,
 )
 
 
@@ -531,9 +532,11 @@ class AqueousChemistry1D:
     """
 
     def __init__(self, reactions_file: Optional[Path] = None,
-                 saline_mode: bool = False):
+                 saline_mode: bool = False,
+                 tpa_mode: bool = False):
         self.Kw = WATER.KW
         self.saline_mode = saline_mode
+        self.tpa_mode = tpa_mode
 
         if saline_mode:
             self.aqueous_species = list(AQUEOUS_SPECIES) + list(SALINE_SPECIES)
@@ -541,6 +544,9 @@ class AqueousChemistry1D:
         else:
             self.aqueous_species = list(AQUEOUS_SPECIES)
             self.pKa_map = dict(ACID_BASE_PAIRS)
+
+        if tpa_mode:
+            self.aqueous_species = list(self.aqueous_species) + list(TPA_SPECIES)
 
         self.species_to_total = get_species_to_total_map(self.pKa_map)
 
@@ -561,6 +567,12 @@ class AqueousChemistry1D:
         if reactions_file is None:
             reactions_file = Path(__file__).parent / 'reactions_full.yaml'
         self.reactions = ReactionLoader.load_reactions(reactions_file)
+
+        if self.tpa_mode:
+            tpa_file = Path(__file__).parent / 'reactions_tpa.yaml'
+            if tpa_file.exists():
+                tpa_rxns = ReactionLoader.load_reactions(tpa_file)
+                self.reactions.extend(tpa_rxns)
 
         if self.saline_mode:
             saline_file = Path(__file__).parent / 'reactions_saline.yaml'
