@@ -45,7 +45,6 @@ from pde_solver import MOLAR_MASS
 # Constants
 # ═══════════════════════════════════════════════════════════════════════
 
-R_LATM = 0.08206   # L·atm/(mol·K)
 T = 298.15          # K
 R_GAS = 8.314       # J/(mol·K)
 KW = 1e-14
@@ -82,13 +81,10 @@ def compute_k_mt_gas_alpha(species: str, delta_gas: float,
                            alpha_b: float) -> float:
     """Gas-side + interfacial resistance k_mt [m/s] in liquid-phase units.
 
-    Identical to pde_solver.py gas_alpha branch for consistency.
-    HENRY_CONSTANTS are dimensionless H_cc, but the 1D code applies
-    an additional R*T factor.  We replicate that here so 0D and 1D
-    use exactly the same k_mt × C_eq product.
+    Identical to pde_solver.py gas_alpha branch.
+    HENRY_CONSTANTS are dimensionless H_cc (Liu 2015).
     """
-    H = HENRY_CONSTANTS.get(species, 1.0)          # dimensionless H_cc
-    H_conv = H * R_LATM * T                        # same as 1D code
+    H_cc = HENRY_CONSTANTS.get(species, 1.0)
     D_g = GAS_DIFFUSIVITY.get(species, D_GAS_DEFAULT)
     M = MOLAR_MASS.get(species, 48.0)
     v_th = math.sqrt(8.0 * R_GAS * T / (math.pi * M * 1e-3))
@@ -96,7 +92,7 @@ def compute_k_mt_gas_alpha(species: str, delta_gas: float,
     k_gas = D_g / delta_gas
     k_int = alpha_b * v_th / 4.0
     k_gi = 1.0 / (1.0 / k_gas + 1.0 / k_int)
-    return k_gi / H_conv
+    return k_gi / H_cc
 
 
 def molecules_to_molar(n: float) -> float:

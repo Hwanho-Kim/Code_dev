@@ -38,7 +38,7 @@ from config_1d import (
     D_GAS_DEFAULT, D_LIQ_DEFAULT, AQUEOUS_SPECIES, GAS_TO_AQUEOUS_MAP,
     MASS_TRANSFER, GRID, DEFAULTS, ODE_CONFIG, ACID_BASE_PAIRS,
     POISSON, SPECIES_CHARGE,
-    SALINE_SPECIES_CHARGE,
+    SALINE_SPECIES_CHARGE, TPA_SPECIES_CHARGE,
 )
 from chemistry_1d import AqueousChemistry1D
 
@@ -136,22 +136,15 @@ def compute_k_mt(species_gas: str, delta_gas: float, delta_liq: float,
         return alpha_b * D_l / delta_liq
 
     if bc_type == 'one_film_gas':
-        import math
-        H_cp = HENRY_CONSTANTS.get(species_gas, 1.0)
-        R_Latm = 0.08206
-        T = 298.15
-        H_cc = H_cp * R_Latm * T
+        H_cc = HENRY_CONSTANTS.get(species_gas, 1.0)  # dimensionless (Liu 2015)
         D_g = GAS_DIFFUSIVITY.get(species_gas, D_GAS_DEFAULT)
         k_gas = D_g / delta_gas
         return k_gas / max(H_cc, 1e-30)
 
     if bc_type == 'gas_alpha':
         import math
-        H_cp = HENRY_CONSTANTS.get(species_gas, 1.0)  # M/atm
-        # Convert to dimensionless H_cc = H_cp × R_Latm × T
-        R_Latm = 0.08206  # L·atm/(mol·K)
+        H_cc = HENRY_CONSTANTS.get(species_gas, 1.0)  # dimensionless (Liu 2015)
         T = 298.15
-        H_cc = H_cp * R_Latm * T
         D_g = GAS_DIFFUSIVITY.get(species_gas, D_GAS_DEFAULT)
         M = MOLAR_MASS.get(species_gas, 48.0)  # g/mol
         R = 8.314
@@ -314,6 +307,8 @@ class PDESolver1D:
         all_charges = dict(SPECIES_CHARGE)
         if saline_mode:
             all_charges.update(SALINE_SPECIES_CHARGE)
+        if getattr(chemistry, 'tpa_mode', False):
+            all_charges.update(TPA_SPECIES_CHARGE)
 
         self._direct_charge = {}
         for sp, Z in all_charges.items():
