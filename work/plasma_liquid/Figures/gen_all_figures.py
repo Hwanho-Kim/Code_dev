@@ -47,8 +47,9 @@ _output_dir = _script_dir
 DZ_MIN = 5e-6
 STRETCH = 1.12
 
-# Reference case: gas_alpha + species-specific α_b, δ_gas=10mm
-REF_BC = 'gas_alpha'
+# Reference case: three_film + species-specific α_b, δ_gas=10mm, δ_liq=100µm
+# (project default 2026-04-23, full Schwartz 1986 series resistance)
+REF_BC = 'three_film'
 REF_ALPHA = None       # None → species-specific α_b from config
 REF_DELTA_GAS = 0.01   # 10 mm
 DT_SNAPSHOT = 2.0      # seconds, snapshot interval for all simulations
@@ -69,7 +70,7 @@ RH80_RATIOS = {
     '3.6kV': {'O3_scale': 0.762, 'NO2_O3': 0.095, 'N2O5_NO2': 0.037, 'HONO_NO2': 0.00662, 'NO3_O3': 0.00337},
 }
 HONO2_RATIO = 0.83      # HNO₃/N₂O₅ (unmeasured, literature)
-H2O2_RATIO = 0.03       # H₂O₂/O₃ (unmeasured, literature)
+H2O2_RATIO = 0.003      # H₂O₂/O₃ (re-fit 2026-04-23 via sweep; prev 0.03)
 
 HONO_GAS = None
 HONO2_GAS = None
@@ -81,17 +82,12 @@ IS_SALINE = False
 SOLUTION_LABEL = 'DIW'
 FIXED_CATION_CONC = 0.0  # Na+ [M] when saline (0.9% NaCl = 0.154M)
 
-# BC comparison cases (Fig 1)
-BC_CASES = [
-    ('One-film (gas)',    'one_film_gas',  1.0,  0.01),
-    ('Gas+\u03b1b',      'gas_alpha',     None, 0.01),
-]
+# BC comparison cases (Fig 1) — only three_film (ref) from 2026-04-23.
+# Legacy BCs (one_film_gas, gas_alpha) removed. Add back for sensitivity if needed.
+BC_CASES = []
 
-# MT flux cases (Fig 1b)
-MT_BC_CASES = [
-    ('One-film (gas)',    'one_film_gas',  1.0,  0.01),
-    ('Gas+\u03b1b',      'gas_alpha',     None, 0.01),
-]
+# MT flux cases (Fig 1b) — only three_film (ref).
+MT_BC_CASES = []
 
 # Species to track MT flux
 MT_SPECIES = [
@@ -227,15 +223,6 @@ def load_gas_data():
             gas_conc[col] = _preprocess_below_lod(raw)
         else:
             gas_conc[col] = np.zeros(len(df))
-    # Estimate N2O4 from NO2 equilibrium
-    if 'N2O4' not in df.columns or np.all(gas_conc.get('N2O4', np.array([0])) == 0):
-        no2 = gas_conc['NO2']
-        T = 298.15
-        Kp = math.exp(
-            math.log(N2O4_EQ.KP_298)
-            + (N2O4_EQ.DELTA_H / PHYSICAL.R) * (1 / N2O4_EQ.REF_TEMP - 1 / T)
-        )
-        gas_conc['N2O4'] = Kp * PHYSICAL.KB_T_OVER_P * T * (no2 ** 2)
 
     # Apply RH 80% fitting ratios if available
     global HONO_GAS, HONO2_GAS, H2O2_GAS
@@ -275,6 +262,17 @@ def load_gas_data():
         HONO_GAS = gas_conc['NO2'] * 0.33
         HONO2_GAS = gas_conc['N2O5'] * 0.83
         H2O2_GAS = gas_conc['O3'] * 0.03
+
+    # N2O4 equilibrium — computed AFTER any NO2 rescaling so that
+    # N2O4 = Kp · (kB·T/P) · [NO2_current]² stays self-consistent.
+    if 'N2O4' not in df.columns or np.all(gas_conc.get('N2O4', np.array([0])) == 0):
+        no2 = gas_conc['NO2']
+        T = 298.15
+        Kp = math.exp(
+            math.log(N2O4_EQ.KP_298)
+            + (N2O4_EQ.DELTA_H / PHYSICAL.R) * (1 / N2O4_EQ.REF_TEMP - 1 / T)
+        )
+        gas_conc['N2O4'] = Kp * PHYSICAL.KB_T_OVER_P * T * (no2 ** 2)
 
     return times, gas_conc
 
@@ -520,46 +518,50 @@ def run_all_simulations(rerun=False):
 # ═══════════════════════════════════════════════════════════════════════
 
 def gen_fig1(data):
+    """Fig 1: Final-time bar chart of pH, NO2-, NO3-, H2O2 for three_film.
+    Experimental values shown as dashed horizontal lines."""
     import matplotlib.pyplot as plt
-    print("\n--- Fig 1: BC comparison ---")
+    print("\n--- Fig 1: Final-value bar chart (three_film) ---")
 
-    labels = [lab for lab, _ in data['bc']]
-    pH_vals = [r['pH'].item() for _, r in data['bc']]
-    no3_vals = [r['avg_NO3-'].item() * 1e6 for _, r in data['bc']]
-    no2_vals = [r['avg_NO2-'].item() * 1e6 for _, r in data['bc']]
-    h2o2_vals = [r['avg_H2O2'].item() * 1e6 for _, r in data['bc']]
+    ref = data['ref']
+    sim_vals = {
+        'pH':   float(ref['pH']),
+        'NO2':  float(ref['avg_NO2-']) * 1e6,
+        'NO3':  float(ref['avg_NO3-']) * 1e6,
+        'H2O2': float(ref['avg_H2O2']) * 1e6,
+    }
 
-    x = np.arange(len(labels))
-    w = 0.6
-
-    fig, axes = plt.subplots(2, 2, figsize=(10, 7.5))
+    fig, axes = plt.subplots(2, 2, figsize=(8, 6.5))
     panels = [
-        ('pH', pH_vals, EXP['pH'], False, (1.5, 5.0)),
-        ('NO\u2082\u207b (\u00b5M)', no2_vals, EXP['NO2'], False, None),
-        ('NO\u2083\u207b (\u00b5M)', no3_vals, EXP['NO3'], False, None),
-        ('H\u2082O\u2082 (\u00b5M)', h2o2_vals, EXP['H2O2'], False, None),
+        ('pH',                           sim_vals['pH'],   EXP['pH']),
+        ('NO\u2082\u207b (\u00b5M)',   sim_vals['NO2'],  EXP['NO2']),
+        ('NO\u2083\u207b (\u00b5M)',   sim_vals['NO3'],  EXP['NO3']),
+        ('H\u2082O\u2082 (\u00b5M)',   sim_vals['H2O2'], EXP['H2O2']),
     ]
 
-    for i, (ylabel, vals, exp_val, use_log, ylim) in enumerate(panels):
+    for i, (ylabel, sim_val, exp_val) in enumerate(panels):
         ax = axes.flat[i]
-        ax.bar(x, vals, w, color='#4878a8', edgecolor='black', lw=0.8, alpha=0.85)
-        ax.axhline(exp_val, color='k', ls='--', lw=1.2)
+        ax.bar(['Sim'], [sim_val], width=0.55,
+               color='#1f77b4', edgecolor='black', lw=0.8, alpha=0.85)
+        ax.axhline(exp_val, color='k', ls='--', lw=1.5,
+                   label=f'Exp = {exp_val:.2f}')
         ax.set_ylabel(ylabel)
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels, fontsize=8, rotation=15, ha='right')
         ax.set_title(f'({"abcd"[i]}) {ylabel}')
-        if use_log:
-            ax.set_yscale('log')
-        if ylim:
-            ax.set_ylim(ylim)
-        for bar, val in zip(ax.patches, vals):
-            ypos = val * 1.15 if use_log and val > 0 else val + 0.02 * (ax.get_ylim()[1] - ax.get_ylim()[0])
-            txt = f'{val:.1f}' if val >= 0.1 else f'{val*1e3:.1f} nM'
-            ax.text(bar.get_x() + bar.get_width() / 2, max(ypos, 0),
-                    txt, ha='center', va='bottom', fontsize=8)
+        # annotate bar
+        top = max(sim_val, exp_val)
+        ax.set_ylim(0, top * 1.25 if top > 0 else 1.0)
+        if ylabel == 'pH':
+            ax.set_ylim(0, 7)
+        ax.text(0, sim_val + 0.02 * ax.get_ylim()[1],
+                f'{sim_val:.2f}', ha='center', va='bottom', fontsize=10)
+        ax.legend(loc='upper right', fontsize=9)
+        ax.grid(True, axis='y', alpha=0.3)
 
-    fig.suptitle(f'Effect of gas-liquid interface BC model ({SOLUTION_LABEL}, {DEFAULT_GAS_SHEET}pp, {CONDITION_LABEL})',
-                 fontsize=13, y=1.01)
+    fig.suptitle(
+        f'Final values ({SOLUTION_LABEL}, {DEFAULT_GAS_SHEET}pp, '
+        f'{CONDITION_LABEL}, three_film)',
+        fontsize=13, y=1.01,
+    )
     fig.tight_layout()
     _save(fig, 'fig1_bc_comparison')
 
@@ -1200,14 +1202,14 @@ def main():
     else:
         SOLUTION_LABEL = 'DIW'
         FIXED_CATION_CONC = 0.0
-        CONDITION_LABEL = f'Henry_{args.condition}'
+        CONDITION_LABEL = args.condition
         EXP = EXP_DIW_ALL[args.voltage]
-        base_folder = 'OAS data'
+        base_folder = 'DIW results'
 
     # Set voltage-specific paths
     DEFAULT_GAS_SHEET = args.voltage
     voltage_label = args.voltage
-    out_folder = _script_dir / base_folder / f'{voltage_label}_{CONDITION_LABEL}_Dg_{REF_DELTA_GAS*1e3:.0f}mm'
+    out_folder = _script_dir / base_folder / f'{voltage_label}_{CONDITION_LABEL}_{REF_BC}'
     out_folder.mkdir(parents=True, exist_ok=True)
     _output_dir = out_folder
     CACHE_DIR = out_folder / 'cache'

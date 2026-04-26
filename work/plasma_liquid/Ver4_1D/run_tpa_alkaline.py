@@ -125,15 +125,6 @@ def load_gas_data(voltage: str, condition: str = 'Humid_fitting'):
         else:
             gas_conc[col] = np.zeros(len(times))
 
-    # N2O4 equilibrium
-    if np.all(gas_conc.get('N2O4', np.array([0])) == 0):
-        T = 298.15
-        Kp = math.exp(
-            math.log(N2O4_EQ.KP_298)
-            + (N2O4_EQ.DELTA_H / PHYSICAL.R) * (1 / N2O4_EQ.REF_TEMP - 1 / T)
-        )
-        gas_conc['N2O4'] = Kp * PHYSICAL.KB_T_OVER_P * T * (gas_conc['NO2'] ** 2)
-
     r = RH80_RATIOS.get(voltage)
     if condition == 'Humid_fitting' and r is not None:
         mask_ss = times >= (times[-1] - 100)
@@ -154,6 +145,16 @@ def load_gas_data(voltage: str, condition: str = 'Humid_fitting'):
         hono_gas = gas_conc['NO2'] * r['HONO_NO2']
     else:
         hono_gas = gas_conc['NO2'] * 0.33  # Humid median fallback
+
+    # N2O4 equilibrium — computed AFTER any NO2 rescaling so that
+    # N2O4 = Kp · (kB·T/P) · [NO2_current]² stays self-consistent.
+    if np.all(gas_conc.get('N2O4', np.array([0])) == 0):
+        T = 298.15
+        Kp = math.exp(
+            math.log(N2O4_EQ.KP_298)
+            + (N2O4_EQ.DELTA_H / PHYSICAL.R) * (1 / N2O4_EQ.REF_TEMP - 1 / T)
+        )
+        gas_conc['N2O4'] = Kp * PHYSICAL.KB_T_OVER_P * T * (gas_conc['NO2'] ** 2)
 
     hono2_gas = gas_conc['N2O5'] * HONO2_RATIO
     h2o2_gas = gas_conc['O3'] * H2O2_RATIO

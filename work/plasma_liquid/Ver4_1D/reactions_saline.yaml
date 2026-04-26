@@ -391,17 +391,23 @@ irreversible_reactions:
     k: 1.4e6
     label: "S35: Cl2- + H2O2 -> 2Cl- + H+ + HO2"
 
-  - id: "S36"
-    type: "irreversible"
-    reactants:
-      Cl2-: 1
-      H2O2: 1
-    products:
-      OH: 1
-      OH-: 1
-      Cl2: 1
-    k: 4.2e8
-    label: "S36: Cl2- + H2O2 -> OH + OH- + Cl2"
+  # S36 DISABLED 2026-04-23 — k=4.2e8 from Liu 2016 ref [44]
+  # (Lundström, Christensen, Sehested, RPC 61, 109 (2001), radiation chemistry)
+  # is 300× S35 rate and not present in Buxton 1988, Jayson 1973, Yu 2004,
+  # Verlackt 2018, Heirman 2019. Likely non-elementary "effective" rate.
+  # H2O2 rate budget diagnostic (3.2kV saline) showed S36 was 99.4% of sink.
+  # Disabled to test if saline H2O2 recovers toward experimental values.
+  # - id: "S36"
+  #   type: "irreversible"
+  #   reactants:
+  #     Cl2-: 1
+  #     H2O2: 1
+  #   products:
+  #     OH: 1
+  #     OH-: 1
+  #     Cl2: 1
+  #   k: 4.2e8
+  #   label: "S36: Cl2- + H2O2 -> OH + OH- + Cl2"
 
   - id: "S37"
     type: "irreversible"

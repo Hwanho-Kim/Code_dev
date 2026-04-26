@@ -135,11 +135,13 @@ class MassTransfer1DConfig:
     enable_mass_transfer: bool = True
 
     # Boundary condition type for gas-liquid interface
-    #   'two_film'   : D_adj two-film model (Lee 2023, current default)
+    #   'two_film'   : D_adj two-film model (Lee 2023)
     #   'dirichlet'  : C(0) ≈ C_eq via stiff relaxation (k_mt = 1.0 m/s)
     #   'film'       : k_mt = D_l / δ_liq (Heirman 2025 Eq.6, α_b=1)
     #   'film_alpha' : k_mt = α_b × D_l / δ_liq (Heirman 2025 Eq.7)
-    bc_type: str = 'two_film'
+    #   'gas_alpha'  : gas + interface (Schwartz 1986, no liquid film)
+    #   'three_film' : full Schwartz 1986 (gas + interface + liquid film)  ← project default 2026-04-23
+    bc_type: str = 'three_film'
     alpha_b: float = 1.0           # mass accommodation coefficient (film_alpha only)
 
     # Species-specific α_b (overrides alpha_b when bc_type='film_alpha').

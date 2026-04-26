@@ -133,8 +133,8 @@ def run_saline_1d():
         mass_transfer_eta=eta,
         saline_mode=True,
         fixed_cation_conc=0.154,
-        bc_type='film_alpha',     # Heirman 2025 Eq.7
-        alpha_b=0.03,             # from DIW calibration
+        bc_type='three_film',     # full Schwartz 1986 (project default 2026-04-23)
+        alpha_b=None,             # use config per-species α_b dict
     )
 
     solver.set_gas_data(

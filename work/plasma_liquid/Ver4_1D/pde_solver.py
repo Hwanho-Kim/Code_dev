@@ -123,6 +123,10 @@ def compute_k_mt(species_gas: str, delta_gas: float, delta_liq: float,
       'gas_alpha'  : gas-side + interfacial resistance only (no liquid film).
                      1/k = 1/(H·D_g/δ_gas) + 1/(α_b·v̄/4)
                      Correct for 1D models where PDE resolves liquid-side.
+      'three_film' : Full Schwartz 1986 (gas + interface + liquid film).
+                     1/K_L = H·δ_gas/D_g + H·4/(α_b·v̄) + δ_liq/D_l
+                     Diagnostic: adds liquid film resistance ON TOP of gas_alpha.
+                     WARNING: physically double-counts with 1D liquid PDE.
     """
     if bc_type == 'dirichlet':
         return 1.0
@@ -162,6 +166,26 @@ def compute_k_mt(species_gas: str, delta_gas: float, delta_liq: float,
         # k_gi_liq = k_gi_gas / H_cc
         k_gi_liq = k_gi_gas / max(H_cc, 1e-30)
         return k_gi_liq
+
+    if bc_type == 'three_film':
+        # Full Schwartz 1986 resistance: gas + interface + liquid film
+        # Liquid-units form: 1/K_L = H·(1/k_gas + 1/k_int) + 1/k_L
+        # NOTE: physically double-counts with 1D liquid PDE; diagnostic use.
+        import math
+        H_cc = HENRY_CONSTANTS.get(species_gas, 1.0)
+        T = 298.15
+        D_g = GAS_DIFFUSIVITY.get(species_gas, D_GAS_DEFAULT)
+        M = MOLAR_MASS.get(species_gas, 48.0)
+        R = 8.314
+        v_thermal = math.sqrt(8.0 * R * T / (math.pi * M * 1e-3))
+        k_gas = D_g / delta_gas
+        k_int = alpha_b * v_thermal / 4.0
+        k_liq = D_l / delta_liq
+        inv_k_gi_gas = (1.0 / max(k_gas, 1e-30)
+                        + 1.0 / max(k_int, 1e-30))
+        inv_k_mt_liq = (H_cc * inv_k_gi_gas
+                        + 1.0 / max(k_liq, 1e-30))
+        return 1.0 / inv_k_mt_liq
 
     # Default: two_film (Lee 2023)
     H = HENRY_CONSTANTS.get(species_gas, 1.0)

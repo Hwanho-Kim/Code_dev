@@ -288,7 +288,8 @@ Source: `OAS data/Dry/(P-L) 가스활성종 농도.xlsx`
 - Cl 보존 projection 채택: Sturm & Silva 2024 (ACS EST Air) 기반. BDF 후 per-cell Cl 원자 보존 → Cl⁻에 투영 (2026-03-25)
 - Mass transfer BC → chemistry step 이동 확정: 확산 step에서 BC 제거, surface cell BDF RHS에 포함. dt 수렴 문제 해결 (2026-03-25)
 - ~~Film+α_b BC 채택~~: **폐기 (2026-04-09)**. D_l/δ_liq가 PDE의 액상 확산과 이중 계산. Schwartz 1986, Zheng/Bruggeman 2020 근거.
-- **gas_alpha BC 채택 (2026-04-09)**: 기상+계면 저항만. 1/k_gi = δ_gas/D_g + 4/(α_b·v̄), k_mt = k_gi/H_cc. 액상 저항은 PDE가 처리. notes/bc_formulation.md 참조.
+- **gas_alpha BC 채택 (2026-04-09)**: 기상+계면 저항만. 1/k_gi = δ_gas/D_g + 4/(α_b·v̄), k_mt = k_gi/H_cc. 액상 저항은 PDE가 처리. notes/bc_formulation.md 참조. **→ 2026-04-23 three_film로 대체**.
+- ~~**gas_alpha BC**~~ → **three_film BC 채택 (2026-04-23, ★ paper BC)**: Schwartz 3-저항 full form `1/K_L = H·δ_gas/D_g + H·4/(α·v̄) + δ_liq/D_l`. δ_liq=100µm. NO3⁻ 3.2/3.6kV에서 ×0.93/0.94 (exp 7% 오차 내). Grid-convergent (dz_min 1-20µm에서 0.15% 변동), voltage-independent (ratio 0.148 전 voltage). `pde_solver.py::compute_k_mt` bc_type='three_film'. Physical: PDE(bulk) + film(sub-grid BL) complementary. H2O2 17× 과다는 별도 c_gas 문제.
 - Monolithic BDF 채택 (Strang splitting 대체): 확산+반응+질량전달을 단일 BDF로 동시 implicit 처리. Strang은 `_use_strang=True`로 비교 가능하게 유지. QSSA는 monolithic에서 OFF (BDF가 Cl stiffness 직접 처리). (2026-03-30)
 - DIW에서 dt_enforce=None (단일 BDF) 권장: macro-step restart 불필요. 3× 가속, pH 차이 무시 가능(0.007). Saline은 Cl conservation 보정 때문에 dt_enforce=60s 유지. (2026-03-31)
 - ODE tolerances: atol=1e-12, rtol=1e-6 확정. 이전 atol=1e-8은 trace species(H₂O₂ ~1e-10M)에 대한 오차 제어 불능 → rate budget 65× 개선, 속도 2× 향상. atol=1e-14 수렴 확인. (2026-03-31)
@@ -492,15 +493,29 @@ Source: `OAS data/Dry/(P-L) 가스활성종 농도.xlsx`
   - **생성 산출물**: `Figures/Saline results/{2.6|3.2|3.6}kV_{Dry|Humid_fitting}_Dg_10mm/` 각 폴더에 fig1/1b/2/3/4/5/6 (png+pdf) + cache npz.
   - **memory feedback 추가**: `feedback_plasma_liquid_new_setup.md` — 모든 실행은 새 OAS data(xlsx) + gas_alpha BC(δ_gas=10mm) 필수, 예전 CSV/film_alpha 금지.
 
-### PENDING (2026-04-20 기준)
-0. **★ NO₃⁻ 7× 과다 해결** — 최우선. gas depletion (empty-chamber artifact) + η (유효면적) 검토. mass_transfer_eta dead code 수정 필요.
-1. **η sweep** — pde_solver.py rhs() 1줄 수정 후 η=[0.05~1.0] sweep. 3전압 동시 검증.
-2. **H₂O₂/O₃ 비율 재조정** — Henry 수정 후 0.03에서 17× 과다. ~0.01이 적정.
-3. **NO₂⁻ 문제** — O₃ barrier (R32). Henry 수정 후 5.0µM으로 개선(실험 3.58 근접). 구조적 한계 잔존.
-4. **pH gap** — ~180µM 음이온 gap. 미해결.
-5. **TPA Phase 5 sweep** — α_b(O₃)×H₂O₂/O₃ 2D sweep.
-6. **Saline 실행** — 새 OAS data + gas_alpha BC.
-7. **Phase 3: 살균 threshold 분석** — 3분/5분 critical species.
+### PENDING (2026-04-23 재정의)
+**★ three_film BC 공식 채택 (2026-04-23 User 결정)**. NO3⁻ 7× 문제 grid/voltage robust 해결. Finite gas reservoir ODE 방향 **보류** (three_film가 더 간단하고 효과적).
+
+0. **★ three_film default 전환 + Figure 일괄 업데이트** — `MASS_TRANSFER.bc_type='two_film'` → `'three_film'`. 모든 run/gen 스크립트 bc_type 확인.
+1. **H₂O₂ gas input ratio 재산정** — H2O2/O3=0.03 → ~0.003-0.01 sweep. BC와 무관한 별도 track. 16× 과다의 실질적 fix.
+2. **2.6 kV under-prediction audit** (×0.67) — c_gas(2.6 kV) 측정 SNR 혹은 plasma production rate voltage 의존성 재검토.
+3. **NO2⁻ 재건** — **보류** (User 2026-04-23). 추후 필요 시 (a) species-specific δ_liq / (b) α_b(NO2) / (c) HONO ratio 중 선택.
+4. **pH gap** — three_film에서 pH +0.4~1.0 단위 높음. 음이온 balance 재검토 필요.
+5. **Saline 확장 + three_film** — DIW 확정 후 saline 적용.
+6. **TPA Phase 5 sweep** — 보류 (새 BC 확정 후 재실행).
+7. **Phase 3 살균 threshold** — 우선순위 낮음.
+
+### Superseded / Cancelled
+- ~~η sweep~~ (2026-04-21 취소, phenomenological knob).
+- ~~Plan v1 PRA α-surface~~ (2026-04-22 supersede; `notes/reactive_uptake_bc_plan.md` 참조용 보존).
+- ~~Finite gas reservoir ODE~~ (2026-04-23 보류; three_film가 더 간단하고 효과적).
+
+### 주요 수치 (2026-04-23 three_film 확정)
+| Voltage | NO3⁻ sim/exp | pH sim/exp | H2O2 sim/exp | NO2⁻ sim/exp |
+|---|---|---|---|---|
+| 2.6 kV | 21.9/32.6 (×0.67) | 4.66/5.09 | 80.1/4.76 (×16.8) | 0.16/0 |
+| 3.2 kV | 58.5/62.7 (×0.93) | 4.23/3.61 | 185.9/11.2 (×16.6) | 0.48/3.58 |
+| 3.6 kV | 66.2/70.4 (×0.94) | 4.18/3.25 | 199.6/16.3 (×12.3) | 0.54/20.7 |
 
 - 2026-04-20 (TPA 후속, 3차 세션): **Henry 수정 후 TPA 3조건 × k_R3 3값 감도 분석**.
   - **Dry + Henry fix (k_R3=1e9)**: 2.6kV 23.6(+86% overshoot), 3.2kV 19.1(−67%), 3.6kV 19.0(−56%). rank 2.6>3.2≈3.6 역전. pH 3.6kV 11.48 저하 과도. HO₂⁻/H₂O₂ 100× 증가(~5µM).
@@ -537,6 +552,189 @@ Source: `OAS data/Dry/(P-L) 가스활성종 농도.xlsx`
       - Ship: Henry-fix 재실행 + 3/5/12min 액상 1-2주 + 세포 RONS + 작성 3주 = **6-8주**.
     - **전략 변경**: 사용자 초안 "soft-sensing + gas-liquid-cell 체인 + 3/5분 threshold" → 수정 "saline vs DIW electrolyte selectivity (main) + semi-quantitative inference (보조) + chemistry transition (완전 demote)".
   - **변경 파일**: `memory/feedback_henry_constants_convention.md` (버그 수정 반영), `memory/MEMORY.md:10` (description 갱신).
+
+- 2026-04-21~22: **Reactive-uptake BC ultraplan 수립** — `notes/reactive_uptake_bc_plan.md` (540+ 줄).
+  - **Framework 전환 결정**: Schwartz 1986 gas_alpha → PRA α-surface (Pöschl 2007, Ammann 2013 IUPAC, Kolb 2010).
+  - **현재 gas_alpha 4 pathology 진단**:
+    (i) α vs γ 혼동 — `alpha_b_literature.md`의 일부 값이 γ 기반 구측정 인용 (O₃ 0.05는 실제 α≈1e-3 Utter 1992, NO₂ 0.03은 α≈2e-4 Cheung 2000).
+    (ii) δ_gas=10mm throttle — k_g=D_g/δ_gas=1.5e-3 m/s가 k_int=α·v̄/4=4.55 m/s를 압도 → **α가 완전 inert** (α 0.05→1e-3 변화해도 k_mt 불변).
+    (iii) 실제 regime은 Dirichlet 아닌 kinetic-limited (k_mt·dz_min/D_l=0.007), BUT δ_gas가 비물리적으로 과도한 throttle.
+    (iv) γ_literature를 입력으로 쓰면 bulk physics double-count (Ammann 2013 quote).
+  - **제안 수식**: `-D_l ∂c/∂z|₀ = (v̄·α/4)·(c_gas − c_surf/H_cc)`, δ_gas drop. c_gas는 OAS chamber-bulk로 취급, 필요 시 Sherwood-film optional (Phase E).
+  - **예상 결과 (honest)**: O₃/NO₂ surface 대폭 감소(kinetic barrier 작동). N₂O₅/H₂O₂/HONO₂는 α 이미 문헌 정합이라 거의 불변 → **NO₃⁻/H₂O₂ 과대 예측은 c_gas 입력 문제로 exposed**. User 철학 "NO3- 정량 fit 아님"과 정합.
+  - **5 Phase plan**: Phase 0 diagnostic (skippable) → A doc audit → B code (compute_k_mt branch + config α 교정) → C DIW validation → D Saline → E optional Sherwood.
+  - **문헌 조사 (general-purpose agent)**: PRA/KM-SUB framework, Hanson 1997, Silsby 2021(δ_gas critique), Zheng-Bruggeman 2020(명시적 Robin BC without δ_gas), Heirman 2025. 45+ citations.
+  - **Open questions 6건 (승인 필요)**: Phase 0 skip 여부, α(O₃) 1e-3 vs 5e-4, α(NO₂) 2e-4, α(NO₃/N₂O₄) assumption, bc_type default 전환 시점, α(H₂O₂) 유지 여부.
+  - **변경 파일**: `notes/reactive_uptake_bc_plan.md` (신규), `CLAUDE.md` (이 엔트리 + Pending Tasks §0 갱신).
+  - **η sweep 취소**: phenomenological knob, 도입 안 함.
+
+- 2026-04-22: **TPA validation figures 재작성 + k_R3 sweep 재실행 + mechanism 재정립**
+  - **fig_htpa_validation 의도 복원**: 이전 버전은 "k_R1·∫⟨TPA·OH⟩dt vs sim hTPA" mass-balance self-check였는데 이는 사용자 원 의도와 달랐음(기록 부재 확인). 원 의도 = "Sim OH는 3.6>3.2>2.6 단조, 실험은 3.2>3.6>2.6 비단조 → inner-filter artifact 시사". 최종은 Green+Red 2-bar로 간소화(Sim vs Exp only), 자잘한 문구/grid/dual axis 제거, y축 0–60 고정.
+  - **색상 반복 수정**: green/red → red/navy → crimson/navy → Okabe-Ito(#D55E00 vermillion / #0072B2 blue) → **Teal+Coral(#e07856 coral / #2a6a8b teal) 최종 채택**. 두 figure(fig_htpa_validation, fig_kR3_1e9) 모두 동일 팔레트.
+  - **k_R3 sweep 실제 재실행** (이전에는 2026-04-20 기록된 값을 `gen_fig_kR3_sweep.py`에 하드코딩만 해두고 raw cache 없었음):
+    - 신규 `Ver4_1D/run_kR3_sweep.py`: chemistry._load_reactions 후 `{'type':'irr', reactants={hTPA:1, OH:1}, k}` 주입, `_precompute_reaction_data/_precompute_numba_arrays` 재호출
+    - 초기 버그: `type: 'irreversible'` 사용 → `_precompute_reaction_data`가 내부 key `'irr'/'rev'` 기대 (ReactionLoader._convert_reaction이 변환 수행) → smoke test fail → `'irr'`로 수정 후 정상
+    - Cache 포맷: `{V}_tpa2000uM_humidfitting.npz` (k_R3=0, 재사용) + `{V}_tpa2000uM_humidfitting_kR3-{k:.0e}.npz` (1e+09, 6e+09). 총 9 runs, 1개 재사용 + 1개 smoke test + 백그라운드 5개 (~130–220s/run, 순 17min).
+    - 값: 재실행 결과가 하드코딩 값과 0.01 µM 이내 일치 확인 (2.6kV k=1e9: 13.77, 13.77 등).
+    - `gen_fig_kR3_sweep.py` 리팩터링: 하드코딩 → `_cache_path(v, k)` 로부터 `d['hTPA_uM']` 직접 로드. 재현 가능성 확보.
+  - **신규 figure `fig_kR3_1e9.{png,pdf}`** — k_R3=1e9 sim vs experiment 2-bar (fig_htpa_validation과 동일 스타일). 3.2/3.6 kV가 실험의 ~50%, 2.6kV는 근접.
+  - **k_R3 효과 메커니즘 재정립 (이전 설명 정정)**:
+    - 사용자 지적: k_R1, k_R3 모두 [OH]에 비례 → ODE `d[hTPA]/dt = [OH]·(k_R1·[TPA] − k_R3·[hTPA])`에서 **[OH]가 공통 인수로 소거**. "고 OH가 분해에 더 기여"는 잘못된 표현.
+    - 정정: `u ≡ ∫[OH]dt` 시간 변수 변환 시 `[hTPA](u) = [hTPA]_ss·(1 − exp(−k_R3·u))`, where `[hTPA]_ss = k_R1·[TPA]/k_R3`는 **[OH] 무관 상수 (=2800 µM local surface)**. 고전압은 표면에서 빠르게 이 SS에 saturate → [OH] 아무리 더 넣어도 표면 [hTPA] 고정 → bulk flux 포화. 저전압은 선형 phase `[hTPA]≈k_R1·[TPA]·u`에 머물러 k_R3 sink 영향 거의 없음 (2.6kV 10% 감소 vs 3.6kV 51%).
+    - 1D 공간분리 (OH ~µs 수명, 표면 500nm–34µm만 존재, hTPA는 bulk로 확산) 때문에 실제 bulk avg는 0D SS 2800µM보다 훨씬 낮음(13~22µM)이지만 "OH-무관 SS로 포화" 메커니즘 자체는 동일.
+  - **TPA reaction set 누락 product 영향 분석**:
+    - R_TPA2 (products={}) → TPA/OH 소모는 정확, peroxyl/유기 radical 2차 화학은 닫혀있음. 실제 O₂ dissolved species 미tracked라 peroxyl 경로가 자동으로 차단됨 (자연스러움).
+    - OH sink 경쟁 추정: TPA k·[S]=8×10⁶ s⁻¹ vs OH⁻ (pH 12) 1.2×10⁸ s⁻¹ → pH 12 alkaline에서 OH⁻가 15× 강한 scavenger. TPA 포획률 ~6% (기존 기록 확인).
+    - 2차 radical 기여 ~10³ s⁻¹로 OH⁻ 대비 10⁻⁵ → 무시 가능. Page 2010 branching 0.35는 net yield (2차 포함)라 이중계산 없음.
+    - **결론: 표준 관행(Charbouillot 2011, Tampieri 2021) 그대로 유지. 논문에 "downstream products not propagated, TPA conversion <5%" 한 줄 명시 권장.**
+  - **생성/수정 파일**:
+    - `Ver4_1D/run_kR3_sweep.py` 신규
+    - `Figures/gen_fig_kR3_sweep.py` 리팩터링 (하드코딩 → cache load)
+    - `Figures/gen_fig_htpa_validation.py` 재작성 (mass-balance check → 2-bar sim vs exp)
+    - `Figures/gen_fig_kR3_1e9.py` 신규
+    - `Figures/cache/tpa/{2.6,3.2,3.6}kV_tpa2000uM_humidfitting_kR3-{1e+09,6e+09}.npz` 신규 (6 files)
+    - `Figures/fig_htpa_validation.{png,pdf}`, `fig_kR3_1e9.{png,pdf}`, `fig_kR3_sweep.{png,pdf}` 갱신
+
+- 2026-04-23 (three_film BC 채택 — ★ 중요 결정): **Schwartz 3-저항 full form 복원으로 NO3⁻ 7× 문제 해결**.
+  - **배경**: 어제(2026-04-22) driving force diagnostic에서 N2O5/NO3/HNO3/H2O2 4종이 driving force ≈1 (full open)로 확인 → "OAS가 infinite reservoir처럼 작동" 결론. User가 **"액상 저항을 복원했을 때 어떻게 되는지 계산"** 요청.
+  - **User empirical 근거 누적**: (1) source audit, (2) species-specific BC (R98 on/off), (3) PRA α-surface 모두 효과 없음 또는 direction 반대. 남은 유일 lever = **Schwartz 3-저항에서 drop한 액상 film 저항 복원**.
+  - **코드 변경**: `pde_solver.py::compute_k_mt`에 **`bc_type='three_film'`** branch 추가. 공식: `1/K_L = H·(δ_gas/D_g + 4/(α·v̄)) + δ_liq/D_l` (Schwartz 1986 full form, liquid-units).
+  - **δ_liq = 100 µm** (config 기본값 유지).
+  - **단일 케이스 pilot (3.2 kV Humid)**: NO3⁻ 395.86 µM → **58.46 µM** (exp 62.74, ×0.93, **7% 오차**). 4× 근처 target 달성.
+  - **Grid convergence test (`Figures/test/test_three_film_robustness.py`)**: dz_min ∈ {1, 5, 20} µm @ 3.2 kV.
+    - NO3⁻: 58.42 / 58.46 / 58.51 µM (**0.15% 변동**, grid-convergent 확정)
+    - pH/H2O2 모두 수렴. **Film 효과는 grid artifact 아님**.
+  - **Voltage transfer test (2.6/3.2/3.6 kV × gas_alpha/three_film, dz_min=5µm)**:
+    | V | gas_alpha NO3⁻ | three_film NO3⁻ | **exp** | three_film ratio |
+    |---|---|---|---|---|
+    | 2.6 kV | 148.64 | **21.88** | **32.63** | **×0.67** (33% under) |
+    | 3.2 kV | 395.86 | **58.46** | **62.74** | **×0.93** ✓ |
+    | 3.6 kV | 447.89 | **66.19** | **70.42** | **×0.94** ✓ |
+    - three_film / gas_alpha ratio: 0.147 / 0.148 / 0.148 — **voltage-independent**. Physics consistent.
+    - 3.2/3.6 kV 6-7% 오차, 2.6 kV 33% under.
+  - **실험값 정식 기록** (from `OAS data/Dry/(P-L) 액체활성종 농도, pH, conductivity.xlsx`, DIW sheet):
+    - 2.6 kV: pH=5.09, NO3⁻=32.63, NO2⁻=0, H2O2=4.76 µM
+    - 3.2 kV: pH=3.61, NO3⁻=62.74, NO2⁻=3.58, H2O2=11.21 µM
+    - 3.6 kV: pH=3.25, NO3⁻=70.42, NO2⁻=20.74, H2O2=16.25 µM
+  - **잔존 문제 (BC와 무관, 별도 track)**:
+    - **H2O2 16-17× 과다 전 voltage 일정** → H_cc=2.1e6 거대라 film 무효. **c_gas input (H2O2/O3=0.03 ratio)** 문제. 별도 fix 필요.
+    - **NO2⁻ over-throttle**: three_film에서 NO2 K 84× ↓ → 전 voltage 0.16~0.54 µM (exp 0/3.58/20.74). Voltage trend도 잃음. 재건 보류 (User 2026-04-23 결정).
+    - **pH +0.4~1.0 단위 높음** (덜 산성): NO3⁻ 감소 + H2O2 잔존 + NO2⁻ 부족 복합 영향.
+    - **2.6 kV 33% under**: gas input 측정 정확도 or plasma production rate voltage 의존성. 별도 audit.
+  - **Double-counting 재해석**: 수학적으로 three_film는 PDE와 액상 resolution에서 겹친다고 볼 수 있으나, paper grid dz_min=5µm는 **convective BL (~100 µm) + near-surface reacto-diffusive layer**를 해상 못 함. Film 저항이 이 sub-grid + BL 영역을 complementary하게 parameterize. **Physical double-count 아닌 complementary**.
+  - **User 결정 (2026-04-23)**:
+    1. **three_film 공식 채택** ✓ (paper BC로 사용)
+    2. NO2⁻ 재건: **보류**
+    3. CLAUDE.md 기록: ✓ (이 엔트리)
+  - **변경 파일**:
+    - `Ver4_1D/pde_solver.py` (line 170-188: `three_film` branch 신규)
+    - `Figures/test/test_three_film.py` (신규, pilot 1-case)
+    - `Figures/test/test_three_film_robustness.py` (신규, grid + voltage sweep, 실험값 포함)
+    - `CLAUDE.md` (이 엔트리 + Pending Tasks + Key Decisions 갱신 예정)
+  - **Next steps (pending)**:
+    1. H2O2/O3 ratio 재산정 (0.03 → ~0.003) — 독립 track
+    2. 2.6 kV under-prediction audit — c_gas 혹은 RH80 scaling factor 재검토
+    3. `MASS_TRANSFER.bc_type` default 전환 (현재 `two_film` → `three_film`)
+    4. 모든 Figure 생성 스크립트 bc_type 일괄 업데이트
+    5. Saline 확장 시 `three_film` 적용 테스트
+
+- 2026-04-22 (BC 진단 심화 세션): **Reactive-uptake plan v1 부분 supersede → "Finite gas reservoir" 방향 도출**.
+  - **맥락**: 이전 세션(2026-04-21~22)의 PRA α-surface plan v1이 monolithic approach. User의 empirical 증거(R98 on/off test, source audit)와 대조 후 구조 재설계.
+  - **Deep research 체크리스트 reconciliation**: User가 이전 Claude deep research 결과(10단계, "7× = 2×·2×·1.5× 복합 오차", N2O5 surface source + 3 병렬 트랙) 공유. 그러나 **user가 이미 N2O5 single-axis fix (R98 on/off, `Figures/test/test_r98_onoff.py`)를 실험했고 compensation 관찰** — N2O4/NO2/N2O5 복합 작용으로 한 경로 차단해도 다른 경로가 보완. Deep research의 "N2O5 93% 지배" 전제 자체가 empirically 기각. → **N2O5-specific BC는 해결책 아님**.
+  - **User empirical 순서 확정 (중요)**: (1) Source audit 먼저 → 효과 無. (2) Species-specific BC test → 효과 無. (3) **BC 구조 자체로 이동**. 나는 원래 (1)을 재제안했는데 user가 이미 수행했음. Source audit 재제안 **중단**.
+  - **"Reactive uptake" 용어 명확화 (user 의도)**: 내 초기 제안 (C) PRA α-only no δ_gas는 user 의도와 불일치. User 의도 = "gas side resistance에 추가하는" (Schwartz 직렬 + γ-based). 3 framework 분류: (A) γ-lumped in Schwartz 직렬, (B) surface reaction term 추가 (Hanson 1997), (C) PRA α-only. User 의도는 (A) 또는 (B).
+  - **Novelty 재정의 (user)**: **"Gas-phase reaction을 사용하지 않는 것 자체가 novelty"**. 대부분 plasma-liquid 논문이 10-100× 불확실한 gas-phase rate constants를 쓰는 반면, 우리는 OAS-constrained BC로 우회. **0D-1D-1D framework with transport-only gas phase, measurement-driven**.
+  - **8mm gap 지적 (user)**: OAS 측정 위치에서 액상까지 8mm gap 존재. 현재 코드는 **direct input**으로 사용 (`set_gas_data`가 OAS time series를 `_gas_conc_molar`에 저장 → `C_eq = H × c_gas` 로 직결). Gas-phase 운송 미모델링 가설.
+  - **BC equation audit (9 species)**: `1/K = 1/k_G + 4/(α·v̄)` 직접 계산 → 전 종 **98-99.99% gas-side limited** (N2O5 99.95%, H2O2 99.99%, NO 98.3% 등). User의 "K ≈ k_G" 관찰 정량 확증. 단위 체크: H_cc dimensionless, c_gas M, Γ[M/s] consistent.
+  - **D_g = 분자확산계수 확인**: `config_1d.py:73-85` GAS_DIFFUSIVITY (m²/s, 기상 literature). `k_gas = D_g/δ_gas`는 1D stagnant-gas 정상상태 확산의 analytical solution. → **현재 gas_alpha가 이미 1D gas diffusion을 shortcut으로 풀고 있음**. Explicit 1D gas PDE (no chemistry) = gas_alpha with δ_gas=L_gap **수학적 완전 동등** (증명: `J = c_OAS/(L/D + 4/(αv̄))`).
+  - **Driving force diagnostic 신규 (`Figures/test/test_driving_force.py`)**: `(C_eq − c_eff_surf)/C_eq` 시계열 측정 (3.2kV Humid fitting, 60s). 초기 6종 → **9종 전수로 확장 (2026-04-23 user 지적)**:
+    - **O3: 0.006** (SATURATED — c_surf=1.00e-5 M ≈ C_eq=1.01e-5 M, R32 bulk sink 불충분)
+    - **NO2: 0.35** (중간 saturated)
+    - **N2O5: 1.000** (R98 즉시 소비, c_surf=1.19e-14 M)
+    - **NO3: 0.998** (full open, c_surf=4.28 nM ≈ 0, bulk reaction 즉시 소비) ← 추가 발견
+    - **HNO3: 1.000** (강산 해리로 분자형 c_eff=4.35e-10 M)
+    - **H2O2: 0.9999** (C_eq=2.77M 거대, c_surf=3.55e-4 M)
+    - **HONO: 0.97** (해리로 분자형 작음)
+    - **N2O4: −2.75 (음수!)** — c_surf(1.01e-8 M) > C_eq(2.68e-9 M)로 **액상에서 gas로 역flux**. 2NO2(aq) ⇌ N2O4(aq) 축적 → BC가 desorption. Flux 절대값은 ~N2O5의 1/6000 (미미) but 양방향 BC 구조 유지 필요 확인.
+    - **NO: OAS=0** (test 스크립트 `load_gas`가 NO 미추출; 실제 production run OAS 확인 필요 — xlsx에 NO 컬럼 있는지 check).
+  - **결정적 통찰**: **N2O5/NO3/HNO3/H2O2 4종이 driving force ≈ 1 (full open)** → BC가 `K·H·c_OAS`로 max rate 유입. User 8mm gap 가설 **정확히 맞음**: 현재 모델은 OAS time series를 **infinite reservoir**로 취급, **finite gas inventory feedback 없음**. 2-film K는 "특정 시점 interface 정상상태 depletion" 계산하지만, c_OAS 자체가 uptake에 의해 감소해야 한다는 mass balance는 **없음**. NO3 gas 직접 uptake 경로도 독립적 contributor로 확인됨 (N2O5 R98 외).
+  - **O3/NO2는 다른 문제**: 이미 액상 saturated. Gas-side 구조 fix로 해결 안 됨. Bulk consumption/diffusion 한계.
+  - **7× 과다의 framework 내 lever 소진**: `Γ = K·H·c_OAS`, K=D_g/δ(geometric bound), H=lit H_cc(fixed), c_OAS=audited. Framework 내에 줄일 lever 없음 → **구조 확장 필요**.
+  - **새 제안: Finite gas reservoir ODE** (no chemistry, novelty 호환):
+    - `dc_gas_i(t)/dt = P_plasma_i − k_leak·c_gas_i − (A_liq/V_gas)·J_uptake_i`
+    - OAS = steady-state 제약 (plasma production rate calibration)
+    - Gas mass balance가 uptake feedback 반영 → driving force 자발적 감소
+    - 필요 파라미터: `V_gas` (chamber volume), `A_liq` (petri surface area), `k_leak` (optional)
+  - **Plan v1 상태**: `notes/reactive_uptake_bc_plan.md` PRA α-surface 접근은 **supersede** (참조용 보존). Literature survey + K audit은 유효.
+  - **변경/신규 파일**:
+    - `Figures/test/test_driving_force.py` (신규 diagnostic)
+    - `CLAUDE.md` (이 엔트리)
+  - **다음 단계 대기**: Finite gas reservoir ODE 구현. User 결정 대기 항목:
+    1. Option A (finite reservoir ODE) vs Option B (wall loss uniform factor) vs Option C (Langmuir competition)?
+    2. Chamber geometry 파라미터 (V_gas, A_liq) 값?
+    3. `plan v1 supersede` 명시적 문서화 필요 여부?
+
+- 2026-04-23 (Figure 정리 + gas preprocessing audit + N₂O₄ bug fix):
+  - **Figure 색상 팔레트 수렴**: `fig_htpa_validation`, `fig_kR3_1e9` 두 figure에서 사용자와 반복 조정 (green/red → red/navy → crimson/navy → Okabe-Ito(#D55E00/#0072B2) → **Teal+Coral(#e07856 coral / #2a6a8b teal) 최종 채택**). 두 figure 동일 팔레트로 통일.
+  - **TPA 프로브 reaction set 브리핑** (`reactions_tpa.yaml`):
+    - R_TPA1 (활성): `TPA + OH → hTPA`, k=1.4e9 (branching 0.35, fluorescent)
+    - R_TPA2 (활성): `TPA + OH → non-fluor`, k=2.6e9 (products={}, 0.65 branching)
+    - R_TPA3 (**비활성**, k=0 주석처리): hTPA + OH — Page 2010 k=6.3e9 single-lab pH 5-7, pH 12 불확실
+    - OH sink 경쟁 (pH 12): TPA k·[S]=8×10⁶ s⁻¹ vs OH⁻ 1.2×10⁸ s⁻¹ → OH⁻ 15× 강 → TPA 포획률 ~6%
+  - **R_TPA2/R_TPA3 product 미추적 safety 분석**:
+    - OH/TPA 소비량 계수 처리로 정확. 2차 peroxyl/유기 radical 화학만 누락.
+    - O₂ dissolved species 애초에 미tracked → peroxyl 경로 자동 차단 (자연스러움).
+    - 2차 radical 기여 ~10³ s⁻¹ vs OH⁻ 1.2×10⁸ → 10⁻⁵ 수준 → 무시 가능.
+    - Page 2010 branching 0.35는 **net yield**(2차 포함) → 이중계산 없음.
+    - 문헌 관행(Charbouillot 2011, Tampieri 2021) 유지. 논문 disclaimer 1줄 권장: "downstream products not propagated; TPA conversion <5% minimizes back-reaction".
+  - **Gas preprocessing 구조 정리**:
+    - 측정 (O₃/NO₂/NO₃/N₂O₅): xlsx raw + LOD filter + Savitzky-Golay smoothing
+    - **수식 기반: N₂O₄ 1종만** — `2 NO₂ ⇌ N₂O₄`, van't Hoff 온도 보정
+    - Ratio 기반: HONO = NO₂·r[HONO_NO2], HONO₂ = N₂O₅·0.83, H₂O₂ = O₃·0.003 (2026-04-23 sweep 재fit, 이전 0.03)
+  - **N₂O₄ ordering bug 발견 및 수정** (`run_tpa_alkaline.py`, `gen_all_figures.py`):
+    - 버그: `N₂O₄ = C·NO₂²` 계산이 **humid_fitting NO₂ 스케일링 전**에 실행 → humid_fitting 모드에서 NO₂는 스케일되지만 N₂O₄는 Dry 기반 값으로 고정.
+    - 정량 (3.2 kV Humid_fitting): NO₂ 1.91e15→6.52e15 (3.4× 증가), 실제 N₂O₄는 1.17e13이어야 하는데 수정 전에는 Dry 기반 1.00e12 (실제의 8.6% 수준 저평가).
+    - Fix (A 채택): N₂O₄ 블록을 humid 스케일링 if/else 뒤로 이동. 양 파일 동일 구조.
+    - 검증: Dry/Humid_fitting 모두 `N₂O₄_peak / (C·NO₂_peak²) = 1.000` (rel_err=0).
+    - Prefactor 정정: `C = Kp·(k_B·T/P)·T = 2.7422×10⁻¹⁹ cm³/molecule` (at 298.15 K). 이전 세션 답변의 9.2×10⁻²² 잘못됨.
+    - 영향 범위: Dry/Humid_median 변화 없음. **Humid_fitting cache stale** → N₂O₄ 11.6× 증가로 R95(N₂O₄+H₂O→HNO₃+HONO) source 영향 가능성. NO₃⁻/HONO budget 재평가 필요.
+    - `gen_all_figures.py`는 사용자 사이드 편집으로 추가 변경 포함: REF_BC='three_film' (2026-04-23 project default), H2O2_RATIO 0.03→0.003, BC_CASES/MT_BC_CASES 비움, Condition label 'Henry_Humid_fitting'.
+  - **Pending**: Humid_fitting 모드 전체 cache 재생성(DIW/Saline/TPA, three_film + N₂O₄ fix 동시 반영). 재실행 범위 사용자 결정 대기.
+  - **변경 파일**:
+    - `Ver4_1D/run_tpa_alkaline.py` N₂O₄ 블록 L128-135 → L149-157 이동
+    - `Figures/gen_all_figures.py` N₂O₄ 블록 L231-239 → L271-279 이동 (+ 사이드 편집)
+    - `Figures/gen_fig_htpa_validation.py`, `Figures/gen_fig_kR3_1e9.py` 팔레트 통일
+    - `Figures/fig_htpa_validation.{png,pdf}`, `fig_kR3_1e9.{png,pdf}` 재생성
+
+- 2026-04-23: **three_film default 전환 + H2O2/O3=0.003 + N2O4 fix 통합 검증 (DIW×3 + Saline×3)**
+  - **코드 default 전환**: `config_1d.py:142` `bc_type='two_film'`→`'three_film'`, `gen_all_figures.py:52` `REF_BC='three_film'`, `run_saline_1d.py:136` `bc_type='three_film'`+`alpha_b=None`(species dict). `pde_solver.py:928` `mass_transfer_eta` Robin BC 적용 제거 (default=1.0, no-op이고 η sweep은 2026-04-21에 cancelled).
+  - **Smoke 검증**: `Figures/test/smoke_saline_three_film.py` 신규 — `gen_all_figures.load_gas_data()`를 직접 import해서 canonical gas 전처리(Dry shape × SS_rh80/SS_dry rescale, N2O4 post-rescale) 그대로 재사용. 3전압 × {DIW, Saline} = 6 sims, 총 12분 (DIW ~50s, Saline ~3min/case).
+  - **DIW 정량 (three_film + 0.003 + N2O4 fix)**:
+
+| V | pH sim/exp | NO3⁻ sim/exp | NO2⁻ sim/exp | H2O2 sim/exp |
+|---|---|---|---|---|
+| 2.6kV | 4.42/5.09 | 38.2/32.6 (×1.17) | 0.05/0 | 5.70/4.76 (×1.20) |
+| 3.2kV | 4.23/3.61 | 59.1/62.7 (**×0.94**) | 0.05/3.58 | 16.6/11.2 (×1.48) |
+| 3.6kV | 4.22/3.25 | 60.1/70.4 (×0.85) | 0.05/20.7 | 21.3/16.3 (×1.31) |
+
+  - **Saline 정량 (같은 default)**:
+
+| V | pH sim/exp | NO3⁻ sim/exp | H2O2 sim/exp | Cl⁻ |
+|---|---|---|---|---|
+| 2.6kV | 4.51/5.15 | 38.3/32.4 (×1.18) | **0.07/2.00 (×0.04)** | 155.1 mM conserved |
+| 3.2kV | 4.33/3.60 | 59.2/101.3 (**×0.58**) | **0.52/5.14 (×0.10)** | 155.1 mM conserved |
+| 3.6kV | 4.32/3.43 | 60.3/112.8 (**×0.53**) | **1.22/7.73 (×0.16)** | 155.1 mM conserved |
+
+  - **★ Saline NO3⁻ enhancement sim이 전혀 재현 못함**: 실험 Saline/DIW NO3⁻ ratio = 1.0/**1.62/1.60** (2.6/3.2/3.6kV), sim ratio = 1.00/1.00/1.00 (0.3% 이내 동일). 현재 chemistry/BC에 saline의 NO3⁻ 증진 메커니즘 없음. **Paper main hook "electrolyte-selective RONS delivery"에 치명적 — chemistry audit 필요**.
+  - **★ Saline H2O2 과도하게 destruction**: 실험 Sal/DIW ratio = 0.42/0.46/0.48, sim = **0.012/0.031/0.057** (25-80× 과소). Cl-mediated H2O2 sink가 chemistry에서 너무 강함 (HOCl + H2O2 경로 등 재검토 필요). 0.003 ratio가 DIW엔 적정이지만 saline엔 부족.
+  - **DIW는 거의 해결**: NO3⁻ 이전 7× over → 0.85~1.17×. H2O2 이전 12-17× → 1.2-1.5×. three_film + N2O4 fix + 0.003이 복합적으로 효과. pH 고전압에서 0.6-1.0 unit 높은 건 NO2⁻ voltage scaling 미포착 + NO3⁻ under 영향.
+  - **생성/변경 파일**:
+    - `Figures/test/smoke_saline_three_film.py` 신규 (6-case DIW+Saline smoke, gaf.load_gas_data import)
+    - `Ver4_1D/config_1d.py` bc_type default 전환 + docstring
+    - `Ver4_1D/pde_solver.py:928` mass_transfer_eta revert (line 219/243 attribute는 유지, 25곳 callsite 호환)
+    - `Ver4_1D/run_saline_1d.py:136-137` bc_type='three_film', alpha_b=None
+    - `Figures/gen_all_figures.py` REF_BC/H2O2_RATIO (+ 사용자 사이드: Fig 1 time-series, output folder `{V}_{condition}_{bc}`)
+  - **다음 단계 후보**: (1) Saline NO3⁻ enhancement 메커니즘 audit (HOCl+NO2⁻, Cl-radical chain), (2) Saline H2O2 sink rate budget 진단, (3) Saline-specific H2O2/O3 ratio (0.01-0.03) sweep, (4) Paper storyline 재검토.
 
 ---
 <!-- UPDATE RULE:
