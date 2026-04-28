@@ -736,6 +736,54 @@ Source: `OAS data/Dry/(P-L) 가스활성종 농도.xlsx`
     - `Figures/gen_all_figures.py` REF_BC/H2O2_RATIO (+ 사용자 사이드: Fig 1 time-series, output folder `{V}_{condition}_{bc}`)
   - **다음 단계 후보**: (1) Saline NO3⁻ enhancement 메커니즘 audit (HOCl+NO2⁻, Cl-radical chain), (2) Saline H2O2 sink rate budget 진단, (3) Saline-specific H2O2/O3 ratio (0.01-0.03) sweep, (4) Paper storyline 재검토.
 
+- 2026-04-23 (이어서): **H2O2 sink 진단 → S36 (Cl2⁻ + H2O2, k=4.2e8) disable + Saline 검증**
+  - **rate budget 진단** (`Figures/test/diag_h2o2_rate_budget.py` 신규): DIW vs Saline 3.2 kV Humid_fitting, 600 s final state. compute_per_reaction_rates + compute_mass_transfer_flux 활용.
+    - DIW H2O2 sink 8.57e-9 M/s: R41(OH+H2O2) 75.7%, R91(NO3+H2O2) 24.2%
+    - **Saline H2O2 sink 4.28e-8 M/s: S36 단독 99.4% (4.25e-8 M/s)**, S35 0.3%
+    - k_eff: DIW 5.2e-4 s⁻¹, Saline 82 s⁻¹ → **15만 배 차이** (S36 단독 원인 확정)
+  - **S36 출처 audit** (`Article/Article/Saline_reaction.pdf`, Liu 2016 SI ppap.201600113):
+    - Liu 2016 #36: Cl2⁻ + H2O2 → OH + OH⁻ + Cl2, k=4.2×10⁸, ref [44] = **Lundström, Christensen, Sehested, Radiat. Phys. Chem. 61, 109 (2001)** (방사선화학)
+    - Liu 2016 #35는 동일 반응물인데 k=1.4×10⁶ (300× 차이, 동일 분기 두 경로 부여 — 비정상)
+    - Buxton 1988 (JPCRD 17:513), Jayson 1973, Yu 2004, Verlackt 2018, Heirman 2019 등 주류 plasma-liquid/radical compilation에 OH+OH⁻+Cl2 분기 **부재**
+    - 열역학: S36 ΔE ≈ +0.01 V (thermoneutral), S35 ΔE ≈ +0.63 V (favorable). S36이 더 어려운 경로인데 300× 빠르다는 것은 비물리적
+    - 의심: Lundström 2001은 radiation chemistry context의 "effective" rate constant일 가능성 → plasma-liquid에 elementary로 옮기면 double-counting
+  - **S36 disable** (`Ver4_1D/reactions_saline.yaml` L394-405 주석화) 후 6 cases 재실행 (`smoke_saline_three_film.py` 그대로):
+
+| V | metric | DIW sim | DIW exp | Sal sim (S36 off) | Sal exp |
+|---|---|---|---|---|---|
+| 2.6kV | pH | 4.42 | 5.09 | 4.45 | 5.15 |
+|       | H2O2 µM | 5.70 | 4.76 | **5.35** (vs S36 on=0.07) | 2.00 |
+|       | NO3⁻ µM | 38.2 | 32.6 | 38.3 | 32.4 |
+| 3.2kV | pH | 4.23 | 3.61 | 4.27 | 3.60 |
+|       | H2O2 µM | 16.6 | 11.2 | **15.5** (vs 0.52) | 5.14 |
+|       | NO3⁻ µM | 59.1 | 62.7 | 59.2 | 101.3 |
+| 3.6kV | pH | 4.22 | 3.25 | 4.26 | 3.43 |
+|       | H2O2 µM | 21.3 | 16.3 | **19.6** (vs 1.22) | 7.73 |
+|       | NO3⁻ µM | 60.1 | 70.4 | 60.2 | 112.8 |
+
+  - **Saline H2O2 30× 회복 확정** (3.2kV: 0.52 → 15.5 µM). **그러나 sim Sal ≈ DIW로 수렴** (실험 Sal/DIW=0.46 vs sim Sal/DIW=0.93) — S36 완전 제거가 과도, 실제 saline destruction 일부는 존재해야 함. Intermediate k 검토 필요.
+  - **Saline NO3⁻ enhancement 여전히 미포착**: sim Sal/DIW=1.00, exp=1.62/1.60. S36과 무관한 별도 chemistry gap.
+  - **Figure 산출** (`Figures/test/fig_s36_comparison.py` → `fig_s36off_vs_exp.{png,pdf}`): Saline 단독 4-panel (pH/H2O2/NO2⁻/NO3⁻) × 3 voltage bar chart. DIW 비교 제거.
+  - **결정 기록**: S36 disable은 진단용 임시 조치 — Lundström 2001 원문 검토 후 elementary vs effective 판정. 잠정 옵션은 (a) k=1.4e6 (S35와 동일), (b) k=1e7~1e8 fitting, (c) Liu 2016 set 외 reference set로 교체.
+
+- 2026-04-24 ~ 2026-04-26: **추가 sweep 분석 (사용자 사이드 작업)**
+  - **`Figures/test/test_h2o2_ratio_sweep.py`** — H2O2/O3 ∈ {0.001, 0.003, 0.01, 0.03}, 3전압 × 4 ratio = 12 sims. 결과로 **DIW 기준 H2O2/O3 = 0.003 채택 근거** 확보 (이전 0.03은 12-17× over). gen_all_figures.py default도 0.003으로 갱신됨.
+  - **`Figures/test/test_hono_hono2_sweep.py` + `hono_hono2_sweep_tables.py`** — HONO/NO2 ∈ {0.007, 0.03, 0.07, 0.1}, HONO2/N2O5 ∈ {0.83, 2, 3, 5}. 24 sims. 결과 (DIW, three_film, H2O2/O3=0.003 고정):
+    - **HONO/NO2 ↑ → NO2⁻ 크게 증가** (3.6kV: 0.05 → 2.6 → 12.4 → 21.7 µM, 실험 20.74에 근접). NO3⁻도 ~30% 증가. **DIW NO2⁻ voltage scaling 미포착 문제의 핵심 lever 발견**
+    - HONO2/N2O5 ↑ → NO3⁻와 pH 영향 (HNO3 직접 dissolution)
+    - **결과 npz/pdf**: `hono_hono2_sweep_tables.{png,pdf}` (8 panel, sweep × 4 metric)
+  - **`Figures/test/test_no2m_budget_hono_sweep.py`** — HONO sweep 시 NO2⁻ rate budget 변화 추적. 결과 `no2m_rate_budget_hono_sweep.pdf`. (세부 결과 미검토 — 추후 audit 필요)
+  - **사용자 사이드 commit `8f41fb0` (2026-04-26)**: 위 모든 변경사항 통합 commit. 3780 lines 추가, 75 files. Working tree clean 상태.
+
+- 2026-04-28 (오늘 진행 상황 점검): **Git commit 완료, CLAUDE.md 미기록 작업 정리**
+  - 2026-04-23~26 작업 모두 commit됨, 본 entry로 미기록 항목 보강.
+  - **현재 Pending (재정의)**:
+    1. **★ Saline NO3⁻ enhancement chemistry audit** — sim Sal/DIW=1.00 vs exp 1.6, paper main hook 직결, 미수행
+    2. **★ S36 k 재조정 또는 Lundström 2001 원문 audit** — 현재 disable이 임시, intermediate k(1e6~1e8) 또는 alternative reference set 조사
+    3. **DIW NO2⁻ voltage scaling**: HONO/NO2 ↑ 시 sweep 결과로 0.07~0.1 적용 시 실험 근사. ratio 정상화 필요 (현재 voltage-dependent default 0.007~0.009)
+    4. **Saline H2O2 fine-tune** — S36 off로 sim Sal=DIW이지만 exp Sal=0.46×DIW, 적정 saline-specific sink 부족
+    5. **Paper storyline 재검토** — saline NO3⁻ 미재현은 "electrolyte-selective RONS delivery" hook 약화
+
 ---
 <!-- UPDATE RULE:
 작업 단위가 완료될 때마다 즉시 이 파일을 갱신할 것 (세션 종료를 기다리지 않는다).
