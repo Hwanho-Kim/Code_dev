@@ -1,0 +1,106 @@
+Sweep voltages: ['2.6kV', '3.6kV']
+Cases: ['baseline', 'R27_off', 'R32_off', 'R77_off', 'R32_R77_off']
+Grid: dz_min=5um, stretch=1.12 (N_z=49) for speed.
+
+[2.6kV baseline] disabling reactions: []
+  N_z=49, N_s=25
+  done: wall=73.6s, success=True, nfev=39621
+  cached: r27_r32_r77_sweep_2.6kV_baseline.npz
+
+[2.6kV R27_off] disabling reactions: [18]
+  disabling idx=18: R27: O3 + OH → HO2 + O2
+  N_z=49, N_s=25
+  done: wall=82.0s, success=True, nfev=45694
+  cached: r27_r32_r77_sweep_2.6kV_R27_off.npz
+
+[2.6kV R32_off] disabling reactions: [23]
+  disabling idx=23: R32: O3 + NO2- → O2 + NO3-
+  N_z=49, N_s=25
+  done: wall=63.8s, success=True, nfev=35233
+  cached: r27_r32_r77_sweep_2.6kV_R32_off.npz
+
+[2.6kV R77_off] disabling reactions: [68]
+  disabling idx=68: R77: OH + NO2- → OH- + NO2
+  N_z=49, N_s=25
+  done: wall=69.4s, success=True, nfev=38714
+  cached: r27_r32_r77_sweep_2.6kV_R77_off.npz
+
+[2.6kV R32_R77_off] disabling reactions: [23, 68]
+  disabling idx=23: R32: O3 + NO2- → O2 + NO3-
+  disabling idx=68: R77: OH + NO2- → OH- + NO2
+  N_z=49, N_s=25
+  done: wall=64.7s, success=True, nfev=36501
+  cached: r27_r32_r77_sweep_2.6kV_R32_R77_off.npz
+
+==============================================================================
+Final state at t=600s — vol-avg, three_film, 2.6kV
+==============================================================================
+case           [OH] M      [O3] M      [NO2-] M    [HO2] M     pH    
+------------------------------------------------------------------------------
+baseline       9.081e-13   9.192e-09   4.809e-08   1.784e-10   4.71  
+R27_off        3.980e-12   3.125e-08   6.137e-09   4.748e-11   4.71  
+R32_off        5.214e-14   4.740e-07   4.317e-07   3.298e-13   4.69  
+R77_off        1.133e-12   6.925e-09   7.460e-08   2.477e-10   4.72  
+R32_R77_off    1.731e-13   2.211e-07   4.475e-07   1.004e-12   4.70  
+
+  [OH]_R27_off / [OH]_baseline = 4.38e+00
+  [OH]_R32_off / [OH]_baseline = 5.74e-02
+  [OH]_R77_off / [OH]_baseline = 1.25e+00
+  [OH]_R32_R77_off / [OH]_baseline = 1.91e-01
+
+[3.6kV baseline] disabling reactions: []
+  N_z=49, N_s=25
+  done: wall=71.4s, success=True, nfev=39344
+  cached: r27_r32_r77_sweep_3.6kV_baseline.npz
+
+[3.6kV R27_off] disabling reactions: [18]
+  disabling idx=18: R27: O3 + OH → HO2 + O2
+  N_z=49, N_s=25
+  done: wall=79.7s, success=True, nfev=43199
+  cached: r27_r32_r77_sweep_3.6kV_R27_off.npz
+
+[3.6kV R32_off] disabling reactions: [23]
+  disabling idx=23: R32: O3 + NO2- → O2 + NO3-
+  N_z=49, N_s=25
+  done: wall=55.6s, success=True, nfev=30378
+  cached: r27_r32_r77_sweep_3.6kV_R32_off.npz
+
+[3.6kV R77_off] disabling reactions: [68]
+  disabling idx=68: R77: OH + NO2- → OH- + NO2
+  N_z=49, N_s=25
+  done: wall=71.8s, success=True, nfev=38607
+  cached: r27_r32_r77_sweep_3.6kV_R77_off.npz
+
+[3.6kV R32_R77_off] disabling reactions: [23, 68]
+  disabling idx=23: R32: O3 + NO2- → O2 + NO3-
+  disabling idx=68: R77: OH + NO2- → OH- + NO2
+  N_z=49, N_s=25
+  done: wall=53.3s, success=True, nfev=28972
+  cached: r27_r32_r77_sweep_3.6kV_R32_R77_off.npz
+
+==============================================================================
+Final state at t=600s — vol-avg, three_film, 3.6kV
+==============================================================================
+case           [OH] M      [O3] M      [NO2-] M    [HO2] M     pH    
+------------------------------------------------------------------------------
+baseline       3.262e-16   4.114e-10   2.114e-05   1.111e-12   4.52  
+R27_off        1.126e-14   6.101e-10   2.105e-05   1.108e-12   4.51  
+R32_off        3.475e-15   2.875e-06   3.664e-05   2.783e-14   4.49  
+R77_off        1.477e-15   4.049e-10   2.119e-05   1.205e-12   4.52  
+R32_R77_off    3.710e-14   2.734e-06   3.668e-05   1.180e-13   4.50  
+
+  [OH]_R27_off / [OH]_baseline = 3.45e+01
+  [OH]_R32_off / [OH]_baseline = 1.07e+01
+  [OH]_R77_off / [OH]_baseline = 4.53e+00
+  [OH]_R32_R77_off / [OH]_baseline = 1.14e+02
+
+==============================================================================
+Cross-voltage comparison: [OH]_vol_avg at t=600s
+==============================================================================
+case          2.6kV         3.6kV         low/high
+------------------------------------------------------------------------------
+baseline      9.081e-13     3.262e-16     2.78e+03
+R27_off       3.980e-12     1.126e-14     3.53e+02
+R32_off       5.214e-14     3.475e-15     1.50e+01
+R77_off       1.133e-12     1.477e-15     7.67e+02
+R32_R77_off   1.731e-13     3.710e-14     4.67e+00
