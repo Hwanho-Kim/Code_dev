@@ -44,8 +44,11 @@ DEFAULT_GAS_SHEET = '3.2kV'  # overridden by --voltage
 _output_dir = _script_dir
 
 # Grid
+# 2026-05-07: STRETCH 1.12 → 1.02. dz_max 1028µm → 199µm, N_z 49 → 188.
+# 1.12 grid는 deep cells dz가 너무 커서 (~1mm) SG flux의 face-by-face round-off로
+# cell-specific 음수 spike 발생 (cell 37, 47 등). 1.02로 smoother gradient.
 DZ_MIN = 5e-6
-STRETCH = 1.12
+STRETCH = 1.02
 
 # Reference case: three_film + species-specific α_b, δ_gas=10mm, δ_liq=100µm
 # (project default 2026-04-23, full Schwartz 1986 series resistance)
@@ -65,9 +68,14 @@ MIN_STABLE_RUN = 5     # consecutive nonzero points to define stable detection
 # --- RH 80% fitting ratios (from test_rh_ratio_fit.py) ---
 # Voltage-dependent, but use 3.2kV as default (overridden per voltage)
 RH80_RATIOS = {
-    '2.6kV': {'O3_scale': 0.493, 'NO2_O3': 0.222, 'N2O5_NO2': 0.043, 'HONO_NO2': 0.00915, 'NO3_O3': 0.0179},
-    '3.2kV': {'O3_scale': 0.647, 'NO2_O3': 0.091, 'N2O5_NO2': 0.054, 'HONO_NO2': 0.00707, 'NO3_O3': 0.00442},
-    '3.6kV': {'O3_scale': 0.762, 'NO2_O3': 0.095, 'N2O5_NO2': 0.037, 'HONO_NO2': 0.00662, 'NO3_O3': 0.00337},
+    # HONO_NO2 voltage-specific (2026-05-04 fine-tune sweep, see test_hono_finetune.py):
+    #   2.6 kV → 0.005 (NO2- floor ~0.05 µM, exp 0)
+    #   3.2 kV → 0.055 (sim 4.11 vs exp 3.58, +15%)
+    #   3.6 kV → 0.097 (sim 20.68 vs exp 20.74, -0.3%)
+    # Previous: uniform 0.10 (3.6 kV match only)
+    '2.6kV': {'O3_scale': 0.493, 'NO2_O3': 0.222, 'N2O5_NO2': 0.043, 'HONO_NO2': 0.005, 'NO3_O3': 0.0179},
+    '3.2kV': {'O3_scale': 0.647, 'NO2_O3': 0.091, 'N2O5_NO2': 0.054, 'HONO_NO2': 0.055, 'NO3_O3': 0.00442},
+    '3.6kV': {'O3_scale': 0.762, 'NO2_O3': 0.095, 'N2O5_NO2': 0.037, 'HONO_NO2': 0.097, 'NO3_O3': 0.00337},
 }
 HONO2_RATIO = 0.83      # HNO₃/N₂O₅ (unmeasured, literature)
 H2O2_RATIO = 0.003      # H₂O₂/O₃ (re-fit 2026-04-23 via sweep; prev 0.03)
@@ -86,8 +94,10 @@ FIXED_CATION_CONC = 0.0  # Na+ [M] when saline (0.9% NaCl = 0.154M)
 # Legacy BCs (one_film_gas, gas_alpha) removed. Add back for sensitivity if needed.
 BC_CASES = []
 
-# MT flux cases (Fig 1b) — only three_film (ref).
-MT_BC_CASES = []
+# MT flux cases (Fig 1b) — three_film only (project default 2026-04-23).
+MT_BC_CASES = [
+    ('three_film', 'three_film', None, 0.01),
+]
 
 # Species to track MT flux
 MT_SPECIES = [
@@ -115,6 +125,14 @@ EXP = EXP_DIW_ALL['3.2kV']  # set in main() by --voltage/--saline
 
 # Species for Fig 2 rate evolution
 TARGET_SPECIES = ['NO3-', 'O3', 'NO2-', 'H2O2']
+# Fig 2b: radicals + H+ for diagnosing low concentrations and pH gap
+# 2026-05-06: 'O' atom replaced with 'NO3' radical. O atom bulk avg ~10⁻¹⁸ M
+# (atto-Molar) is at numerical-zero level relative to atol=1e-15. Its rate
+# budget (R20/R73/R106-R109) is dominated by atol-band noise, with R28/R27
+# forward/reverse mirroring at ±2e-14 producing meaningless mirror pattern.
+# NO3 radical (Henry=44, deeper penetration, R93 catalyst role) gives a more
+# meaningful budget. See notes/o3_spatial_diagnosis.md.
+TARGET_SPECIES_RADICAL = ['HO2', 'HO3', 'O2-', 'O3-', 'OH']
 SPEC_TO_TOTAL = {
     'HONO': 'HONO_total', 'NO2-': 'HONO_total',
     'HONO2': 'HONO2_total', 'NO3-': 'HONO2_total',
@@ -125,9 +143,13 @@ SPEC_TO_TOTAL = {
 }
 
 # Fig 5 snapshots and species
+# Tuple: (sp_name in AQUEOUS_SPECIES, display_label, unit_label, scale_to_unit)
+# When display_label is 'NO2-' or 'HO2-' (ionic form of acid pool),
+# gen_fig5 applies pH-dependent speciation per cell.
 SNAP_TIMES_MIN = [1, 2, 4, 6, 8, 12]
 SPATIAL_SPECIES = [
     ('HONO2_total', 'NO3-',  'uM',  1e6),
+    ('HONO_total',  'NO2-',  'uM',  1e6),
     ('O3',          'O3',    'uM',  1e6),
     ('H2O2_total',  'H2O2',  'nM',  1e9),
     ('OH',          'OH',    'pM',  1e12),
@@ -158,13 +180,17 @@ def _uni(sp):
 # Gas Data
 # ═══════════════════════════════════════════════════════════════════════
 
-def _preprocess_below_lod(vals):
+def _preprocess_below_lod(vals, species=None):
     """Linear interpolation + Savitzky-Golay smoothing for gas data.
 
     1. Find stable detection start (MIN_STABLE_RUN consecutive nonzero).
     2. Before stable start: linear ramp from 0 to first smoothed stable value.
     3. After stable start: fill intermittent zeros by linear interp, then SG smooth.
-    4. SG filter (window=15, poly=3) applied to stable region to remove LOD noise.
+    4. SG filter applied to stable region to remove LOD noise.
+
+    Species-aware window (2026-05-12, Phase F3 result):
+      NO2/NO3 → window=151 (302s) — forced-response oscillation reduction.
+      Others  → window=31  (62s)  — preserve transient dynamics.
     """
     from scipy.signal import savgol_filter
 
@@ -197,8 +223,10 @@ def _preprocess_below_lod(vals):
             if out[i] <= 0:
                 out[i] = np.interp(i, nz_idx, nz_vals)
 
-    # SG smoothing on stable region
-    sg_win = 15
+    # SG smoothing on stable region (species-aware window)
+    # NO2/NO3: window=151 (302s) for forced-response noise reduction (Phase F3)
+    # Others : window=31  (62s)  preserve transient dynamics
+    sg_win = 151 if species in ('NO2', 'NO3') else 31
     stable_region = out[stable_start:]
     if len(stable_region) >= sg_win:
         w = sg_win if sg_win % 2 == 1 else sg_win + 1
@@ -220,7 +248,7 @@ def load_gas_data():
     for col in ['O3', 'NO', 'NO2', 'NO3', 'N2O4', 'N2O5']:
         if col in df.columns:
             raw = np.maximum(df[col].values.astype(float), 0.0)
-            gas_conc[col] = _preprocess_below_lod(raw)
+            gas_conc[col] = _preprocess_below_lod(raw, species=col)
         else:
             gas_conc[col] = np.zeros(len(df))
 
@@ -415,6 +443,11 @@ def compute_rates_snapshot(solver, y_2d, t):
             'products': rxn.get('products', {}),
         })
 
+    # Mass-pool flux into the *_total slot (matches solver RHS at pde_solver.py:928).
+    # Plotting convention: rates and MT shown in mass-pool units (HONO_total etc.),
+    # so panel labels with conjugate-base species names (NO2-, NO3-) actually mean
+    # "the mass pool containing this species". Conservation is closed at this level
+    # because the solver's ODE updates the *_total slot, not individual species.
     mt_flux = {}
     hp_idx = solver._h_plus_idx
     h_s = max(y_2d[0, hp_idx], 1e-14) if hp_idx >= 0 else 1e-7
@@ -439,9 +472,22 @@ def _total_match_names(sp):
     return names
 
 
-def species_contribution(rxn_rates, species_name, mt_flux):
-    """Net rate contribution of each reaction to one species."""
-    match = _total_match_names(species_name)
+def species_contribution(rxn_rates, species_name, mt_flux, strict=False):
+    """Net rate contribution of each reaction to a species.
+
+    strict=False (default): aggregate over the *_total mass pool (acid-base
+    pair members share budget). Use for mass-conservation views (fig2 NO2-/
+    NO3-/H2O2 etc.) where the solver's conservative variable is *_total.
+
+    strict=True: only reactions whose reactant/product list mentions the exact
+    species name. Use for fig2b radical panels (HO2 vs O2-) where the user
+    wants to read off which reactions directly produce/consume that species,
+    not the merged pool budget.
+    """
+    if strict:
+        match = {species_name}
+    else:
+        match = _total_match_names(species_name)
     contribs = []
     for r in rxn_rates:
         in_r = set(r['reactants'].keys()) & match
@@ -455,9 +501,22 @@ def species_contribution(rxn_rates, species_name, mt_flux):
             net -= int(r['reactants'][sp]) * r['rate']
         if abs(net) > 1e-30:
             contribs.append((r['label'], net))
+    # mt_flux keyed by *_total slot. Sum over match yields the mass-pool flux
+    # (same units as the *_total ODE in pde_solver.py:928).
     mt_val = sum(mt_flux.get(n, 0.0) for n in match)
     if abs(mt_val) > 1e-30:
-        contribs.append(('MT', mt_val))
+        # Mass-pool gas-uptake labels — explicit "_total" to clarify that the
+        # entire pool is added (then partitioned by acid-base equilibrium via
+        # speciate(), with H+ adjusted by _enforce_electroneutrality).
+        mt_labels = {
+            'NO3-':  'HONO2(aq) → H+ + NO3-',
+            'NO2-':  'HONO(aq) → H+ + NO2-',
+            'HONO':  'HONO(aq) → H+ + NO2-',
+            'HONO2': 'HONO2(aq) → H+ + NO3-',
+            'O3':    'O3(g) → O3(aq)',
+            'H2O2':  'H2O2(g) → H2O2(aq)',
+        }
+        contribs.append((mt_labels.get(species_name, f'MT({species_name})'), mt_val))
     return contribs
 
 
@@ -519,9 +578,9 @@ def run_all_simulations(rerun=False):
 
 def gen_fig1(data):
     """Fig 1: Final-time bar chart of pH, NO2-, NO3-, H2O2 for three_film.
-    Experimental values shown as dashed horizontal lines."""
+    Sim and Exp shown as paired bars (one large figure with all 4 metrics)."""
     import matplotlib.pyplot as plt
-    print("\n--- Fig 1: Final-value bar chart (three_film) ---")
+    print("\n--- Fig 1: Sim vs Exp bar comparison (three_film) ---")
 
     ref = data['ref']
     sim_vals = {
@@ -531,36 +590,41 @@ def gen_fig1(data):
         'H2O2': float(ref['avg_H2O2']) * 1e6,
     }
 
-    fig, axes = plt.subplots(2, 2, figsize=(8, 6.5))
+    fig, axes = plt.subplots(2, 2, figsize=(9, 7))
     panels = [
-        ('pH',                           sim_vals['pH'],   EXP['pH']),
-        ('NO\u2082\u207b (\u00b5M)',   sim_vals['NO2'],  EXP['NO2']),
-        ('NO\u2083\u207b (\u00b5M)',   sim_vals['NO3'],  EXP['NO3']),
-        ('H\u2082O\u2082 (\u00b5M)',   sim_vals['H2O2'], EXP['H2O2']),
+        ('pH',                          sim_vals['pH'],   EXP['pH']),
+        ('NO\u2082\u207b (\u00b5M)', sim_vals['NO2'],  EXP['NO2']),
+        ('NO\u2083\u207b (\u00b5M)', sim_vals['NO3'],  EXP['NO3']),
+        ('H\u2082O\u2082 (\u00b5M)', sim_vals['H2O2'], EXP['H2O2']),
     ]
 
     for i, (ylabel, sim_val, exp_val) in enumerate(panels):
         ax = axes.flat[i]
-        ax.bar(['Sim'], [sim_val], width=0.55,
-               color='#1f77b4', edgecolor='black', lw=0.8, alpha=0.85)
-        ax.axhline(exp_val, color='k', ls='--', lw=1.5,
-                   label=f'Exp = {exp_val:.2f}')
-        ax.set_ylabel(ylabel)
-        ax.set_title(f'({"abcd"[i]}) {ylabel}')
-        # annotate bar
+        bars = ax.bar(['Sim', 'Exp'], [sim_val, exp_val], width=0.55,
+                      color=['#9467bd', '#2ca02c'],
+                      edgecolor='black', lw=0.8, alpha=0.85)
+        # value labels
+        for bar, val in zip(bars, [sim_val, exp_val]):
+            top = max(sim_val, exp_val)
+            ymax = top * 1.25 if top > 0 else 1.0
+            if ylabel == 'pH':
+                ymax = 7
+            txt = f'{val:.2f}'
+            ax.text(bar.get_x() + bar.get_width()/2, val + 0.02 * ymax,
+                    txt, ha='center', va='bottom', fontsize=10, weight='bold')
+        ax.set_ylabel(ylabel, fontsize=11)
+        ax.set_title(f'({"abcd"[i]}) {ylabel}', fontsize=12, weight='bold')
         top = max(sim_val, exp_val)
-        ax.set_ylim(0, top * 1.25 if top > 0 else 1.0)
+        ax.set_ylim(0, top * 1.30 if top > 0 else 1.0)
         if ylabel == 'pH':
             ax.set_ylim(0, 7)
-        ax.text(0, sim_val + 0.02 * ax.get_ylim()[1],
-                f'{sim_val:.2f}', ha='center', va='bottom', fontsize=10)
-        ax.legend(loc='upper right', fontsize=9)
         ax.grid(True, axis='y', alpha=0.3)
 
+    _hono_ratio = RH80_RATIOS.get(DEFAULT_GAS_SHEET, {}).get('HONO_NO2', 0.10)
     fig.suptitle(
-        f'Final values ({SOLUTION_LABEL}, {DEFAULT_GAS_SHEET}pp, '
-        f'{CONDITION_LABEL}, three_film)',
-        fontsize=13, y=1.01,
+        f'Sim vs Exp ({SOLUTION_LABEL}, {DEFAULT_GAS_SHEET}pp, '
+        f'{CONDITION_LABEL}, three_film, HONO/NO\u2082={_hono_ratio:g})',
+        fontsize=13, weight='bold', y=1.01,
     )
     fig.tight_layout()
     _save(fig, 'fig1_bc_comparison')
@@ -635,12 +699,26 @@ def gen_fig1b(data):
                 flux[si] = k_mt * (C_eq - C_s) / L
 
             t_min = snap_t / 60.0
+            # Cumulative uses RAW flux (mass-balance preserved)
             cum = np.cumsum(flux[:-1] * np.diff(snap_t)) * 1e6  # µM
             cum = np.concatenate(([0.0], cum))
 
+            # Visual smoothing of top-row flux only (SG window=75, polyorder=3).
+            # Cosmetic — does not affect cumulative or mass balance.
+            from scipy.signal import savgol_filter
+            sg_w = 75
+            if len(flux) >= sg_w:
+                w = sg_w if sg_w % 2 == 1 else sg_w + 1
+                flux_vis = savgol_filter(flux, window_length=w, polyorder=3)
+                if abs(np.mean(flux)) > 1e-30:
+                    bias_pct = (np.mean(flux_vis) - np.mean(flux)) / np.mean(flux) * 100
+                    print(f"    [{label} / {gas_name}] SG-smooth bias: {bias_pct:+.2f}%")
+            else:
+                flux_vis = flux
+
             color = bc_colors[ri % len(bc_colors)]
-            ax_inst.plot(t_min, flux, color=color, lw=1.2, label=label)
-            ax_cum.plot(t_min, cum, color=color, lw=1.2, label=label)
+            ax_inst.plot(t_min, flux_vis, color=color, lw=1.2, label=label)  # smoothed (display)
+            ax_cum.plot(t_min, cum, color=color, lw=1.2, label=label)        # raw integral
 
         ax_inst.set_title(f'{sp_label}', fontweight='bold')
         ax_inst.set_ylabel('Flux (M/s)')
@@ -673,23 +751,51 @@ def gen_fig2(data):
 
     solver = _get_solver(times, gas_conc)
     nt = len(snap_t)
-
-    # Compute per-reaction rates at each snapshot
-    print("  computing per-reaction rates...")
-    all_rxn, all_mt = [], []
-    for i in range(nt):
-        rr, mt = compute_rates_snapshot(solver, snap_y[i], snap_t[i])
-        all_rxn.append(rr)
-        all_mt.append(mt)
-
-    # Volume-averaged concentration time series
+    chem = solver.chem
+    N_z = solver.N_z
+    n_rxn = len(chem.reactions)
+    h_idx = chem.species_idx['H+']
     dz, L = solver.dz_cells, solver.L
+
+    # Per-cell rate matrix for speciation-weighted vol-avg per species.
+    # Acid-base members (NO2- via HONO_total, NO3- via HONO2_total,
+    # H2O2 via H2O2_total) get f(z)-weighted; non-pair species (O3) f=1.
+    # Note: NO3-/H2O2 have f≈1.000 at our pH range so the correction is
+    # negligible; only NO2- (pKa 3.4) sees a meaningful effect.
+    print("  computing per-cell rates (speciation-aware fig2)...")
+    all_rates_3d = np.zeros((nt, n_rxn, N_z))
+    all_Hp = np.zeros((nt, N_z))
+    all_mt_pool = []   # mt_flux dict per snapshot (mass-pool, unweighted)
+    for i in range(nt):
+        all_Hp[i] = np.maximum(snap_y[i][:, h_idx], 1e-14)
+        for j in range(N_z):
+            yc = np.clip(snap_y[i][j, :].copy(), chem.trace, 1.0)
+            yc[h_idx] = max(yc[h_idx], 1e-14)
+            spec = chem.speciate(yc)
+            for ri, rxn_d in enumerate(chem._rxn_data):
+                all_rates_3d[i, ri, j] = chem._compute_single_rate(rxn_d, yc, spec)
+        # MT (mass-pool flux into surface; speciated later by f(z=0))
+        _, mt_i = compute_rates_snapshot(solver, snap_y[i], snap_t[i])
+        all_mt_pool.append(mt_i)
+
+    # Vol-avg [species](t) with acid-base speciation (panel title context).
     conc = {}
     for sp in TARGET_SPECIES:
-        total = SPEC_TO_TOTAL.get(sp, sp)
-        idx = solver.chem.species_idx.get(total, solver.chem.species_idx.get(sp))
-        if idx is not None:
-            conc[sp] = np.array([np.dot(snap_y[i][:, idx], dz) / L for i in range(nt)])
+        total = SPEC_TO_TOTAL.get(sp)
+        if total is not None and total in ACID_BASE_PAIRS and total in chem.species_idx:
+            tot_idx = chem.species_idx[total]
+            acid_form, base_form, pKa = ACID_BASE_PAIRS[total]
+            Ka = 10 ** -pKa
+            c_t = np.zeros(nt)
+            for i in range(nt):
+                f_z = (all_Hp[i] / (all_Hp[i] + Ka) if sp == acid_form
+                       else Ka / (all_Hp[i] + Ka))
+                c_t[i] = np.dot(snap_y[i][:, tot_idx] * f_z, dz) / L
+            conc[sp] = c_t
+        elif sp in chem.species_idx:
+            sp_i = chem.species_idx[sp]
+            conc[sp] = np.array([np.dot(snap_y[i][:, sp_i], dz) / L
+                                  for i in range(nt)])
 
     # Build time series per species
     fig, axes = plt.subplots(2, 2, figsize=(14, 9), sharex=True)
@@ -697,10 +803,68 @@ def gen_fig2(data):
 
     for pi, sp in enumerate(TARGET_SPECIES):
         ax = axes.flat[pi]
+
+        # Same framework as fig2b:
+        #   (1) Strict-direct rxns (full stoich × rate vol-avg)
+        #   (2) Acid-base equilibrium net flux (residual approach for closure)
+        #   (3) MT line (for transferable species; speciated by surface f)
+        total = SPEC_TO_TOTAL.get(sp)
         by_label = defaultdict(lambda: np.zeros(nt))
-        for i in range(nt):
-            for label, rate in species_contribution(all_rxn[i], sp, all_mt[i]):
-                by_label[label][i] = rate
+        strict_total_t = np.zeros(nt)
+
+        # (1) Strict-direct rxns
+        for ri, rxn in enumerate(chem.reactions):
+            label = rxn.get('label', f'R{ri}')
+            reac = rxn['reactants']
+            prod = rxn.get('products', {})
+            stoich = int(prod.get(sp, 0)) - int(reac.get(sp, 0))
+            if stoich == 0:
+                continue
+            vol_avg = (all_rates_3d[:, ri, :] * dz[None, :]).sum(axis=1) / L
+            contribution = stoich * vol_avg
+            by_label[label] = contribution
+            strict_total_t += contribution
+
+        # (3) MT line — for transferable species; speciated by surface f
+        mt_line_t = np.zeros(nt)
+        if total is not None and total in ACID_BASE_PAIRS:
+            acid_form, base_form, pKa = ACID_BASE_PAIRS[total]
+            Ka = 10 ** -pKa
+            match_set_mt = {acid_form, base_form, total}
+            for i in range(nt):
+                Hp_s = max(snap_y[i][0, h_idx], 1e-14)
+                f_self_s = (Hp_s / (Hp_s + Ka) if sp == acid_form
+                            else Ka / (Hp_s + Ka))
+                mt_pool = sum(all_mt_pool[i].get(n, 0.0) for n in match_set_mt)
+                mt_line_t[i] = f_self_s * mt_pool
+        else:
+            for i in range(nt):
+                mt_line_t[i] = all_mt_pool[i].get(sp, 0.0)
+        mt_labels = {
+            'NO3-':  'HONO2(aq) → H+ + NO3-',
+            'NO2-':  'HONO(aq) → H+ + NO2-',
+            'H2O2':  'H2O2(g) → H2O2(aq)',
+            'O3':    'O3(g) → O3(aq)',
+        }
+        if np.max(np.abs(mt_line_t)) > 1e-30:
+            by_label[mt_labels.get(sp, f'{sp}(g) → {sp}(aq)')] = mt_line_t
+
+        # (2) AB equilibrium flux — acid-base members only (residual closure)
+        if total is not None and total in ACID_BASE_PAIRS:
+            acid_form, base_form, pKa = ACID_BASE_PAIRS[total]
+            Ka = 10 ** -pKa
+            if total in chem.species_idx:
+                tot_idx = chem.species_idx[total]
+                c_t = np.zeros(nt)
+                for i in range(nt):
+                    Hp_z = np.maximum(snap_y[i][:, h_idx], 1e-14)
+                    f_z = (Hp_z / (Hp_z + Ka) if sp == acid_form
+                           else Ka / (Hp_z + Ka))
+                    c_t[i] = np.dot(snap_y[i][:, tot_idx] * f_z, dz) / L
+                dc_dt = np.gradient(c_t, snap_t)
+                ab_flux = dc_dt - strict_total_t - mt_line_t
+                ab_label = f'{acid_form} ⇌ H+ + {base_form}'
+                by_label[ab_label] = ab_flux
 
         # Filter: keep >=1% contribution at any time
         max_total = max(sum(abs(r[i]) for r in by_label.values()) for i in range(nt)) if nt else 1
@@ -710,15 +874,23 @@ def gen_fig2(data):
             if peak_frac >= 0.01:
                 sig_labels.append(label)
 
-        # Despike only: median filter removes BDF dense output spikes.
-        # No moving average — preserves real transients (e.g. radical ignition).
+        # Despike: median filter removes BDF dense output spikes.
+        # Then SG smoothing for visual cleanliness (display only, mean-preserving).
         from scipy.ndimage import median_filter
+        from scipy.signal import savgol_filter
         med_win = max(int(10 / DT_SNAPSHOT), 5)  # 10s median window
+        sg_w = 75  # ~150s SG smoothing for visualization (display only)
+
+        def _vis_smooth(arr):
+            d = median_filter(arr, size=med_win)
+            if len(d) >= sg_w:
+                w = sg_w if sg_w % 2 == 1 else sg_w + 1
+                d = savgol_filter(d, window_length=w, polyorder=3)
+            return d
 
         for label in sig_labels:
             r = by_label[label]
-            ax.plot(t_min, median_filter(r, size=med_win), lw=1.2,
-                    label=label[:40])
+            ax.plot(t_min, _vis_smooth(r), lw=1.2, label=label[:40])
 
         # net dC/dt: finite-difference from actual concentration (ground truth)
         if sp in conc:
@@ -732,7 +904,7 @@ def gen_fig2(data):
             net_fd[-1] = dcdt[-1] if len(dcdt) > 0 else 0
             if nt > 2:
                 net_fd[1:-1] = 0.5 * (dcdt[:-1] + dcdt[1:])
-            ax.plot(t_min, median_filter(net_fd, size=med_win),
+            ax.plot(t_min, _vis_smooth(net_fd),
                     'k--', lw=2, label=r'$\Delta C / \Delta t$')
 
         ax.set_ylabel(f'd[{_uni(sp)}]/dt (M/s)')
@@ -966,20 +1138,34 @@ def gen_fig5(data):
     ax.set_title('(a) pH', fontweight='bold', loc='left')
     ax.legend(fontsize=7)
 
-    # Species panels
+    # Species panels — pH-dependent speciation for ionic pools
+    from config_1d import ACID_BASE_PAIRS
+    _SPECIATE_IONIC = {
+        'NO2-': ('HONO_total', 'ion'),     # HONO ↔ H+ + NO2-, pKa=3.4
+        'HO2-': ('H2O2_total', 'ion'),     # H2O2 ↔ H+ + HO2-, pKa=11.6
+        'O2-':  ('HO2_total',  'ion'),     # HO2 ↔ H+ + O2-,   pKa=4.8
+    }
     for pi, (sp_name, sp_label, unit, scale) in enumerate(SPATIAL_SPECIES):
         ax = axes.flat[pi + 1]
         idx = chem.species_idx.get(sp_name)
         if idx is None:
             ax.set_visible(False)
             continue
+        speciate = _SPECIATE_IONIC.get(sp_label)
         for ci, si in enumerate(snap_idx):
-            prof = np.clip(snap_y[si][:, idx], 1e-30, None) * scale
+            raw = snap_y[si][:, idx]
+            if speciate is not None:
+                pool_name, _ = speciate
+                pKa = ACID_BASE_PAIRS[pool_name][2]
+                Ka = 10.0 ** (-pKa)
+                h = np.maximum(snap_y[si][:, h_idx], 1e-14)
+                raw = raw * Ka / (h + Ka)  # ionic fraction × total pool
+            prof = np.clip(raw, 1e-30, None) * scale
             ax.plot(z_mm, prof, color=colors[ci], lw=1.5,
                     label=f'{snap_t[si]/60:.0f} min')
         ax.set_yscale('log')
         ax.set_ylabel(f'{_uni(sp_label)} ({unit})')
-        ax.set_title(f'({"bcdefgh"[pi]}) {_uni(sp_label)}',
+        ax.set_title(f'({"bcdefghij"[pi]}) {_uni(sp_label)}',
                      fontweight='bold', loc='left')
         if pi == 0:
             ax.legend(fontsize=7)
@@ -989,7 +1175,8 @@ def gen_fig5(data):
     for ax in axes.flat:
         if ax.get_visible():
             ax.set_xlabel('Depth (mm)')
-            ax.set_xlim(0, z_mm[-1])
+            ax.set_xscale('log')
+            ax.set_xlim(z_mm[0], z_mm[-1])
 
     fig.suptitle(f'Spatial profiles (DIW, {REF_BC}, \u03b4g={REF_DELTA_GAS*1e3:.0f}mm)',
                  fontsize=14, y=1.01)
@@ -1161,10 +1348,328 @@ def _setup_mpl():
 # Main
 # ═══════════════════════════════════════════════════════════════════════
 
+def gen_fig2b(data):
+    """Fig 2b: Rate evolution for radicals HO2, HO3, O2-, O3-, OH.
+
+    Same structure as fig2 (median+SG smoothing for display).
+    HO2 and O2- share the HO2_total mass pool — their panels show identical
+    budgets because conservation is at *_total level.
+    """
+    import matplotlib.pyplot as plt
+    print("\n--- Fig 2b: Radical & H+ rate evolution ---")
+
+    ref = data['ref']
+    snap_t = ref['snap_t']
+    snap_y = ref['snap_y']
+    times, gas_conc = data['times'], data['gas_conc']
+
+    solver = _get_solver(times, gas_conc)
+    nt = len(snap_t)
+    chem = solver.chem
+    N_z = solver.N_z
+    n_rxn = len(chem.reactions)
+    h_idx = chem.species_idx['H+']
+
+    # Per-cell rate matrix (snapshot, reaction, cell). Stored so we can apply
+    # different per-species speciation weights f(z) without recomputing rates.
+    print("  computing per-cell rates (speciation-aware fig2b)...")
+    all_rates_3d = np.zeros((nt, n_rxn, N_z))
+    all_Hp = np.zeros((nt, N_z))
+    for i in range(nt):
+        all_Hp[i] = np.maximum(snap_y[i][:, h_idx], 1e-14)
+        for j in range(N_z):
+            yc = np.clip(snap_y[i][j, :].copy(), chem.trace, 1.0)
+            yc[h_idx] = max(yc[h_idx], 1e-14)
+            spec = chem.speciate(yc)
+            for ri, rxn_d in enumerate(chem._rxn_data):
+                all_rates_3d[i, ri, j] = chem._compute_single_rate(rxn_d, yc, spec)
+
+    # Volume-averaged concentration time series, with acid-base speciation
+    # so panel titles report [HO2] vs [O2-] separately (not the merged
+    # HO2_total pool).
+    dz, L = solver.dz_cells, solver.L
+    conc = {}
+    for sp in TARGET_SPECIES_RADICAL:
+        total = SPEC_TO_TOTAL.get(sp)
+        if total is not None and total in solver.chem.species_idx:
+            # Acid-base member: c(sp) = f × c(*_total), f = H+/(H+ + Ka) (acid)
+            # or Ka/(H+ + Ka) (base), evaluated per cell.
+            tot_idx = solver.chem.species_idx[total]
+            pair = ACID_BASE_PAIRS.get(total)
+            acid_form, base_form, pKa = pair
+            Ka = 10 ** -pKa
+            c_t = np.zeros(nt)
+            for i in range(nt):
+                C_total = snap_y[i][:, tot_idx]
+                Hp = np.maximum(snap_y[i][:, h_idx], 1e-14)
+                if sp == acid_form:
+                    frac = Hp / (Hp + Ka)
+                else:  # base_form
+                    frac = Ka / (Hp + Ka)
+                c_t[i] = np.dot(C_total * frac, dz) / L
+            conc[sp] = c_t
+        elif sp in solver.chem.species_idx:
+            idx = solver.chem.species_idx[sp]
+            conc[sp] = np.array([np.dot(snap_y[i][:, idx], dz) / L
+                                  for i in range(nt)])
+
+    fig, axes = plt.subplots(3, 2, figsize=(13, 11), sharex=True)
+    axes.flat[5].axis('off')  # hide unused 6th panel
+    t_min = snap_t / 60.0
+
+    # Pool concentration cache for AB-flux computation per species
+    pool_t_cache = {}  # total_name -> vol-avg time series
+
+    for pi, sp in enumerate(TARGET_SPECIES_RADICAL):
+        ax = axes.flat[pi]
+
+        # Decomposition per panel:
+        #   (1) Strict-direct rxns: sp explicitly in reactants/products,
+        #       full stoich × rate vol-avg.
+        #   (2) Acid-base equilibrium net flux line:
+        #       AB_flux_into_sp = d⟨[sp]⟩/dt_FD - ⟨strict-direct rate⟩
+        #       This captures real mass flowing through HO2 ⇌ H+ + O2-
+        #       (= ⟨HO2_total × ∂f/∂t⟩ + spatial covariance + any residual).
+        #       By construction Σ panel = ΔC/Δt of [sp] (vol-avg) ⇒ closure.
+        total = SPEC_TO_TOTAL.get(sp)
+        by_label = defaultdict(lambda: np.zeros(nt))
+
+        # (1) Strict-direct rxns
+        strict_total_t = np.zeros(nt)
+        for ri, rxn in enumerate(chem.reactions):
+            label = rxn.get('label', f'R{ri}')
+            reac = rxn['reactants']
+            prod = rxn.get('products', {})
+            stoich = int(prod.get(sp, 0)) - int(reac.get(sp, 0))
+            if stoich == 0:
+                continue
+            vol_avg = (all_rates_3d[:, ri, :] * dz[None, :]).sum(axis=1) / L
+            contribution = stoich * vol_avg
+            by_label[label] = contribution
+            strict_total_t += contribution
+
+        # (2) AB equilibrium flux (only for acid-base members)
+        if total is not None and total in ACID_BASE_PAIRS:
+            acid_form, base_form, pKa = ACID_BASE_PAIRS[total]
+            Ka = 10 ** -pKa
+            # vol-avg [sp](t) — speciated
+            if total in chem.species_idx:
+                tot_idx = chem.species_idx[total]
+                c_t = np.zeros(nt)
+                for i in range(nt):
+                    Hp_z = np.maximum(snap_y[i][:, h_idx], 1e-14)
+                    f_z = (Hp_z / (Hp_z + Ka) if sp == acid_form
+                           else Ka / (Hp_z + Ka))
+                    c_t[i] = np.dot(snap_y[i][:, tot_idx] * f_z, dz) / L
+                # FD derivative
+                dc_dt = np.gradient(c_t, snap_t)
+                # AB flux = full d[sp]/dt - strict-direct chemistry
+                ab_flux = dc_dt - strict_total_t
+                ab_label = f'{acid_form} ⇌ H+ + {base_form}'
+                by_label[ab_label] = ab_flux
+        # Radicals not in TRANSFERABLE_SPECIES → no MT entry, skip MT term.
+
+        # Filter: keep top contributors (peak >= 1% of max)
+        max_total = (max(sum(abs(r[i]) for r in by_label.values())
+                          for i in range(nt))
+                      if nt and by_label else 1)
+        thr = 0.01
+        sig_labels = []
+        for label, rates in by_label.items():
+            peak_frac = np.max(np.abs(rates)) / max(max_total, 1e-30)
+            if peak_frac >= thr:
+                sig_labels.append((label, np.max(np.abs(rates))))
+        # Top-10 by peak
+        sig_labels = sorted(sig_labels, key=lambda x: -x[1])[:10]
+        sig_labels = [s[0] for s in sig_labels]
+
+        from scipy.ndimage import median_filter
+        from scipy.signal import savgol_filter
+        med_win = max(int(10 / DT_SNAPSHOT), 5)
+        sg_w = 75
+
+        def _vis_smooth(arr):
+            d = median_filter(arr, size=med_win)
+            if len(d) >= sg_w:
+                w = sg_w if sg_w % 2 == 1 else sg_w + 1
+                d = savgol_filter(d, window_length=w, polyorder=3)
+            return d
+
+        for label in sig_labels:
+            r = by_label[label]
+            ax.plot(t_min, _vis_smooth(r), lw=1.2, label=label[:42])
+
+        # net dC/dt
+        if sp in conc:
+            c_arr = conc[sp]
+            net_fd = np.zeros(nt)
+            if nt > 1:
+                dt_snap = np.diff(snap_t)
+                dc = np.diff(c_arr)
+                dcdt = dc / dt_snap
+                net_fd[0] = dcdt[0]
+                net_fd[-1] = dcdt[-1]
+                if nt > 2:
+                    net_fd[1:-1] = 0.5 * (dcdt[:-1] + dcdt[1:])
+            ax.plot(t_min, _vis_smooth(net_fd),
+                    'k--', lw=2, label=r'$\Delta C / \Delta t$')
+
+        ax.set_ylabel(f'd[{_uni(sp)}]/dt (M/s)')
+        # Title: species name + bulk-avg concentration at final time
+        if sp in conc:
+            cval = conc[sp][-1]
+            mag = abs(cval)
+            if mag >= 1e-3:
+                cstr = f'{cval:.2e} M'
+            elif mag >= 1e-6:
+                cstr = f'{cval*1e6:.2f} \u00b5M'
+            elif mag >= 1e-9:
+                cstr = f'{cval*1e9:.2f} nM'
+            else:
+                cstr = f'{cval*1e12:.2f} pM'
+            title = f'({"abcde"[pi]}) {_uni(sp)}  [final={cstr}]'
+        else:
+            title = f'({"abcde"[pi]}) {_uni(sp)}'
+        ax.set_title(title, fontweight='bold', loc='left')
+        ax.axhline(0, color='gray', lw=0.5)
+        ax.legend(fontsize=7, loc='best')
+
+    # bottom row visible: axes[2,0]=OH, axes[1,1]=O3- (since [2,1] hidden)
+    axes[2, 0].set_xlabel('Time (min)')
+    axes[1, 1].set_xlabel('Time (min)')
+    axes[1, 1].tick_params(labelbottom=True)
+
+    fig.suptitle(
+        f'Radical rate evolution ({SOLUTION_LABEL}, '
+        f'{DEFAULT_GAS_SHEET}pp, {CONDITION_LABEL}, three_film)',
+        fontsize=13, y=1.01,
+    )
+    fig.tight_layout()
+    _save(fig, 'fig2b_radical_rate')
+
+
+def gen_fig1c(data):
+    """Fig 1c: Bulk concentration time series.
+       Left: long-lived (NO3-, NO2-, O3, H2O2)
+       Right: short-lived radicals/intermediates (log scale)
+    """
+    import matplotlib.pyplot as plt
+    from config_1d import AQUEOUS_SPECIES, ACID_BASE_PAIRS
+    print("\n--- Fig 1c: Concentration time series ---")
+
+    ref = data['ref']
+    snap_t = np.array(ref['snap_t'])
+    snap_y = np.array(ref['snap_y'])
+    dz = np.array(ref['dz_cells'])
+    L = float(ref['L'])
+    sp_idx = {sp: i for i, sp in enumerate(AQUEOUS_SPECIES)}
+
+    def avg(species):
+        i = sp_idx.get(species)
+        if i is None:
+            return np.zeros(len(snap_t))
+        return np.array([np.dot(snap_y[k, :, i], dz) / L
+                         for k in range(len(snap_t))])
+
+    # Speciation factors (use bulk-avg H+)
+    hp = np.maximum(avg('H+'), 1e-14)
+    Ka_hono  = 10.0 ** (-ACID_BASE_PAIRS['HONO_total'][2])
+    Ka_hono2 = 10.0 ** (-ACID_BASE_PAIRS['HONO2_total'][2])
+    Ka_h2o2  = 10.0 ** (-ACID_BASE_PAIRS['H2O2_total'][2])
+
+    # Long-lived species (ionic forms via speciation)
+    NO2m = avg('HONO_total')  * Ka_hono  / (hp + Ka_hono)
+    NO3m = avg('HONO2_total') * Ka_hono2 / (hp + Ka_hono2)
+    H2O2 = avg('H2O2_total')  * hp       / (hp + Ka_h2o2)
+    O3   = avg('O3')
+
+    # Short-lived radicals/intermediates (acid-base 쌍은 분자/이온 분리)
+    Ka_HO2     = 10.0 ** (-ACID_BASE_PAIRS['HO2_total'][2])     # 4.8
+    Ka_ONOOH   = 10.0 ** (-ACID_BASE_PAIRS['ONOOH_total'][2])   # 6.6
+    Ka_O2NOOH  = 10.0 ** (-ACID_BASE_PAIRS['O2NOOH_total'][2])  # 5.9
+
+    f_HO2     = hp / (hp + Ka_HO2)        # molecular fraction
+    f_ONOOH   = hp / (hp + Ka_ONOOH)
+    f_O2NOOH  = hp / (hp + Ka_O2NOOH)
+
+    HO2_t      = avg('HO2_total')
+    ONOOH_t    = avg('ONOOH_total')
+    O2NOOH_t   = avg('O2NOOH_total')
+
+    HO2_mol    = HO2_t      * f_HO2
+    O2m        = HO2_t      * (1 - f_HO2)
+    ONOOH_mol  = ONOOH_t    * f_ONOOH
+    ONOOm      = ONOOH_t    * (1 - f_ONOOH)
+    O2NOOH_mol = O2NOOH_t   * f_O2NOOH
+    O2NOOm     = O2NOOH_t   * (1 - f_O2NOOH)
+
+    OH      = avg('OH')
+    O3m_rad = avg('O3-')
+    O_atom  = avg('O')
+    HO3     = avg('HO3')
+
+    tmin = snap_t / 60.0
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5.5))
+
+    # ─── (a) Long-lived (O3 scaled ×1000 for visibility) ───
+    ax = axes[0]
+    long_lived = [
+        ('NO\u2083\u207b',          NO3m, 1e6,        '#d62728'),
+        ('NO\u2082\u207b',          NO2m, 1e6,        '#1f77b4'),
+        ('O\u2083 \u00d7 1000',     O3,   1e6 * 1000, '#2ca02c'),
+        ('H\u2082O\u2082',          H2O2, 1e6,        '#9467bd'),
+    ]
+    for label, arr, mult, color in long_lived:
+        ax.plot(tmin, arr * mult, label=label, color=color, lw=1.8)
+    ax.set_xlabel('Time (min)')
+    ax.set_ylabel('Concentration (\u00b5M)')
+    ax.set_title('(a) Long-lived species', fontweight='bold', loc='left')
+    ax.set_xlim(0, tmin[-1])
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc='best', fontsize=10)
+
+    # ─── (b) Short-lived (log scale, pM units) ───
+    ax = axes[1]
+    # solid = molecular (acid form), dashed = ionic (conjugate base)
+    short_lived = [
+        ('OH',                                       OH,         '#d62728', '-'),
+        ('HO\u2082',                                HO2_mol,    '#1f77b4', '-'),
+        ('O\u2082\u207b',                          O2m,        '#1f77b4', '--'),
+        ('ONOOH',                                    ONOOH_mol,  '#2ca02c', '-'),
+        ('ONOO\u207b',                              ONOOm,      '#2ca02c', '--'),
+        ('O\u2082NOOH',                             O2NOOH_mol, '#9467bd', '-'),
+        ('O\u2082NOO\u207b',                       O2NOOm,     '#9467bd', '--'),
+        ('O\u2083\u207b',                          O3m_rad,    '#ff7f0e', '-'),
+        ('HO\u2083',                                HO3,        '#8c564b', '-'),
+        ('O',                                        O_atom,     '#7f7f7f', '-'),
+    ]
+    for label, arr, color, ls in short_lived:
+        a_clip = np.maximum(arr * 1e12, 1e-3)  # pM, floor 1 fM
+        ax.plot(tmin, a_clip, label=label, color=color, lw=1.5, linestyle=ls)
+    ax.set_yscale('log')
+    ax.set_xlabel('Time (min)')
+    ax.set_ylabel('Concentration (pM)')
+    ax.set_title('(b) Short-lived radicals/intermediates', fontweight='bold', loc='left')
+    ax.set_xlim(0, tmin[-1])
+    ax.grid(True, alpha=0.3, which='both')
+    ax.legend(loc='best', fontsize=8, ncol=1)
+
+    fig.suptitle(
+        f'Bulk concentration evolution ({SOLUTION_LABEL}, {DEFAULT_GAS_SHEET}pp, '
+        f'{CONDITION_LABEL}, three_film)',
+        fontsize=13, y=1.01,
+    )
+    fig.tight_layout()
+    _save(fig, 'fig1c_concentration_timeseries')
+
+
 FIGURE_MAP = {
     '1':  gen_fig1,
     '1b': gen_fig1b,
+    '1c': gen_fig1c,
     '2':  gen_fig2,
+    '2b': gen_fig2b,
     '3':  gen_fig3,
     '4':  gen_fig4,
     '5':  gen_fig5,
@@ -1189,6 +1694,9 @@ def main():
     parser.add_argument('--condition', default='Humid_fitting',
                         choices=['Dry', 'Humid_median', 'Humid_fitting'],
                         help='Gas-phase condition (default: Humid_fitting)')
+    parser.add_argument('--label-suffix', default='', dest='label_suffix',
+                        help='Optional suffix appended to output folder '
+                             '(e.g., "HONOvar" → {V}_{cond}_{bc}_HONOvar)')
     args = parser.parse_args()
 
     # Solution mode
@@ -1209,7 +1717,9 @@ def main():
     # Set voltage-specific paths
     DEFAULT_GAS_SHEET = args.voltage
     voltage_label = args.voltage
-    out_folder = _script_dir / base_folder / f'{voltage_label}_{CONDITION_LABEL}_{REF_BC}'
+    suffix = f'_{args.label_suffix}' if args.label_suffix else ''
+    out_folder = (_script_dir / base_folder
+                  / f'{voltage_label}_{CONDITION_LABEL}_{REF_BC}{suffix}')
     out_folder.mkdir(parents=True, exist_ok=True)
     _output_dir = out_folder
     CACHE_DIR = out_folder / 'cache'
