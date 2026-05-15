@@ -839,26 +839,27 @@ class PDESolver1D:
         H_conc = 10.0 ** (-initial_pH)
         OH_conc = 1e-14 / H_conc
 
-        # Vectorized initialization across all grid points
+        # 2026-05-07: Full seedmin — O2, N2, OH all to trace.
+        # Previous defaults (O2=2.5e-4, N2=5e-4, OH=1e-12) created
+        # chemistry-disconnected initial seeds that produced atol-band horizontal
+        # floors in deep cells (e.g., OH plateau ~1e-13 M). With pure trace IC,
+        # only H+/OH- explicit (pH-physical), the deep-cell floors collapse to
+        # true atol-band noise (1e-22 ~ 1e-20 with atol=1e-20).
+        # Side effect: chemistry network 일부 변화 — air-saturated O2/N2 reservoir
+        # 없어서 R10/R20/R25 등 reactions의 deep-cell behavior 다름.
         for j in range(self.N_z):
             off = j * self.N_s
-            if 'O2' in self.species_idx:
-                y0[off + self.species_idx['O2']] = 2.5e-4
-            if 'N2' in self.species_idx:
-                y0[off + self.species_idx['N2']] = 5e-4
             if 'H+' in self.species_idx:
                 y0[off + self.species_idx['H+']] = H_conc
             if 'OH-' in self.species_idx:
                 y0[off + self.species_idx['OH-']] = OH_conc
-            if 'OH' in self.species_idx:
-                y0[off + self.species_idx['OH']] = 1e-12
             if self.saline_mode and 'Cl-' in self.species_idx:
                 y0[off + self.species_idx['Cl-']] = 0.154
 
-        if self.N_z > 1:
-            rng = np.random.default_rng(42)  # deterministic seed
-            y0 *= (1.0 + 1e-6 * rng.standard_normal(self.N_total))
-            np.clip(y0, trace, None, out=y0)
+        # Perturbation block removed (2026-05-07): conflicted with uniform-trace
+        # IC intent. Did NOT cause cell-specific anomalies (verified by
+        # regen_fig5_no_perturb.py — same cells 37, 47 negative without it).
+        np.clip(y0, trace, None, out=y0)
 
         return y0
 

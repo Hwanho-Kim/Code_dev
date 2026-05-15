@@ -324,7 +324,11 @@ class ODESolverConfig:
     """ODE solver configuration for 1D PDE system."""
     method: str = 'BDF'          # Primary solver (stiff system)
     rtol: float = 1e-6           # Tight enough for trace species (O₃ ~nM, H₂O₂ ~0.1nM)
-    atol: float = 1e-15          # Must be << min(trace radical conc); OH/HO2 ~1e-12 M
+    # 2026-05-07: atol 1e-15 → 1e-20. 이전 1e-15는 deep cells의 atol-band noise zone
+    # (1e-15 ~ 1e-30 사이 15 orders)에서 BDF 정확도 보장 못 해 음수/garbage 생성.
+    # 1e-20은 trace species의 deep cells floor를 1e-22 (tight) ~ 1e-20 (default)까지
+    # 정확 추적. 비용은 default 대비 ×1.5 (Phase D 측정).
+    atol: float = 1e-20          # Must be << min(trace radical conc); OH/HO2 ~1e-12 M
     max_step: float = 1.0        # Max time step [s] (for time-varying BCs)
     max_rate: float = 1e8        # Maximum reaction rate clamp
     max_concentration: float = 1.0  # Maximum concentration [mol/L]
