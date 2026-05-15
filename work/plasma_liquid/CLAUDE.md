@@ -784,6 +784,189 @@ Source: `OAS data/Dry/(P-L) 가스활성종 농도.xlsx`
     4. **Saline H2O2 fine-tune** — S36 off로 sim Sal=DIW이지만 exp Sal=0.46×DIW, 적정 saline-specific sink 부족
     5. **Paper storyline 재검토** — saline NO3⁻ 미재현은 "electrolyte-selective RONS delivery" hook 약화
 
+- 2026-04-28: **Saline RONS=DIW 원인 규명 — Cl 화학 0.00004% 활성도 정량 확증**
+  - **NO3⁻ rate budget 진단** (`Figures/test/diag_no3_saline_vs_diw.py` 신규): DIW vs Saline 3.2 kV.
+    - DIW production 8.31e−8 M/s: R98(44%) + R32(24%) + R19(15%) + R92(9%) + R95(9%)
+    - Saline production 9.22e−8 M/s: R98(39%) + R32(21%) + **S55(18%)** + R19(13%) + R95(8%) + R92(0.1%)
+    - **★ NO3 radical sink swap 발견**: DIW의 R92(NO3+NO2⁻ → NO3⁻+NO2)가 Saline에서 S55(NO3+Cl⁻ → NO3⁻+Cl)로 갈아탐. 둘 다 1:1 NO3⁻ 생성, 154 mM Cl⁻이 0.05 µM NO2⁻를 200만배 압도해 S55가 R92를 가로챔.
+    - S56(N2O5+Cl⁻) bulk pathway = 4.9e−11 (0.05%): N2O5 bulk≈0이라 무력
+    - **Saline NO3⁻ enhancement (실험 1.6×) 미포착의 정량적 원인 확정**
+  - **NO2⁻/H2O2 smoke vs diag 270× 불일치 의문 해결**: HONO_NO2 ratio가 04-23(voltage-specific 0.00707/0.00707/0.00662) → 04-26(uniform 0.10)으로 commit 8f41fb0에서 변경됨. 코드 정상, 입력 파라미터 변화. `check_spatial_avg.py` 직접 dump로 검증 완료. SWEEP1 데이터 (HONO=0.007 → NO2⁻=0.054, HONO=0.10 → NO2⁻=14.7) 일치.
+  - **Cl⁻ 보존 메커니즘 정리** (`pde_solver.py:298-311, 634-653`): _enforce_cl_conservation은 **총 Cl 원자 질량 보존** (21개 Cl 함유 종 합, n_Cl 가중치). Sturm & Silva 2024 projection method, BDF 수치오차를 dominant pool(Cl⁻)에 흡수. 화학 변환 자체는 보존 강제와 무관하게 정상 진행.
+  - **Cl 진화/활성화 진단** (`Figures/test/diag_cl_evolution.py` 신규):
+    - 이전 diag의 +1112 µM Cl⁻ drift는 **vol_avg 계산 bias** (Σdz=10.07mm vs L=10.0mm geometric grid mismatch). **실제 drift = 0.0000%** (5자리수 보존)
+    - **Cl 화학 활성도 = 0.00004%** — 154 mM Cl⁻ 중 단지 65 nM만 transient species로 변환
+    - 종별: Cl3⁻ 21 nM (가장 큼), HClO_total 531 pM, ClO3⁻ 334 pM, ClNO2 13 pM, Cl2 2.1 pM, Cl2⁻ 0.34 pM
+    - **HClO_total = 531 pM**, 실험 plasma-activated saline의 mM 보고와 ~10⁹배 괴리
+    - per-cell Cl⁻ 변화: surface ~ 중간 영역 균일하게 -0.45 µM, bottom 0
+  - **Cl 활성화 차단 메커니즘 (4가지 동시)**:
+    1. Chain initiation 부족 — Cl atom 생성 single-source (S55, 1.68e−8 M/s)
+    2. ★ Catalytic short-circuit — S54(Cl2⁻+NO2⁻ → 2Cl⁻) + S35(Cl2⁻+H2O2 → 2Cl⁻)이 Cl2⁻ sink 45% 차지하며 즉시 Cl⁻ 회수
+    3. Quadratic dependence trap — Cl2 생성 모두 [Cl]² 또는 [Cl2⁻]² 의존, trace 농도(fM/pM)에서 완전 차단
+    4. OH 고갈 — S4(OH+Cl⁻ → HOCl⁻, k_eff=6.6e8 s⁻¹)가 OH 즉시 scavenge, [OH]_saline = 1.8e−15 M (DIW 16× 작음). S39(Cl2⁻+OH → HClO) 죽음
+  - **Cl⁻ 소비 budget**:
+    - Production 1.52e−8 M/s: S54(97.5%) + S35(1.7%) + S58(0.4%) + 기타
+    - Consumption 3.37e−8 M/s: S55(49.9%) + S6(49.8%) + S56(0.1%) + S4(0.1%) + S96(0.0%)
+    - **S55 ≈ S6 정확 일치** (Cl atom SS 강제, τ_Cl ≈ 1 ns) → Cl atom은 순간 매개체
+    - **★ Catalytic cycle 등가성**: S55 + S6 + S54 net = NO3 + NO2⁻ → NO3⁻ + NO2 = R92와 stoichiometrically 동일. **Cl⁻은 R92 catalyst 역할만 함**
+    - Cycle turnover: 600s 동안 Cl⁻ 1개당 평균 6.0e−5회 cycle (15,000개 중 1개만 한 번 돌아봄) — 효율 극저
+  - **활성화 가능성 평가 (현재 reaction set 외부 메커니즘 필요)**:
+    - (A) Plasma-direct surface oxidation: e⁻/O atom/OH 표면 직접 작용. 모델에 없음
+    - (B) Gas-phase Cl 입력 (Cl2/HClO MT): GAS_TO_AQUEOUS_MAP에 Cl 종 일체 없음. 측정값 있어야 추가 가능
+    - (C) OH 고갈 우회: S4 효율 낮추거나 다른 OH source 추가
+  - **결론**: bulk reaction-only chemistry로는 plasma-activated saline의 mM HClO를 설명 불가. paper main hook "electrolyte-selective RONS delivery"가 sim 미포착. saline novelty 재정의 또는 surface chemistry 도입 필요.
+  - **CLAUDE.md 갱신 + commit `6241f86`**: 04-23~28 session log (+48 lines).
+  - **변경/생성 파일**:
+    - `Figures/test/diag_no3_saline_vs_diw.py` 신규 (NO3⁻/NO2⁻/H2O2/Cl⁻ 4-budget + Saline-specific Cl chemistry ranking)
+    - `Figures/test/check_spatial_avg.py` 신규 (spatial_avg key dump 검증)
+    - `Figures/test/diag_cl_evolution.py` 신규 (Cl 시간 진화 + 보존 검증 + per-cell 분포 + activation 정량)
+    - `CLAUDE.md` 04-23~28 entry 추가 (commit 6241f86)
+  - **다음 단계 후보**: (1) Cl 활성화 메커니즘 결정 (plasma-direct/gas Cl 입력/OH 우회 중 하나 도입), (2) Paper storyline 재정의 (saline novelty hook 약화 반영), (3) 다른 priority pending로 전환 (DIW NO2⁻ scaling, S36 audit, 등).
+
+- 2026-04-28 (HONO uniform 확정 + fig 1c/2b 신규 + 진단·문헌조사 세션):
+  - **★ 핵심 결정: HONO/NO2 = 0.10 uniform 채택**. voltage-dependent 폐기 (이전 RH80_RATIOS 0.00915/0.00707/0.00662 → 전 voltage 0.10).
+    - 결정 근거: 3.6 kV NO2⁻ ×1.05 perfect (실험 20.74 vs sim 21.7), 2.6 kV overshoot (19.9 vs 0)은 uniform의 한계로 수용. NO2⁻ trend 부분 fit, paper에서 first-order surrogate로 서술.
+  - **HONO ∝ NO2 문헌 deep research 완료**: 두 채널 모두 NO2에 first-order 의존:
+    - **Homogeneous**: OH + NO → HONO (NOx mode에서 [NO]∝[NO2]) — Sakiyama 2012, JPhysD 45 425201
+    - **Heterogeneous**: 2 NO2(g) + H2O(ads) → HONO + HNO3 (γ_NO2→HONO ~ 10⁻⁵-10⁻⁴) — Finlayson-Pitts 2003 PCCP, Liu 2022 ES&T
+    - 결론: 비례식 OK, 단 k는 RH/power/τ_res 의존 → "single operating point first-order surrogate"로 paper 서술 권장
+    - 핵심 reference: Sakiyama 2012, Pavlovich/Clark/Graves 2014 PSST 23 065036 (FTIR HNO2 정량), Bruggeman 2016 PSST 25 053002, Liu 2022 ES&T 56
+  - **3 voltage 폴더 일괄 재생성** (HONO=0.10): `Figures/DIW results/{2.6, 3.2, 3.6}kV_Humid_fitting_three_film/` 삭제 후 재생성. fig1, fig1b, **fig1c (신규)**, fig2, **fig2b (신규)**, fig3-6.
+  - **Figure 변경 사항 종합**:
+    - **fig1_bc_comparison**: 2x2 subplot, **Sim+Exp 막대 2개** per metric (이전 dashed line + bar → bar+bar).
+    - **fig1b_mt_flux**: three_film만 표시 (MT_BC_CASES = [('three_film',...)]). **윗 열 post-flux SG smoothing window=75 (cosmetic)**, 아래 열 cumulative는 raw 적분 유지 (mass balance 보존, bias <0.15%).
+    - **fig1c_concentration_timeseries (신규)**: 1×2 subplot. (a) Long-lived: NO3⁻/NO2⁻/**O3×1000**/H2O2 (linear µM). (b) Short-lived 10종: OH, **HO2/O2⁻ acid-base 분리** (pKa=4.8), **ONOOH/ONOO⁻** (pKa=6.6), **O2NOOH/O2NOO⁻** (pKa=5.9), O3⁻, HO3, O (log scale pM, solid=분자 / dashed=이온).
+    - **fig2_rate_evolution**: median(10s) + **SG smoothing window=75 (cosmetic)**. **MT 라벨 reaction-style** (`HONO2 → H+ + NO3-`, `HONO → H+ + NO2-`, `O3(g) → O3(aq)`, `H2O2(g) → H2O2(aq)`) — 이온 직접 MT가 아닌 **분자형 가스 + 강산 해리** 경로임을 명시.
+    - **fig2b_radical_rate (신규)**: O, OH, HO2, H+ rate budget. Top-10 contributors per panel, median+SG smoothing 동일 적용. H+ panel은 5% 임계 (다른 panel 1%).
+  - **`gen_all_figures.py` 코드 변경**:
+    - `RH80_RATIOS`: HONO_NO2 → 0.10 전 voltage
+    - `MT_BC_CASES`: `[('three_film', 'three_film', None, 0.01)]` 추가 (이전 빈 리스트)
+    - `gen_fig1`: bar Sim+Exp redesign
+    - `gen_fig1b`: post-flux SG smoothing (window=75) 적용
+    - `gen_fig1c`: 신규 함수
+    - `gen_fig2`: post-flux median+SG (window=75) 적용
+    - `gen_fig2b`: 신규 함수
+    - `species_contribution`: MT 라벨 → reaction-style mapping
+    - `FIGURE_MAP`: `'1c'`, `'2b'` 등록
+    - `_preprocess_below_lod`: SG window 31 (62s) 유지 — input은 그대로, post-flux smoothing만 강화
+  - **진단 분석 (이번 세션):**
+    - **fig1b noise propagation diagnostic** (`Figures/test/diag_fig1b_noise.py` 신규): 단계별 CV% 추적. NO3 raw 9% → SG31 후 0.5% (×18 감소). 0.5%가 floor — C_s noise는 driving force cancellation으로 영향 미미. **SG window 31→75 post-flux smoothing이 시각적으로 가장 효과적**.
+    - **NO3⁻ sink 0개 확정** (Liu 2015 mechanism): 14 sources, 0 sinks → terminal accumulator. 물리적으로 합리적 (UV photolysis 외 reduction agent 거의 없음).
+    - **H2O2 9 sinks, O3 11 sinks 확인** (이전 "sink 거의 없음" 정정). 단 라디칼 (OH ~0.04 pM, HO2 ~ pM) 농도 부족으로 sink rate ~source의 0.4% → 실질 inactive. R32 (O3+NO2⁻)가 dominant O3 sink.
+    - **Radical chain ignition 시간 패턴**: ~3분 peak (radical-rich), 4분 이후 NO2⁻ 빌드업 → R77 (OH+NO2⁻ k=1e10) 활성화 → OH 100× 감소 → quasi-steady (radical-poor regime). Bruggeman 2016 review의 known transient.
+    - **fig1b cumulative vs fig2 dC/dt 일관성 확인**: 3.6 kV t=600s에서 MT_in (5e-9 M/s) = R32_out → bulk O3 0.4 nM 안정, dC/dt≈0, but cumulative ↗ 5e-9·600s = ~3 µM throughput. **Mass conservation 정확히 작동**.
+  - **현재 fit (HONO=0.10, three_film, H2O2/O3=0.003, HONO2/N2O5=0.83)**:
+    | V | NO3⁻ s/e | NO2⁻ s/e | H2O2 s/e | pH s/e |
+    |---|---|---|---|---|
+    | 2.6 | 42.9/32.6 (×1.31) | 19.9/0 (over) | 6.43/4.76 (×1.35) | 4.25/5.09 |
+    | 3.2 | 74.5/62.7 (×1.19) | 14.7/3.58 (×4.1) | 19.8/11.2 (×1.77) | 4.09/3.61 |
+    | 3.6 | 78.5/70.4 (×1.12) | **21.7/20.7 (×1.05) ✓** | 25.1/16.3 (×1.54) | 4.05/3.25 |
+  - **잔존 문제**:
+    - 라디칼 (OH/HO2/O) 농도 underestimate — gas-phase OH/HO2 input 누락 가능성 (해결 후보: Sakiyama 비율 ~10⁻⁴ × O3로 추정 입력)
+    - pH gap +0.4-0.8 단위 (charge balance, sim H+ < exp H+ at 3.2/3.6 kV)
+    - NO2⁻ trend (uniform HONO 한계) — 2.6 kV overshoot, 3.2 kV undershoot
+  - **변경/신규 파일** (이번 세션):
+    - `Figures/gen_all_figures.py` 수정 (HONO=0.10, fig 1/1b/1c/2/2b, MT label, smoothing)
+    - `Figures/test/diag_fig1b_noise.py` 신규 (단계별 noise propagation 진단)
+    - 3 voltage figures 재생성 (`Figures/DIW results/{V}_Humid_fitting_three_film/fig*.{png,pdf}`)
+    - `MEMORY.md` + `project_no2m_o3_feedback.md` 신규 + `project_reactive_uptake_bc_plan.md` 갱신 (이전 세션 마지막)
+  - **다음 권장**: (1) Git commit, (2) gas-phase OH/HO2 input 추가 (라디칼 농도 보강), (3) Saline 동일 framework 적용 검증.
+
+- 2026-04-29: **OAS gas input 진단 + Dry condition figure 생성 + fig2 acid-base speciation 검토 + Liu/Kong 2016 reference 추출**
+  - **OAS gas input 진단** (`Figures/test/diag_gas_input_voltage_trend.py`, `diag_gas_raw_vs_processed.py` 신규):
+    - Raw OAS vs RH80-processed 종별 변환 인자 (last 100s SS):
+      | 종 | 2.6kV | 3.2kV | 3.6kV | 효과 |
+      |---|---|---|---|---|
+      | O₃ PROC/RAW | 0.493 | 0.647 | 0.762 | RH80 감쇠 |
+      | NO₂ PROC/RAW | 4.66× | 3.41× | 3.23× | RH80 증폭 |
+      | N₂O₅ PROC/RAW | 0.137 | 0.132 | 0.115 | ÷7-8 (수증기 가수분해) |
+      | NO₃ PROC/RAW | 1.64× | 1.98× | 1.59× | 약한 증폭 |
+    - Voltage scaling 변화 (3.6/2.6 ratio): O₃ RAW 3.30× → PROC 5.10× (×1.55 amplified), NO₂ 3.14× → 2.18× (dampened), NO₃ 0.99× → 0.96× (preserved), N₂O₅ 2.24× → 1.88×
+    - **사용자 지적**: RH80 fitting에서 voltage 증가 시 O₃가 NO₂보다 더 sharp scaling — 직관(NOx-mode 전환)과 반대 방향
+  - **Dry condition figure 생성** (사용자 요청, raw OAS shape 유지 + HONO/HONO2/H2O2 ratio 적용):
+    - `gen_all_figures.py` Dry 분기 임시 patch (HONO=0.10·NO₂, HONO2=0.83·N₂O5, H2O2=0.003·O₃ 적용, RH80 미적용) → 3 voltage 실행 → 즉시 원복 (영구 변경 X)
+    - 신규 폴더: `Figures/DIW results/{2.6, 3.2, 3.6}kV_Dry_three_film/` 각 9 figure (fig1/1b/1c/2/2b/3/4/5/6)
+    - 신규 스크립트: `Figures/DIW results/gen_voltage_comparison_Dry.py`
+    - 신규 figure: `fig_voltage_comparison_Dry.{png,pdf}` (Dry vs Humid_fitting vs Exp 3-bar)
+    - **결과**: Dry NO₃⁻ 187/362/404 µM vs Humid 43/75/78 → **N₂O₅ ÷7 효과로 5-6× 폭증** 확인 (RH80 가수분해 감쇠가 N₂O₅-mediated NO₃⁻ 생성을 결정)
+  - **fig2 acid-base speciation 처리 검토 (long discussion + 결국 원복)**:
+    - 사용자 의문: HONO MT가 NO₂⁻ panel에 그대로 그려지고 f_ion 적용 안 됨. pH 의존이 어디서 들어가는지?
+    - 코드 audit:
+      - `_compute_single_rate` + `_get_conc` (chemistry_1d.py:750-790): rate 계산 시 [NO₂⁻] = f_ion × HONO_total로 정확히 분리된 농도 사용 ✓
+      - `_apply_rate` + `_get_target_idx` (chemistry_1d.py:792-814): mass conservation은 *_total slot 단일 처리 — NO₂⁻이든 HONO든 reactant이면 dydt[HONO_total] -= rate
+      - `_enforce_electroneutrality` (pde_solver.py:570-632): HONO_total 변화 후 charge balance Newton iteration으로 H⁺ 자동 보정 (Σ Ka/(H+Ka)·C_total 항)
+    - **결론**: HONO MT 1 mol → HONO_total +1 → NO₂⁻ +f_ion mol, HONO 분자형 +f_mol mol, H⁺ +f_ion mol (instantaneous re-eq via electroneutrality solve)
+    - 잘못된 첫 시도: `mt_flux`를 acid_form/base_form으로 split (surface f_ion) + reaction rate에 vol-avg f_ion 곱 → surface(0.71) ≠ vol-avg(0.95) f_ion으로 mass balance 깨짐
+    - 사용자 정정 후 **원복**: 시뮬은 conservative variable HONO_total 단위로 풀고, NO₂⁻ 단독 budget은 derived view. **이전 fig2가 mass pool 기준 mass balance 정확** — 라벨만 misleading
+    - 최종: 라벨만 reaction-style 명확화 — `'HONO(aq) → H+ + NO2-'`, `'HONO2(aq) → H+ + NO3-'`, `'H2O2(g) → H2O2(aq)'`, `'O3(g) → O3(aq)'`
+    - fig2/2b/4 재생성 (Humid_fitting 3 voltage + Dry 3 voltage)
+  - **NO₂⁻ voltage trend 모순 분석**:
+    - 사용자 모순 정리: 액상 NO₂⁻ (0/3.58/20.74 µM, 5.8× 점프 3.2→3.6 kV) → 고전압=NOx-mode vs OAS RH80 NO₂/O₃ ratio (0.222/0.091/0.095) → 저전압=NOx-mode. 정반대.
+    - 사용자 명시 제약: NO 기각 (detection limit 이하), gas-phase 1D PDE 안 함, OAS data 그대로 사용
+    - 차원분석: source/sink ratio = NO₂(g)²/O₃(g) ∝ 4.75×/5.10× = **0.93×** → 시뮬에서 voltage 증가 시 NO₂⁻ 거의 평탄 (실제 sim 19.9/14.7/21.7와 일치, exp 5.8× 점프 못 잡음)
+    - Humid OAS 직접 측정 외삽 (`test_rh_ratio_fit.py` 실행): HONO/NO₂ = 0.0091/0.0071/0.0066 (voltage-별 RH80 외삽) vs 우리 default 0.10 → **14× 차이** + voltage 거의 평탄. 직접 측정값 쓰면 NO₂⁻ 절대값 더 작아져 absolute level 격차만 커짐
+    - 결론: **현재 framework lever 모두 소진**. NO₂⁻ 5.8× voltage 점프는 액상 chemistry only로는 자연 발생 불가. 후보:
+      - (R5) Liquid surface heterogeneous chemistry (현 모델 부재) — 코드 큰 수정 필요
+      - 또는 framework limit으로 paper에서 "first-order surrogate, 3.6 kV fit, voltage trend는 surface chemistry 미고려 한계"로 명시
+  - **Article folder 1D 논문 review**:
+    - **현규 1D (Lee 2023 CEJ 458:141425)**: 우리와 거의 동일 framework (two-film, δ_gas=10mm, δ_liq=100µm). **표면 heterogeneous chemistry 없음**. UV photolysis 7개만 추가 (Table 1), 외부 6W UV lamp (UV-C+UV-A) 사용 — 우리 setup에 부적절. NO 생성의 51%가 HONO + hν → OH + NO photolysis. Sim ×0.25 to fit experiment (4× over-prediction, 우리도 비슷한 NO₃⁻ over)
+    - **Liu/Kong 2016 (Sci Rep 6:23737, our reaction set 원본)**: SDBD+DIW, V_pp=11kV, **power 0.05 W/cm² 고정**, air gap **L_g=0.1~2cm 변수**. Critical L_g=0.5cm: S1 (MT dominant) vs S2 (liquid chemistry dominant). 우리 setup L_g=10mm=1cm = **S2 영역**. 실험 검증: pH 0.6 unit gap, H₂O₂ 1.2~7.2× over, nitrite/nitrate 1.6~2.9× over (우리 three_film+ratio fit 후 NO₃⁻ 1.12-1.31×, H₂O₂ 1.2-1.8×로 더 좋음)
+  - **Photolysis 처리 방식 정리** (UV photolysis 추가 검토용 reference): Q = ∫ Φ σ F dλ (effective 1차 rate constant, s⁻¹). hν는 reactant 안 적고 k_eff에 흡수. YAML 'irr' 형식으로 추가 가능. Spatial uniform 또는 Beer-Lambert. **우리 setup에 외부 UV 없으면 적용 부적절**.
+  - **Memory 작성/정리**:
+    - 신규: `reference_liu2016_pathway.md` — Liu/Kong 2016 reference. 첫 작성 시 Fig 7-8 정량 % 분석 포함, 사용자가 화살표 convention 정정 (시작단=loss 분배 vs 끝단=기여도) → NO₂⁻만 정확 재작성 후 **사용자 요청으로 Fig 7-8 분석 모두 제거** + OH 농도 reference도 단위 환산 부정확으로 제거. 최종: 시스템 setup, S1/S2 scenario, 실험 검증 결과, voltage 모순 해석만 유지
+    - `MEMORY.md` 업데이트
+  - **변경/생성 파일**:
+    - `Figures/gen_all_figures.py`: Dry 분기 임시 patch + 원복, mt_flux split 시도 후 원복, MT 라벨 reaction-style (`HONO(aq) → H+ + NO2-` 등)
+    - `Figures/test/diag_gas_raw_vs_processed.py` 신규
+    - `Figures/test/diag_gas_input_voltage_trend.py` 신규
+    - `Figures/DIW results/{2.6, 3.2, 3.6}kV_Dry_three_film/` 신규 폴더 (각 9 figure)
+    - `Figures/DIW results/gen_voltage_comparison_Dry.py` 신규
+    - `Figures/DIW results/fig_voltage_comparison_Dry.{png, pdf}` 신규
+    - `Figures/DIW results/{V}_{Humid_fitting, Dry}_three_film/fig2/2b/4` 재생성 (라벨 정확화)
+    - `memory/reference_liu2016_pathway.md` 신규 (정정 거치며 보수적 내용으로 수렴)
+    - `memory/MEMORY.md` 업데이트
+  - **다음 단계 후보**:
+    1. Liquid surface heterogeneous chemistry 추가 (NO₂⁻ voltage trend 재현) — 코드 큰 수정
+    2. R11 (NO₃ + H₂O₂ → HO₂ + H⁺ + NO₃⁻) 우리 model에서 활성화 정도 확인 (Liu에선 H₂O₂ sink 86-92% dominant)
+    3. Paper storyline 갱신 — voltage trend는 framework limit으로 명시, electrolyte-selective hook 약화 인정
+    4. Saline 확장 검증
+
+- 2026-05-04: **HONO/NO₂ voltage-specific fine-tune sweep + 3 voltage figure 재생성 (HONOvar)**
+  - **목적**: 이전 uniform HONO/NO₂=0.10이 3.6 kV NO₂⁻만 매칭하고 2.6/3.2 kV는 over-prediction → voltage별 ratio 최적화로 NO₂⁻ trend 재현 시도.
+  - **이전 sweep 참조 (2026-04-26 SWEEP1, NO₂⁻ µM)**:
+    - HONO=0.007/0.030/0.070/0.100 → 2.6kV: 0.045/2.567/12.447/19.943, 3.2kV: 0.054/0.328/7.447/14.683, 3.6kV: 0.051/0.740/11.788/21.666
+    - exp NO₂⁻: 2.6kV=0, 3.2kV=3.58, 3.6kV=20.74
+  - **Log-linear interp 추정**: 2.6kV ≤0.005, 3.2kV ≈0.057, 3.6kV ≈0.097
+  - **Fine-tune sweep 신규** (`Figures/test/test_hono_finetune.py`, 9 sims, ~12min):
+    - 2.6kV {0.000, 0.001, 0.003, 0.005} → NO₂⁻=0.069/0.068/0.058/0.049 (모두 baseline floor ~0.05 µM)
+    - 3.2kV {0.045, 0.055, 0.060} → NO₂⁻=2.191/4.111/5.179
+    - 3.6kV {0.090, 0.097} → NO₂⁻=18.377/20.682
+  - **Best HONO/NO₂ voltage-specific 확정**:
+
+| V | HONO/NO₂ | NO₂⁻ sim/exp | NO₃⁻ sim/exp | pH sim/exp | H₂O₂ sim/exp |
+|---|---|---|---|---|---|
+| 2.6 kV | **0.005** | 0.049/0.00 (+0.05 floor) | 36.94/32.63 (×1.13) | 4.43/5.09 | 5.16/4.76 (×1.08) |
+| 3.2 kV | **0.055** | 4.11/3.58 (+15%) | 71.77/62.74 (×1.14) | 4.13/3.61 | 19.59/11.21 (×1.75) |
+| 3.6 kV | **0.097** | 20.68/20.74 (−0.3%) ✓ | 78.03/70.42 (×1.11) | 4.05/3.25 | 25.03/16.25 (×1.54) |
+
+  - **2.6 kV NO₂⁻ floor ~0.05 µM**: HONO=0 일 때 sim NO₂⁻=0.069 → R19 (2NO₂+H₂O→HONO+HONO₂) + R95 (N₂O₄+H₂O 가수분해) 두 source가 baseline 결정. exp=0 도달 불가 (실험 detection limit 이하 가정).
+  - **NO₂⁻ trend 매칭 결과**: voltage 단조 증가 0.05 → 4.11 → 20.68 µM, 실험 0/3.58/20.74과 일치. 이전 uniform 0.10에서는 19.9/14.7/21.7 (단조 깨짐).
+  - **NO₃⁻/H₂O₂는 거의 불변**: HONO/NO₂ ratio 변경이 N₂O₅-mediated NO₃⁻에 영향 미미 (HONO direct dissolution path 미미). H₂O₂는 HONO 무관.
+  - **pH gap +0.4 ~ +0.8 unit 잔존**: NO₃⁻ ×1.1 정도라 H⁺ 부족, charge balance gap 미해결.
+  - **변경 파일**:
+    - `Figures/test/test_hono_finetune.py` (신규, voltage-specific sweep, 9 sims)
+    - `Figures/test/hono_finetune_results.txt` (신규)
+    - `Figures/gen_all_figures.py` — `RH80_RATIOS[V]['HONO_NO2']`을 voltage-specific으로 변경 (0.005/0.055/0.097), `--label-suffix` argparse 추가, Fig 1 suptitle 동적 ratio 표시
+    - `Figures/DIW results/gen_voltage_comparison_HONOvar.py` (신규, gen_voltage_comparison_HONO010.py 기반)
+    - `Figures/DIW results/{2.6, 3.2, 3.6}kV_Humid_fitting_three_film_HONOvar/` (3 폴더, 각 9 figure + cache)
+    - `Figures/DIW results/fig_voltage_comparison_HONOvar.{png, pdf}` (신규)
+  - **이전 폴더 보존**: `_three_film/` (HONO=0.10 uniform) 그대로 유지. 비교 가능.
+  - **다음 단계 후보**:
+    1. 3.2kV 추가 fine-tune (HONO=0.052) — 현재 +15% over를 더 줄이려면
+    2. NO₃⁻ ×1.1 audit — 더 정밀 fit 위해 HONO₂/N₂O₅ ratio 재조정 검토
+    3. pH gap 진단 (charge balance 닫힘 여부 재확인)
+    4. Saline 동일 voltage-specific HONO 적용 검증
+
 ---
 <!-- UPDATE RULE:
 작업 단위가 완료될 때마다 즉시 이 파일을 갱신할 것 (세션 종료를 기다리지 않는다).
@@ -793,3 +976,508 @@ Source: `OAS data/Dry/(P-L) 가스활성종 농도.xlsx`
 4. Session History에 날짜+요약 한 줄 추가
 사용자가 터미널을 그냥 닫아도 CLAUDE.md는 이미 최신 상태여야 한다.
 -->
+
+- 2026-05-04: **사용자 지적 3가지 문제 진단 + HONO/NO2 voltage-specific fine-tune**
+  - **PART 1 — HONO/NO2 voltage-specific sweep**:
+    - 이전 uniform HONO/NO2=0.10이 3.6kV NO2⁻만 매칭, 2.6/3.2kV over-prediction
+    - `Figures/test/test_hono_finetune.py` 신규 (9 sims, ~12min). voltage-specific sweep 결과:
+      - 2.6 kV → **0.005** (NO2⁻=0.049 µM, baseline floor R19/R95 ~0.05 µM, exp 0)
+      - 3.2 kV → **0.055** (NO2⁻=4.11 µM, exp 3.58, +15%)
+      - 3.6 kV → **0.097** (NO2⁻=20.68 µM, exp 20.74, −0.3%) ✓
+    - `gen_all_figures.py` 수정: RH80_RATIOS HONO_NO2 voltage-specific, `--label-suffix` argparse 추가 (기존 폴더 보존), Fig 1 suptitle 동적 ratio 표시
+    - `Figures/DIW results/gen_voltage_comparison_HONOvar.py` 신규 (HONO010 기반)
+    - `Figures/DIW results/{2.6,3.2,3.6}kV_Humid_fitting_three_film_HONOvar/` 3 폴더 × 9 figure 신규 + comparison figure
+    - 결과: 2.6kV NO2⁻ 19.9→0.05, 3.2kV 14.7→4.11, 3.6kV 21.7→20.68 µM. **NO2⁻ voltage trend 단조 회복**
+  - ---
+  - **PART 2 — fig5에 NO2⁻ panel 추가 (영구)**:
+    - `gen_all_figures.py`:
+      - `SPATIAL_SPECIES`에 `('HONO_total', 'NO2-', 'uM', 1e6)` 추가
+      - `gen_fig5`에 pH-dependent speciation 로직 (`_SPECIATE_IONIC` dict): NO2⁻ = HONO_total × Ka/(H+ + Ka), per-cell snapshot별. HO2⁻/O2⁻도 향후 자동 적용
+    - 3 voltage 폴더 fig5 재생성. 7-panel layout (pH + NO3⁻ + NO2⁻ + O3 + H2O2 + OH + HO2)
+  - ---
+  - **PART 3 — 사용자 지적 3가지 문제 진단**:
+    - **문제 1**: 2.6 kV fig1c의 O3 시계열 noise (Henry 평형 도달 시점부터 oscillation, 다른 voltage는 smooth)
+    - **문제 2**: fig2b_radical_rate의 O atom panel rate budget mismatch (R28/R27 ±2e-14 mirror, ΔC/Δt ≈ 0)
+    - **문제 3**: fig5_spatial 3.6 kV의 O3 비물리적 U-shape (surface 7e-7 → 0.2mm 8e-22 → 1.3mm zero/atol-noise → 4mm 1.83e-10 peak → deep decay)
+  - ---
+  - **문제 1 진단 (Phase A → B → B5 → 결론)**:
+    - **Phase A** (`Figures/test/diag_o3_henry_oscillation.py`): driving force는 모든 voltage 0.7+ 유지 (Henry eq 절대 도달 안 함, PDE 액상 저항 dominant). 2.6 kV만 MT flux 8e-9 plateau saturate, 3.2/3.6 kV는 monotonic 증가
+    - **τ_chem (R32) 비교**: 2.6 kV = 43s (NO2⁻ 0.05µM), 3.2 kV = 0.53s (NO2⁻ 3.77µM), 3.6 kV = 0.10s (NO2⁻ 19.97µM). τ_MT ~573s 모든 voltage 동일. **2.6 kV만 underdamped 영역**.
+    - **Phase B1 초기 시도** (`diag_o3_phase_b1_r32_off.py`): R32 disable로 baseline와 결과 동일. 가설 기각으로 보임.
+    - **Phase B5** (`diag_o3_phase_b5.py`): BDF atol 1e-15 → 1e-18, rtol 1e-6 → 1e-9, max_step 1.0 → 0.1, 5 cases. **detrended std 4 자리 소수점까지 완전 동일** (10.740, 24.125). nfev ×3.5 cost 증가. **Numerical artifact 완전 배제 확정**.
+    - **★ Phase B redo** (`diag_o3_phase_b_redo.py`): 이전 Phase B1/B2 disable이 `chem._rxn_data['k']=0`만 수정하고 `_precompute_numba_arrays()` 호출 안 해서 **Numba JIT compute_rates_batch가 원본 k 사용** 버그 발견. 수정 후:
+      - baseline bulk 2.06 nM, **R32 OFF bulk 298.6 nM (145× 증가, R32 매우 active 확인)**, R22-R32 ALL OFF 471 nM
+      - **detrended std: baseline 24.1% → R32 OFF 2.7% (10× 감소)** — R32 가설 부활 확정
+    - **결론**: **R32 ↔ NO2⁻ Lotka-Volterra-type chemistry-driven limit cycle**. 2.6 kV에서 NO2⁻ 작아 R32 weakly damped → underdamped limit cycle. 3.2/3.6 kV는 R32가 1000~5000× 강한 damping → overdamped, smooth. **물리적 chemistry feature** (numerical 아님), input smoothness와 무관.
+    - 사용자 비판: "smooth input + saturating system → fluctuation 비물리적" — linear system에서만 성립. R32 (2-species product nonlinear) limit cycle은 constant input에서도 자연 발생.
+    - **Fix 미적용** (mechanism 인정으로 마무리, plotting smoothing 등 옵션 보류)
+  - ---
+  - **문제 3 진단 (Phase C → D → E → 부분 결론)**:
+    - **Phase C** (`diag_o3_phase_c_diff_chem_off.py`): chem_off (k=0 모든 reactions) vs diff_off (D=0 모든 species) vs baseline 비교
+      - **chem_off**: diffusion-only erfc analytical 거의 정확히 일치 (4mm 1.93e-8 vs erfc 예측 2.5e-8). **SG diffusion solver 정상 작동 확인**.
+      - **diff_off**: 모든 deep cells 5.88e-15 균일 (atol-floor + chemistry 자체 trace 생성). 작은 효과.
+      - baseline: surface→0.1mm chemistry-dominated dip → 4mm peak (1.83e-10) → deep decay.
+    - **Phase D** (`diag_o3_phase_d_atol_sweep.py`, 8 sims): atol 1e-15 / 1e-20 / 1e-25 / 1e-30 × {chem_off, baseline}.
+      - **atol을 10¹⁵× 강화해도 baseline 4mm O3 = 1.83e-10 그대로** (음수 cells 일부 정상화 -1e-21 → +3e-26 정도만)
+      - chem_off도 4mm = 1.93e-8 그대로
+      - **atol-floor 가설 완전 기각**. baseline 4mm peak는 BDF의 정확한 PDE 해.
+      - cost: nfev ×11.5 (atol 1e-30), wall ×13배. 매우 비쌈.
+    - **Phase E** (`diag_o3_phase_e_cell40_dydt.py`): cell 40 (z=4.07mm) dydt budget 시간별 분해.
+      - Top reactions affecting O3 at cell 40: R32 (peak 9.3e-13), R25 (3.1e-14), R27 (3.1e-14), R28 (2.8e-15), R20 (5.6e-16)
+      - **diff_in이 dominant positive source** (peak 1.81e-12 M/s at t=420s). chem_net 소량 negative (R32 lifetime 850s at 4mm with NO2⁻=2.35nM)
+      - cell 40 history: t=60s 2.93e-15 → t=180s 1.21e-12 (60×) → t=420s 1.63e-10 peak → t=600s 4.45e-11 decay
+      - chain mechanism: surface → cell 1 → ... → cell 39 → cell 40 (diffusion 누적 over 480s)
+    - **부분 결론**: BDF/atol/diffusion solver/chemistry batch 모두 numerical level은 정확. baseline 4mm = 1.83e-10은 우리 PDE 해 자체. 단:
+      - mid cells (0.5-2mm)에서 R32 lifetime <2s vs diffusion transit ~1000s timescale gap에도 O3가 deep까지 leak — 단순 reactive-penetration estimate와 1-2 orders 불일치
+      - 가능 원인: (A) early-time free diffusion (NO2⁻ build-up 전) + late-time slow consumption, (B) SG scheme이 extreme gradient 10¹⁵에서 미세 numerical artifact, (C) 미발견 subtle bug
+      - **미해결**: 사용자 비판 "10¹⁵ in 0.2mm 비물리적" 정량 정당화 부족. Reference solver (FD+RK4) 비교가 결정적 verification으로 남음
+    - 사용자 비판 "physical 우기지 말고 debug": 인정. atol/diffusion/chemistry 모두 검증 통과했고 BDF가 정확히 추적하는 PDE 해이므로 numerical artifact 아님 확정. 그러나 simple analytical estimate와 차이가 크고 transient 해석만으로 정당화 약함 — 진짜 physical인지 1-2 orders 잔여 의문.
+  - ---
+  - **문제 2 (O atom rate budget) 진단 미진행** — Phase E 시점에서 사용자가 문제 3로 우선 이동. 이전 진단 (atol 1e-15 floor 한참 위가 1e-18 농도)만 정리됨.
+  - ---
+  - **변경/생성 파일** (이번 세션):
+    - `Figures/test/test_hono_finetune.py` 신규 (HONO sweep)
+    - `Figures/test/hono_finetune_results.txt`
+    - `Figures/test/diag_o3_henry_oscillation.py` 신규 (Phase A)
+    - `Figures/test/diag_o3_phase_b1_r32_off.py` 신규 (Phase B1, Numba bug)
+    - `Figures/test/diag_o3_phase_b2_b4.py` 신규 (Phase B2/B4, Numba bug)
+    - `Figures/test/diag_o3_phase_b_redo.py` 신규 (Phase B redo, fixed)
+    - `Figures/test/diag_o3_phase_b5.py` 신규 (Phase B5 BDF atol sweep)
+    - `Figures/test/diag_o3_phase_c_diff_chem_off.py` 신규 (Phase C)
+    - `Figures/test/diag_o3_phase_d_atol_sweep.py` 신규 (Phase D atol sweep)
+    - `Figures/test/diag_o3_phase_e_cell40_dydt.py` 신규 (Phase E cell 40 budget)
+    - `Figures/test/fig_diag_o3_oscillation.{png,pdf}`, `fig_diag_o3_b1.{png,pdf}`, `fig_diag_o3_b2b4.{png,pdf}`, `fig_diag_o3_b_redo.{png,pdf}`, `fig_diag_o3_b5.{png,pdf}`, `fig_diag_o3_c.{png,pdf}`, `fig_diag_o3_d.{png,pdf}`, `fig_diag_o3_e_cell40.{png,pdf}` 신규
+    - `Figures/test/diag_o3_oscillation.txt`, `diag_o3_b1.txt`, `diag_o3_b2b4.txt`, `diag_o3_b_redo.txt`, `diag_o3_b5.txt`, `diag_o3_c.txt`, `diag_o3_d.txt` 신규
+    - `Figures/gen_all_figures.py`:
+      - `RH80_RATIOS` HONO_NO2 voltage-specific (0.005/0.055/0.097)
+      - `--label-suffix` argparse + `out_folder` 적용
+      - `gen_fig1` suptitle 동적 HONO/NO2 표시
+      - `SPATIAL_SPECIES`에 NO2⁻ 추가
+      - `gen_fig5`에 `_SPECIATE_IONIC` dict + speciation logic
+    - `Figures/DIW results/gen_voltage_comparison_HONOvar.py` 신규
+    - `Figures/DIW results/fig_voltage_comparison_HONOvar.{png, pdf}` 신규
+    - `Figures/DIW results/{2.6, 3.2, 3.6}kV_Humid_fitting_three_film_HONOvar/` 3 폴더 신규 (각 9 figure + cache)
+  - ---
+  - **확인된 코드 사실**:
+    - **Chemistry는 모든 N_z=49 cells에 적용** (`compute_rates_batch` 49-cell loop, `pde_solver.py:894-895`)
+    - **Diffusion은 SG (Scharfetter-Gummel) finite-volume flux**: `J_{j+1/2} = D/h × (B(α)·c_j − B(−α)·c_{j+1})`. Poisson OFF로 α=0이라 표준 Fickian flux로 환원
+    - **atol species-specific 이미 적용**: OH/O-/O3-/HO3/NO3는 atol_base × 0.01 = 1e-17 (`pde_solver.py:1000-1005`)
+    - **Numba precompute 필수**: chemistry 수정 후 `chem._precompute_numba_arrays()` 호출 안 하면 `compute_rates_batch`가 원본 k 사용 (Phase B1 버그 원인)
+  - ---
+  - **다음 단계 후보**:
+    1. **Reference solver 작성**: 단순 explicit FD+RK4로 동일 reaction-diffusion PDE 풀어 우리 결과와 비교 (문제 3 결정적 verification)
+    2. **NO2⁻ 시공간 추적**: mid cells (0.5-2mm)의 NO2⁻ build-up 시점 분석. 문제 3의 "early-time free diffusion" 가설 정량 검증
+    3. **R20 OFF 시뮬**: deep cells에서 chem_net positive (R20 forward) 영향 정량 (Phase E에서 t=60s chem_net=+3e-17 발견)
+    4. **문제 2 진단**: O atom rate budget 본격 분석 (atol-tight species list에 'O' 추가 또는 QSSA)
+    5. **문제 1 fix 옵션**: chemistry-driven limit cycle 시각화 — caption annotation 또는 plotting smoothing
+
+- 2026-05-06: **Problem 1/2/3 통합 진단 (외부 AI 협업) — 핵심 narrative 정정**
+  - 2026-05-04 entry 후속. 사용자 비판으로 제 LV narrative 완전 기각, mechanism 재식별.
+  - ---
+  - **Problem 1 (2.6 kV oscillation) — chemistry network linear analysis로 LV 가설 정량 기각**:
+    - 사용자 비판: R32 (mutual annihilation, dx/dt=dy/dt=-kxy) → 2-species Jacobian trace<0/det>0 → eigenvalue 항상 음의 실수부. **LV 수학적으로 불가**. 제 "underdamped regime sustained oscillation" narrative는 damped와 양립 불가.
+    - **Phase H** (`Figures/test/diag_o3_phase_h_jacobian.py`): 0D chemistry Jacobian (25×25) eigenvalue 직접 계산. **2.6 kV / 3.6 kV bulk-only 및 surface 모두 Hopf candidates 0**. Most-positive Re eigenvalue: 2.6 kV bulk +4.35e-11 (essentially conservation), surface +1.11e-2 (Im=0 purely real, exponential growth only — oscillation 아님)
+    - **Phase β** (`diag_o3_phase_beta_no2_clamp.py`): 2.6 kV에서 `solver.rhs` monkey patch로 HONO_total dydt=0 강제 (NO2⁻ 시간 변화 없음). 결과: bulk-only [O3] std 11.5% → 15.8% (오히려 증가). **NO2⁻은 dynamical variable 아님. R32-NO2⁻ pair는 oscillator 아님 — amplification channel만**.
+    - **Phase γ** (`diag_o3_phase_gamma_pde_jacobian.py`): **Full 1D PDE Jacobian (1225×1225) eigenvalue**. 2.6 kV: Hopf 0 (top-5 모두 Im=0). 3.6 kV: Hopf candidates 4 (period 5811s = 97분, growth τ 774s — 시뮬 600s 한 cycle 못 끝냄, visible 안 보임). **2.6 kV oscillation은 chemistry 자연 limit cycle 아님 — 0D + 1D PDE 모두 Hopf 0**.
+    - **Phase Radau** (`diag_o3_phase_radau.py`): scipy BDF → Radau (5차 implicit RK). 4mm peak ratio 1.029× (3% 차이만). **ODE solver method 무관**.
+    - **결론 정정**: **forced response from gas BC residual variation (raw OAS ±2.4% 변동) + R32 nonlinear amplification**. 2.6 kV는 bulk 농도 작아 relative noise 큼. 다른 voltage는 chemistry damping 강해 absorbed.
+  - ---
+  - **Problem 2 (O atom rate budget mismatch) — 진단 + plot fix 적용**:
+    - **Phase η** (`diag_o3_phase_eta_species_atol.py`): 모든 25 species의 bulk-only avg vs atol 직접 비교. **8개 species (32%) atol-band noise 영역**:
+      - H, H2, NO, NO3, N2O, N2O3 (대부분 voltages), 2.6 kV에서 O atom (1/3 voltages)
+      - 음수 농도 빈출 (-1e-19 ~ -1e-22 사이 numerical zero)
+      - N2O는 initial trace 1e-30 그대로 (chemistry inactive)
+    - **즉 O atom뿐 아니라 25 species 중 32%가 numerical noise level**. fig2b의 O atom rate budget (R28/R27 ±2e-14 mirror, ΔC/Δt≈0)은 atol-band 양쪽 noise 곱한 garbage.
+    - **★ Fix (δ) 적용**: `gen_all_figures.py:124-126` `TARGET_SPECIES_RADICAL: ['O', 'OH', 'HO2', 'H+'] → ['NO3', 'OH', 'HO2', 'H+']`. NO3 radical은 H_cc=44 깊은 침투 + R93 catalyst 역할로 의미 있는 budget. 3 voltage HONOvar 폴더 fig2b 재생성 완료.
+  - ---
+  - **Problem 3 (3.6 kV 4mm O3 peak) — 모든 numerical knob 무효, mechanism 미식별**:
+    - **Phase F** (`diag_o3_phase_f_o_atom_removal.py`): O atom 6 reactions OFF (R20, R73, R106-R109) + Numba precompute 호출. 4mm peak 0.2% 변화. 외부 AI 첫 가설 (noise-fed R20 via O atom × O2 reservoir) 기각.
+    - **Phase G** (`diag_o3_phase_g_dz_sweep.py`): dz_min sweep 1, 5, 10, 20 µm. 4mm peak max/min ratio 1.08 (8% 변동). **grid-independent (numerical leak via stiff Jacobian conditioning 가설 기각)**.
+    - **Phase α** (`diag_o3_phase_alpha_wall_dump.py`): 49 cells full dump. wall (z=0.4-1.3mm) atol-noise (음수 -1e-19까지). Deep zone (z=1.4mm 이후) **monotonic 증가** to peak at cell 39 (z=3.63mm)=2.6e-10. cell-by-cell smooth gradient (internal source 형태).
+    - **Phase J** (`diag_o3_phase_j_wall_qss.py`): QSS reactive-penetration 분석. NO2⁻(z) profile로 ∫₀^z dz/λ(z) 직접 적분 (∫=15 / 81 / 235 for 2.6/3.2/3.6 kV). QSS 예측 c(4mm)/c(0) = e⁻²³⁵ ≈ **5×10⁻¹⁰³**. 관측 sim/QSS = **2×10⁹⁸** at 4mm. **deep cells 90-100 orders over physical**.
+    - **Phase I** (`diag_o3_phase_i_external_verify.py`, 외부 AI 제안): 6-case verification:
+      - **Case I (R20+R35 OFF + initial OH=trace)**: 4mm peak 1.83e-10 → 1.92e-10 (×1.05). **chemistry source 0인데도 peak 살아남음 — 외부 AI Case I 결과 우리 setup에서 정확 재현**.
+      - Case I × N_z 25/49/57: ±11% 변동 (grid-independent)
+      - **atol_tight (1e-30 + max_step 0.1s)**: 4mm peak 0.997× (변화 없음, 외부 AI atol fix 추천 무효)
+      - **trace_1e50** (chemistry RHS clip floor 1e-50): 4mm peak 0.997× (외부 AI atol-trace floor mismatch 가설 기각)
+    - **Phase Radau**: BDF → Radau도 4mm peak 1.029× (solver method 무관)
+    - **결론**: **Numerical artifact 확정** (Phase J 90+ orders over). **그러나 atol/trace/dz/chemistry sources/solver method 모두 무관**. Mechanism 미식별. 외부 AI atol-trace floor mismatch 가설도 정량 기각. 진짜 source 후보 (모두 미검증):
+      1. SG flux scheme의 extreme gradient (10¹⁵ ratio across 0.2mm) round-off
+      2. BDF Newton inner iteration의 numerical limit at stiff coupling
+      3. Float64 cumulative error
+      4. Initial perturbation (y0 *= 1+1e-6 noise) seeding deep cells × chemistry
+  - ---
+  - **fig5_spatial visualization 개선**:
+    - X-axis log scale 적용 (gen_all_figures.py `gen_fig5`에 `ax.set_xscale('log')`). wall structure (0.01-1mm 구간) fine resolution.
+    - **atol=1e-30 fig5 재생성** (`regen_fig5_atol1e30.py`): 3 voltage `_HONOvar_atol1e30/` 폴더. 결과:
+      - **Type 1 (atol-bound)**: NO3⁻, NO2⁻, H2O2, HO2 deep floor 4-6 orders 더 깊게 (10⁻¹¹ → 10⁻¹⁵ µM 등)
+      - **Type 2 (initial seed, atol 무관)**: pH=7.0 (deep, initial H+=1e-7), OH ~10⁻¹³ M (initial 1e-12 seed)
+      - **Type 3 (mechanism 미식별)**: O3 4mm peak, HO2 1mm wave — atol/initial 둘 다 무관
+    - **사용자 직관 정확**: OH plateau at 1e-13 (atol-tight 1e-32보다 19 orders 위)이 atol 가설로 설명 안 됨 → initial OH=1e-12 seed의 잔재 (build_initial_condition `pde_solver.py:854`)
+  - ---
+  - **Initial conditions 분석** (`build_initial_condition` line 835-863):
+    - Explicit seeds (모든 cells): O2=2.5e-4 M, N2=5e-4 M, H+=1e-7 (pH=7), OH-=1e-7, **OH=1e-12 (radical seed)**
+    - 나머지 모든 species: trace=1e-30
+    - O2/N2: air-saturated water 가정 (atmosphere Henry 평형, standard plasma-liquid 모델 가정)
+    - 단 **O2 huge reservoir (2.5e-4 M, 모든 cells, 거의 무변화)**가 deep cells에서 R10/R20/R25 등 O2-involved reactions의 fictitious source 가능성 (Phase F R20만 OFF로 부분 검증, R10 등 미검증)
+  - ---
+  - **외부 AI 협업 결과**:
+    - Case I 제안 → numerical leak 결정적 확증 (chemistry source 0에도 peak 살아남음)
+    - atol-trace floor mismatch 가설 → 우리 검증 → **기각** (외부 AI 추천 fix 4mm peak에 영향 없음)
+    - Reference solver (FD+RK4) 제안 → 미진행
+  - ---
+  - **변경/생성 파일** (이번 세션):
+    - `Figures/test/diag_o3_phase_f_o_atom_removal.py` (Phase F)
+    - `Figures/test/diag_o3_phase_g_dz_sweep.py` (Phase G)
+    - `Figures/test/diag_o3_phase_alpha_wall_dump.py` (Phase α 49 cells dump)
+    - `Figures/test/diag_o3_phase_h_jacobian.py` (Phase H 0D Jacobian)
+    - `Figures/test/diag_o3_phase_beta_no2_clamp.py` (Phase β NO2⁻ clamp)
+    - `Figures/test/diag_o3_phase_i_external_verify.py` (Phase I 외부 AI Case I + atol/trace)
+    - `Figures/test/diag_o3_phase_j_wall_qss.py` (Phase J QSS analysis)
+    - `Figures/test/diag_o3_phase_gamma_pde_jacobian.py` (Phase γ 1225-dim PDE Jacobian)
+    - `Figures/test/diag_o3_phase_radau.py` (Phase Radau)
+    - `Figures/test/diag_o3_phase_eta_species_atol.py` (Phase η 25 species atol audit)
+    - `Figures/test/regen_fig5_atol1e30.py` (atol=1e-30 fig5)
+    - `Figures/test/regen_fig5_seedmin.py` (initial seeds → trace fig5, in progress)
+    - `Figures/test/fig_diag_o3_*.{png, pdf}`, `diag_o3_*.txt` (각 Phase 산출)
+    - `Figures/gen_all_figures.py`:
+      - `TARGET_SPECIES_RADICAL: 'O' → 'NO3'` (line 124-126)
+      - `gen_fig5`에 `ax.set_xscale('log')` 추가 (line 1073-1074)
+    - `Figures/DIW results/{V}_Humid_fitting_three_film_HONOvar_atol1e30/fig5_spatial.{png,pdf}` (3 voltage)
+    - `Figures/DIW results/{V}_Humid_fitting_three_film_HONOvar_seedmin/fig5_spatial.{png,pdf}` (3 voltage, in progress)
+    - `Figures/DIW results/{V}_Humid_fitting_three_film_HONOvar/fig2b_radical_rate.{png,pdf}` (재생성)
+  - ---
+  - **종합 상태**:
+    | Problem | 진단 상태 | Fix |
+    |---|---|---|
+    | 1 (oscillation) | ✓ chemistry network linear analysis로 LV 기각, **forced response from gas BC variation 확정** | 미적용 |
+    | 2 (O atom budget) | ✓ atol-band noise (32% species 동일 문제) | ✓ plot fix (O→NO3) |
+    | 3 (4mm peak) | ✓ Numerical artifact (QSS 90+ orders over), ✗ mechanism 미식별 | 미적용 |
+  - ---
+  - **다음 단계 후보**:
+    1. **Reference solver (FD+RK4)**: Problem 3 mechanism 식별 결정적. 미진행.
+    2. **Initial seed minimal fig5**: O2/N2/OH=trace로 변경 후 deep floor 변화 검증 (in progress)
+    3. **O2-involved reactions sweep**: R10, R20, R25 등 모두 OFF로 deep peak 영향 검증
+    4. **External AI 다음 round**: Phase I 결과 (atol-trace fix 무효) 보내서 다른 mechanism 가설 요청
+    5. **Bottom BC 변경 시도** (no-flux → absorbing c=0): mass trap 효과 검증
+  - ---
+  - **Article folder 논문들의 bottom BC 일관성 확인**: 모든 plasma-liquid 1D/2D 논문 (Liu 2015, Liu 2016, Liu 2017 saline, Liu 2021, Lee 2023 현규, Heirman 2025) bottom BC = **no-flux (closed wall)** 사용. Liu 2015만 명시 (Γ=0, "100s 동안 deep cells 도달 안 함" 가정). 우리 600s 시뮬은 이 가정 위반 — 우리 numerical 해가 **Liu 2015 가정 violate** 하는 상태. 정통 BC지만 deep cells에 mass trap 부작용.
+
+- 2026-05-07: **fig5 deep cells horizontal floor 분류 + 영구 default 변경 (★ 중요 결정)**
+  - 2026-05-06 entry 후속. Problem 3 (deep cells anomaly) 후속 진단 + 영구 fix 적용.
+  - ---
+  - **사용자 지적 1 — fig5 deep cells horizontal floor 분류**:
+    - 사용자가 fig5에서 일부 species가 특정 depth부터 일정 농도로 horizontal하게 유지되는 점 지적
+    - 검증된 분류 (verification 완료):
+      - **Type 1 (atol-band)**: NO3⁻, NO2⁻, H2O2, HO2 등 trace species. atol=1e-30로 변경 시 4-6 orders 더 깊어짐 (atol-floor 효과)
+      - **Type 2A (initial pH=7 seed)**: H+/OH- 1e-7. atol 무관, deep cells 도달 못 한 영역 그대로 유지
+      - **Type 2B (initial OH=1e-12 seed)**: OH plateau ~1e-13 M (initial 1e-12에서 약간 drain). atol 무관 (atol 1e-30로도 1e-13 stuck → atol 가설 결정적 기각)
+      - **Type 3 (mechanism 미식별)**: O3 4mm peak, HO2 1mm wave (Phase D/F/G/I/Radau 모든 numerical knob 무관)
+    - 신규: `Figures/test/regen_fig5_atol1e30.py` (3 voltage), `Figures/test/regen_fig5_seedmin.py` (3 voltage), `Figures/test/diag_o3_phase_eta_species_atol.py`
+  - ---
+  - **사용자 지적 2 — fig5 panel (f) OH cliff (single-cell negative spikes)**:
+    - 사용자: 1분 라인 cell 37 (z=2.88mm), 8분 라인 cell 47 (z=9.04mm) 단 한 cell 음수 spike. 다른 시간엔 다른 cell.
+    - 첫 가설 (random initial perturbation, seed=42): pde_solver.py:858-861의 `y0 *= (1 + 1e-6 * rng.standard_normal)` → cell-specific deterministic random sign이 atol-band sign-flip 시드라 의심
+    - 검증 (`regen_fig5_no_perturb.py`): perturbation 완전 제거 후에도 cell 37, 47 동일하게 음수 → **Random perturbation 가설 정량 기각**
+    - 두 번째 가설 (grid resolution): dz_min sweep test
+      - dz_min=5µm (default, stretch 1.12) → cell 47 음수
+      - dz_min=1µm → 음수 cells 0개 (Phase G dz=1µm 결과와 일관)
+      - **Mechanism 확정**: SG flux scheme의 face-by-face round-off가 large dz cells (default stretch 1.12에서 dz_max 1028µm)에서 atol-band 농도의 sign flip 유발
+  - ---
+  - **★ 사용자 결정 — 영구 default 변경 (★)**:
+    1. **`pde_solver.py:858-861` random perturbation 블록 제거**: y0 *= (1+1e-6 random) 영구 삭제. uniform-trace IC 의도와 충돌.
+    2. **`gen_all_figures.py:48` STRETCH = 1.12 → 1.02**:
+       - N_z: 49 → 188 cells
+       - dz 범위: 5-1028µm → 5-199µm (deep cells 5× smoother)
+       - cell-specific 음수 spike 해결 main driver
+    3. **`config_1d.py:327` ODE_CONFIG.atol = 1e-15 → 1e-20**:
+       - atol-band noise zone 5 orders 축소
+       - Phase D 측정: cost ×1.5 (vs default), atol=1e-25 대비 ×8 빠름
+    4. **`pde_solver.py:842-856` build_initial_condition full seedmin**:
+       - O2 = 2.5e-4 → trace 1e-30
+       - N2 = 5e-4 → trace 1e-30
+       - OH = 1e-12 (radical seed) → trace 1e-30
+       - H+/OH- = 10⁻⁷ (pH=7, pH-physical) 유지
+       - Cl⁻ = 0.154 (saline mode only) 유지
+       - **Side effect**: chemistry network 일부 변화 — air-saturated O2/N2 reservoir 없어 R10/R20/R25 등 reactions의 deep-cell behavior 다름. **pH 결과 4.05 → 3.47 (0.6 unit acidic 변화) 측정됨.**
+  - ---
+  - **시뮬 wall time 측정** (3.6 kV):
+
+| Setup | N_z | dz 범위 | atol | Wall | nfev | pH (final) |
+|---|---|---|---|---|---|---|
+| Default 이전 (stretch 1.12, atol 1e-15, with seeds) | 49 | 5-514 µm† | 1e-15 | 42 s | 25,636 | 4.05 |
+| stretch 1.02 + atol 1e-30 + seedmin | 188 | 5-107 µm | 1e-30 | >1 hour | not converged | (kill) |
+| stretch 1.02 + atol 1e-25 + seedmin | 188 | 5-107 µm | 1e-25 | 1771 s (29.5분) | 223,081 | 3.47 |
+| **★ stretch 1.02 + atol 1e-20 + seedmin (영구 default)** | **188** | **5-107 µm** | **1e-20** | **656 s (10.9분)** | **83,307** | **3.47** |
+
+    † 시뮬 print message에서 dz_max=514µm 표시되나 직접 build 시 1028µm — overshoot trim 처리 차이로 추정.
+  - ---
+  - **3 voltage HONOvar_v2 생성 완료**:
+    - `Figures/DIW results/{2.6, 3.2, 3.6}kV_Humid_fitting_three_film_HONOvar_v2/` 3 폴더
+    - 각 폴더 9 figures (fig1, 1b, 1c, 2, 2b, 3, 4, 5, 6) + cache
+    - 기존 `_HONOvar` 폴더는 그대로 보존 (이전 default 비교용)
+  - ---
+  - **결과 — 영구 변경 효과 (3.6 kV fig5 직접 확인)**:
+    - ✓ Panel (f) OH cliff 완전 제거 (cell-specific 음수 spike 모든 시점 0개)
+    - ✓ Panel (b) NO3⁻, (c) NO2⁻, (e) H2O2, (g) HO2 모두 매끈한 monotonic profile
+    - ✓ Panel (a) pH: z>3mm pH=7 horizontal (initial H+/OH- seed로 인한 정상 영역, chemistry 도달 못한 영역)
+    - ✗ **Panel (d) O3 4mm deep peak 여전히 존재** (~10⁻⁵ µM): grid/atol/initial seeds/perturbation 모두 무관 (별도 mechanism)
+    - ✗ Panel (g) HO2 1mm 부근 wave-like pattern 여전: 같은 mechanism class
+  - ---
+  - **변경/생성 파일** (이번 세션):
+    - **★ 영구 코드 변경**:
+      - `Ver4_1D/pde_solver.py:842-856` build_initial_condition (full seedmin, perturbation 제거)
+      - `Ver4_1D/config_1d.py:327` ODE_CONFIG.atol = 1e-20
+      - `Figures/gen_all_figures.py:48` STRETCH = 1.02
+    - **신규 진단 스크립트**:
+      - `Figures/test/regen_fig5_atol1e30.py` (3 voltage atol=1e-30 검증)
+      - `Figures/test/regen_fig5_seedmin.py` (3 voltage seedmin 검증)
+      - `Figures/test/regen_fig5_no_perturb.py` (random perturbation 가설 검증, 기각)
+      - `Figures/test/regen_fig5_smalldz.py` (dz=1µm test, 음수 cells 0개 확인)
+      - `Figures/test/test_3.6kV_full_combo.py` (영구 default verification, atol 1e-20/1e-25/1e-30 sweep)
+      - `Figures/test/diag_o3_phase_eta_species_atol.py` (25 species atol 비교, Phase η)
+    - **재생성 폴더**:
+      - `Figures/DIW results/{2.6, 3.2, 3.6}kV_Humid_fitting_three_film_HONOvar_atol1e30/` (atol 검증)
+      - `Figures/DIW results/{2.6, 3.2, 3.6}kV_Humid_fitting_three_film_HONOvar_seedmin/` (seedmin 검증)
+      - `Figures/DIW results/3.6kV_Humid_fitting_three_film_HONOvar_seedmin_noperturb/` (perturbation 가설 검증)
+      - `Figures/DIW results/3.6kV_Humid_fitting_three_film_HONOvar_seedmin_dz1um/` (dz 가설 검증)
+      - `Figures/DIW results/3.6kV_Humid_fitting_three_film_HONOvar_FULL_atol1e25/` (atol 1e-25)
+      - `Figures/DIW results/3.6kV_Humid_fitting_three_film_HONOvar_FULL_atol1e20/` (atol 1e-20)
+      - **`Figures/DIW results/{2.6, 3.2, 3.6}kV_Humid_fitting_three_film_HONOvar_v2/`** (★ 영구 default 적용 결과, 3 voltage × 9 figures)
+  - ---
+  - **종합 상태**:
+    | Problem | 진단 상태 | Fix |
+    |---|---|---|
+    | 1 (oscillation) | ✓ chemistry network linear analysis로 LV 기각 (Phase H/γ) | 미적용 (gas BC variation forced response) |
+    | 2 (O atom budget) | ✓ atto-Molar atol-band noise (32% species 동일 issue) | ✓ plot fix (O→NO3, 2026-05-06) |
+    | 3 (deep cells anomaly) | **부분 해결**: cell-specific 음수 spike는 grid/perturbation/atol/seedmin 영구 변경으로 제거 (2026-05-07). 그러나 **O3 4mm deep peak는 여전히 별도 mechanism** | ★ 영구 fix 4건 적용 (cell anomaly 부분), O3 4mm peak는 미해결 |
+  - ---
+  - **다음 단계 후보**:
+    1. **panel (d) O3 4mm peak 별도 진단**: 모든 simple knob 무관 확인됨 → reference solver (FD+RK4) 작성이 결정적. 또는 Bottom BC 변경 (absorbing c=0) 시도.
+    2. **HONOvar (이전 default) vs HONOvar_v2 직접 비교 figure**: 영구 변경 효과 시각화 (pH, NO3⁻, H2O2 정량 비교)
+    3. **Saline 결과 영구 default 적용 재생성**: DIW와 동일 setting으로 saline 6 cases 재시뮬
+    4. **External AI 다음 round**: O3 4mm peak가 모든 시도에 무관함을 보고하고 다른 mechanism 가설 요청
+    5. **memory MEMORY.md 갱신** (영구 변경 사항 + "Always verify, never speculate" rule 반영)
+
+- 2026-05-07 (afternoon): **O3 V-shape 결정적 진단 — Phase K1~K6 + R32 OFF + D sweep + Poisson ON**
+  - **fig5b 시도 (단명)**: per-cell rate × 5 time × 7 species 시각화 시도 → 너무 복잡으로 폐기. `gen_all_figures.py`에서 `gen_fig5b`/`compute_rates_snapshot_2d`/`species_contribution_2d` 모두 제거 (residual 0).
+  - ---
+  - **Phase K1~K6 — V-shape이 numerical artifact인지 PDE 해인지 결정 검증** (`Figures/test/diag_o3_phase_k*.py` 6개 신규):
+    - K1: SG flux Gaussian manufactured solution. 중간 cells 정확, deep cells (1e−26~1e−68) underflow 영역에서 deviation. SG implementation 자체 OK.
+    - K2: Pure diffusion (chemistry OFF) + 15-order step IC + BDF. **Monotonic** — chemistry 없으면 V-shape 안 형성.
+    - K3: Single-species O3 toy + imposed NO2⁻(z, t) (cache interpolation). **V-shape 정확 재현** (recovery x5.7e15). multi-species coupling 무관 확정.
+    - K4: K3 toy를 BDF/Radau/LSODA/RK45 4개 integrator. 모두 동일 V-shape (recovery x4.83e15) — time integrator 무관.
+    - K5: SG vs simple central FD. 정확 일치 (FD/SG = 1.00). E=0이라 SG = Fickian, Bernoulli 책임 없음.
+    - K6: Bernoulli function precision. α 모든 범위 machine precision OK.
+    - **결론**: **V-shape은 PDE의 정확한 해**. 8 numerical scheme 조합 모두 동일.
+  - ---
+  - **R32 OFF 검증** (`Figures/test/diag_r32_off_v2.py`):
+    - 49-cell HONOvar baseline에서 R32 (O3+NO2⁻→NO3⁻)만 disable → numba precompute → 시뮬.
+    - Baseline: recovery x1.63e13 / R32 OFF: **x1.0 (monotonic 회복)**.
+    - **V-shape 100% R32 단독 책임 확정**. 이전 추측 ("다른 sinks도 partner 부족으로 약함")이 검증 결과 틀림 — 12개 다른 sinks는 V-shape 형성에 기여 안 함.
+  - ---
+  - **사용자 의문 정량 검증** (`diag_o3_param_dump.py`, `diag_o3_surface_balance.py`, `diag_o3_deep_source_v2.py`):
+    - Surface (j=0) mass balance: MT (1.13e−4 M/s) ≈ R32 sink (8.35e−5) + diff outflow (2.95e−5). **Closure 100.5%**.
+    - 모든 시간에서 max R32 sink rate at cell 0 (surface). "mid에서 sink"는 시각적 인상.
+    - Mid c_O3 underflow 이유: surface 100µm 안에서 mass 16 orders 소진 → mid 도달 자체가 차단.
+    - Deep cells dCdt > 0 (mass gaining) — chem_net all sink, **div_diff > 0 = diffusion이 유일 source**. NO2⁻ wall ahead의 free-diffusion 잔재가 deep으로 propagate.
+  - ---
+  - **D sweep + dz refinement** (`diag_d_sweep_dzrefine.py`, `diag_d_hono_sweep.py`):
+    - D_O3 ×{0.1, 1, 10, 100}: recovery 1→1e15→1e12→1e4. **D_O3 ×100에도 V 잔존**.
+    - D_HONO_total ×{0.1, 1, 10, 100}: recovery 7.6e15→5.3e14→2.7e6→**1.0**. **D_HONO ×100에서 V 완전 제거**.
+    - dz_min 0.5µm + stretch 1.20 (50 cells, surface refined): baseline과 동일 recovery x5.3e14. **mesh refinement 영향 없음**.
+    - 결론: D_HONO_total이 D_O3보다 V-shape에 훨씬 sensitive.
+  - ---
+  - **Poisson ON 시뮬 (의외 결과)** (`diag_poisson_on.py`, `diag_poisson_no_enforce.py`):
+    - `POISSON.enabled=True`로 quasi-neutrality + ambipolar coupling 기대 (D_amb = 2D+D−/(D++D−) = 3.17e−9 for H+/NO2⁻).
+    - Poisson ON: V-shape **더 강해짐** (recovery 1.63e13 → 5.34e14, mid valley x100 더 깊고 narrow).
+    - `_enforce_electroneutrality` monkey-patch로 OFF 추가 시뮬 → 결과 정확히 동일 (5.34e14). enforce는 dt_enforce=None이라 시뮬 끝 1번만 호출.
+    - 즉 Poisson ON의 효과는 진짜 PDE level. Multi-ion 상황에서 ambipolar coupling이 V 약화 안 시킴.
+    - **E field magnitude per cell dump 미실시** (다음 단계).
+  - ---
+  - **Mid sink 제거 옵션 비교 표**:
+    | 방법 | recovery factor | V 제거 |
+    |---|---|---|
+    | R32 OFF | x1.0 | 완전 |
+    | D_HONO_total ×100 | x1.0 | 완전 |
+    | D_HONO_total ×10 | x2.7e6 | 8 orders |
+    | D_O3 ×100 | x1e4 | 11 orders 잔존 |
+    | dz_0.5µm refinement | x5.3e14 | 변화 없음 |
+    | Poisson ON | x5.3e14 | 강화 (×33) |
+    | Poisson ON + enforce OFF | x5.3e14 | 동일 |
+  - ---
+  - **NO2⁻ propagation front 메커니즘 (정량 확정)**:
+    - D_HONO_total = 1.85e−9 ≈ D_O3 = 1.75e−9 → 비슷한 속도로 propagate.
+    - NO2⁻ front 안쪽 (R32 active): O3 빠르게 0으로 (sink wall, λ_react = 3.5µm at surface).
+    - NO2⁻ front 바깥쪽 (deep): sink 부재 → free-diffusion 잔재.
+    - Bottom no-flux trap → deep mass 잔류.
+  - ---
+  - **Memory rule 추가**: `feedback_always_verify.md` 신규 — "추측 금지, 모든 답변 데이터 검증 후". MEMORY.md 업데이트. 사용자 비판 반복 ("뇌피셜말고 검증해봤음?", "해봤냐고^^")으로 강화.
+  - ---
+  - **변경/생성 파일**:
+    - `Figures/test/diag_o3_phase_k{1..6}_*.py` (6 phase scripts)
+    - `Figures/test/diag_o3_param_dump.py`, `diag_o3_surface_balance.py`, `diag_o3_deep_source_v2.py`
+    - `Figures/test/diag_r32_off_v2.py` + `r32_off_v2.npz`
+    - `Figures/test/diag_d_sweep_dzrefine.py` + `d_sweep_*.npz` (5 caches)
+    - `Figures/test/diag_d_hono_sweep.py` + `d_hono_sweep_*.npz` (4 caches)
+    - `Figures/test/diag_poisson_on.py`, `diag_poisson_no_enforce.py` + caches
+    - `Figures/test/diag_sg_flux_v2.py` (face flux + mass conservation)
+    - `Figures/test/plot_o3_no2_product_v2.py`, `plot_o3_rhs_terms_v2.py`
+    - `Figures/test/fig_*.{png,pdf}` 약 12개 figures
+    - `gen_all_figures.py` — fig5b 추가 후 제거
+    - `memory/feedback_always_verify.md` 신규
+    - `memory/MEMORY.md` 업데이트
+  - ---
+  - **다음 단계 후보** (미진행):
+    1. **E_half(z, t) + ρ(z, t) dump** (Poisson ON 정량 검증)
+    2. **D_HONO_total → D_amb=3.17e−9 substitution** (×1.7 ambipolar 단순)
+    3. **NO2⁻ 침투 깊이 실험 비교** (Liu 2016 등)
+    4. **Multi-component ambipolar (Maxwell-Stefan)** — H+/OH−/NO2−/NO3−/Cl− 동시
+    5. **NO2⁻ surface generation 자체 의심** (HONO MT 너무 강한지)
+    6. **Liu 2015 100s 가정 violation 영향 정량**
+
+- 2026-05-07 (evening): **DMEM RONS 임시 프로젝트 — Deep research 리포트 작성**
+  - 사용자가 `Article/JYChoi_20260429_DMEM RONS 반응 관련 레퍼런스.pptx` 추가. DIW 반응 set에 DMEM 약식 반응 추가하는 임시 과제.
+  - PPTX 핵심 (Pyr+H2O2 k=2.36, Met+H2O2 k=2e-2, Cystine⇌2Cys 가역 평형, 2 references)이 **불충분**하다고 판단 → 3-agent 병렬 deep research 수행 (Web).
+  - **Agent 1**: DMEM Gibco 12800017 정확 조성 (cytion/Sigma D6429/ATCC 30-2002 cross-check) + Pyruvate kinetics. Vásquez-Vivar 1997 ChemResTox: Pyr+ONOOH k=49, Pyr+ONOO⁻ k=100, **products=AcO⁻+CO2+•NO2+•CO2⁻ (radical 생성)**. Pyr+•OH k≈7e8 (Buxton). Pyr+(O3, NO2•, NO3•, O2•⁻, ¹O2) data gap.
+  - **Agent 2**: Met + Cys/Cystine cascade. Met+H2O2 k=2e-2 → **τ~10⁶s, 60s 모델에서 무시 가능 (drop)**. Met+•OH=8.3e9, +O3=4e6, +ONOOH=181, +¹O2=1.7e7, +HOCl=3.4e7, **Met+NO2• ≈ 0** (Prütz 1985). Cys cascade (CysSH→CysSOH→CysSO2H→CysSO3H): 각 단계 k 결정. **DMEM에는 free CysSH 없음 (cystine·2HCl 0.2 mM만)**, 효소 없는 환경에서 환원 거의 안 됨. CysSSCys+•OH=7e9이 주 반응.
+  - **Agent 3**: 부차 성분 + 결정적 발견. **HCO3⁻ 44 mM이 ONOO⁻ 화학을 완전히 hijack**: ONOO⁻+CO2 (k=5.8e4) → ONOOCO2⁻ → 0.33(•NO2+CO3•⁻) + 0.67(NO3⁻+CO2). τ(ONOO⁻) ≈ **10ms**, AA에 직접 도달 못 함. **Glucose 25 mM이 •OH의 49% 흡수** (k×[C]=3.8e7 s⁻¹). Tyr (0.4 mM) → 3-NO2-Tyr nitration이 주 신호. Trp (0.078 mM) → NFK/kynurenine.
+  - **PPTX 대비 핵심 누락 8개** 식별: NaHCO3, Glucose, Tyr, Trp, Pyr+ONOO⁻ radical 생성, Cys 산화 캐스케이드, free Cys 부재, Met+H2O2 우선순위 오류.
+  - **권장 reaction set**: Tier 1 14개 (Pyr×3, Met×3, Cys×1, Tyr×3, Glc×1, Gln+AA_pool×2, Bic×3 ★MUST). Tier 2/3 optional. 신규 species ~20종 (총 67~70).
+  - **DMEM의 가장 큰 차이점**: pH가 거의 안 떨어짐 (HCO3⁻ buffer로 ~7.4 유지). DIW의 pH 3.6 결과와 정반대. 산성 thiolate 효과 (CysSH pKa 8.3) 무력화.
+  - **변경/생성 파일**:
+    - `notes/dmem_chemistry_research.md` 신규 (8 sections, ~60 sources, full kinetic table + recommended reaction set + initial conditions)
+  - **다음 단계 (미진행)**: (1) Park ChemistryOpen 2024 e202300213 본문 직접 다운로드 (Pyr+H2O2 k=2.36은 Asmus 2019 인용 확인), (2) `reactions_dmem.yaml` 스켈레톤 작성, (3) 신규 species (Pyruvate, Cystine, Tyrosine, Glucose, HCO3, CO3_radical 등) chemistry_1d.py 등록, (4) DMEM initial condition (NaHCO3 buffered pH=7.4) 별도 시뮬 케이스 추가.
+
+- 2026-05-12: **★ 2.6 kV O3 oscillation 해결 — NO2/NO3 species-aware SG smoothing 영구 default**
+  - 배경: User가 `2.6kV_Humid_fitting_three_film_HONOvar_v2/fig1c` O3 시계열 oscillation 재지적. 2026-05-06 외부 AI Phase γ에서 "forced response from gas BC residual variation"로 정성 결론났으나 정량 확증 + production fix 미적용 상태였음. Phase F1~F3로 mechanism 확정 + 영구 default 변경.
+  - ---
+  - **Phase F1 — All-gas-const 검증** (`Figures/test/diag_o3_phase_f1_gas_const.py`):
+    - 모든 gas species → 시간평균 const (NO2/N2O4/O3/N2O5/NO3 + HONO/HONO2/H2O2). 2 sims (baseline vs all-const).
+    - Result detrended std (t>180s): bulk **23.31% → 5.09% (−78%)**, vol 10.67 → 1.54 (−86%), surf 5.49 → 0.43 (−92%). pH/NO3⁻/H2O2 동일.
+    - Wall time 552s → 33305s (60× 증가, all-const step input의 BDF stiffness 영향).
+    - **결론**: gas-side variation이 oscillation 단독 원인 정량 확증. 2026-05-06 외부 AI Phase γ 결론과 정확 일치.
+  - ---
+  - **Phase F2 — Leave-one-out species 격리** (`Figures/test/diag_o3_phase_f2_species_iso.py`):
+    - 5 cases: baseline + (O3/NO2/N2O5/NO3 각각 const, 나머지 변동).
+    - bulk std: baseline 23.31, **NO3 const 11.54 (−51%)**, O3 22.36 (−4%), N2O5 22.91 (−2%), **NO2 const 52.44 (+125%)**.
+    - **NO2 const +125%는 step input artifact**: NO2 평균 const → HONO/N2O4도 t=0부터 큰 값 inject (정상은 ramp-up) → huge transient → detrend 잔차 폭증. NO2 진짜 변동 기여는 F2로 측정 불가.
+    - **NO3 const −51%은 깨끗**: NO3는 derived species 없음 → step input artifact 작음 → 진짜 변동 제거 효과만 측정.
+    - **User 직관 (NO2가 화학적으로 더 중요)이 정확**: step input artifact 인정.
+  - ---
+  - **NO2/NO3 raw CV% 비교** (시뮬 없이, `Figures/test/plot_no2_no3_smoothing.py`):
+    - **NO2 raw 14.98%** → w=31 (62s) 5.81% → w=151 (302s) 4.94% → w=251 (502s) 4.12%
+    - **NO3 raw 6.83%** → w=31 3.36% → w=151 3.13% → w=251 3.16%
+    - **NO2가 NO3보다 raw measurement noise 2.2배 큼**. User 직관 확증.
+    - w=151 → NO2에 유의미한 추가 reduction, NO3는 diminishing returns. w=151 채택.
+  - ---
+  - **Phase F3 — NO2/NO3 SG w=151 시뮬 검증** (`Figures/test/diag_o3_phase_f3_strong_sg.py`):
+    - baseline (w=31 all) vs strong (NO2/NO3 w=151, O3/N2O5 default w=31). 2 sims.
+    - Result bulk std: **23.31 → 12.52 (−46%)**, surf 5.49 → 2.28 (−58%). pH/NO3⁻/NO2⁻/H2O2 **0.2% 이내 동일**.
+    - Wall time 563s → 469s (**−17%**, smooth input → BDF stiffness 감소).
+    - **결론**: NO2+NO3 strong smoothing이 oscillation 절반 잡음. F1 5% floor 대비 F3 12.5% — 잔여 ~7%는 O3 자체 변동 + BDF numerical noise.
+  - ---
+  - **★ 영구 default 변경 (2026-05-12)**:
+    - `Figures/gen_all_figures.py::_preprocess_below_lod(vals, species=None)`: **species-aware** SG window
+      - NO2/NO3 → **window=151** (302s averaging, forced-response noise reduction)
+      - Others → window=31 (62s, transient dynamics 보존)
+    - 호출 site: `gas_conc[col] = _preprocess_below_lod(raw, species=col)` (line 245)
+    - Sanity check: NO2 CV 1.67% → 0.44%, N2O4 CV 3.33% → 0.89% (NO2-derived), O3/N2O5 변경 없음, mean 모두 보존.
+  - ---
+  - **3 voltage HONOvar_v3 재생성 결과**:
+
+| V | NO3⁻ sim/exp | NO2⁻ sim/exp | H2O2 sim/exp | pH sim/exp | wall |
+|---|---|---|---|---|---|
+| 2.6 kV | 36.92/32.63 (×1.13) | 0.049/0 | 5.17/4.76 (×1.09) | 4.43/5.09 | 488s |
+| 3.2 kV | 71.86/62.74 (×1.15) | 4.15/3.58 (+16%) | 19.59/11.21 (×1.75) | 4.13/3.61 | 494s |
+| 3.6 kV | 78.15/70.42 (×1.11) | 20.55/20.74 ✓ | 25.04/16.25 (×1.54) | 4.05/3.25 | 2235s |
+
+    - HONOvar_v2 대비 변화 0.2% 이내 (NO3⁻/NO2⁻/H2O2/pH 모두 보존). 정량 fit 무손실.
+    - **★ 2.6 kV fig1c O3 oscillation 완전 소멸** — 1~3.5분 사이 3-peak 패턴이 single monotonic ramp-up으로 변환. 3.2/3.6 kV는 원래 smooth였으나 일관성 위해 동일 적용.
+  - ---
+  - **Mechanism 종합 (2026-04-09 ~ 2026-05-12)**:
+    1. 2026-04-09: O3 oscillation "BDF artifact" 잠정 결론 (틀림)
+    2. 2026-05-04 Phase B5: BDF tolerance 10¹⁵× 강화에도 std% 동일 → numerical 배제
+    3. 2026-05-04 Phase B redo: R32 OFF로 std 24→2.7% → "Lotka-Volterra limit cycle" 가설 (틀림)
+    4. 2026-05-06 Phase H/γ: 0D + 1D PDE Jacobian 모두 Hopf candidates 0 → LV 수학적 기각, "forced response from gas BC variation" 정성 결론
+    5. **2026-05-12 Phase F1 정량 확증**: all-const → 78% reduction. forced response 확정.
+    6. 2026-05-12 Phase F2/F3: NO2 raw noise > NO3 (user 직관), production fix (NO2/NO3 SG w=151) 50% reduction with 0% 정량 변화.
+  - ---
+  - **변경/생성 파일** (이번 세션):
+    - ★ 영구 변경: `Figures/gen_all_figures.py` `_preprocess_below_lod` species-aware (line 183-235, 245)
+    - 진단 스크립트 신규: `Figures/test/diag_o3_phase_f1_gas_const.py`, `diag_o3_phase_f2_species_iso.py`, `diag_o3_phase_f3_strong_sg.py`, `plot_no2_no3_smoothing.py`
+    - 진단 figure 신규: `Figures/test/fig_diag_o3_{f1,f2,f3}.{png,pdf}`, `fig_no2_no3_smoothing_2.6kV.{png,pdf}`
+    - 진단 텍스트: `Figures/test/diag_o3_{f1,f2,f3}.txt`
+    - **신규 폴더 (★ 새 default 결과)**: `Figures/DIW results/{2.6,3.2,3.6}kV_Humid_fitting_three_film_HONOvar_v3/` (각 9 figures + cache)
+  - ---
+  - **종합 상태 (Problem 1/2/3 통합 — 2026-05-04~12)**:
+    | Problem | 진단 | Fix |
+    |---|---|---|
+    | 1 (2.6 kV oscillation) | ✓ forced response from gas BC variation (F1 78% 정량 확증) | **✓ NO2/NO3 SG w=151 영구 default (F3 46% in production, 0% 정량 변화)** |
+    | 2 (O atom budget) | ✓ atto-Molar atol-band noise (2026-05-06) | ✓ plot fix (O→NO3, 2026-05-06) |
+    | 3 (deep cells anomaly) | 부분 해결 (2026-05-07 영구 default fix) | ✓ cell anomaly 부분, O3 4mm peak는 미해결 |
+  - ---
+  - **잔존 Pending (재정의)**:
+    1. ~~2.6 kV O3 oscillation~~ ✅ (이번 세션)
+    2. **3.2/3.6 kV H2O2 1.5-1.75× 과다** — H2O2/O3 ratio voltage-별 재산정? (현재 uniform 0.003)
+    3. **pH gap +0.4-0.8 unit** — charge balance gap, `project_le_chatelier_h_pending.md` 연관
+    4. **Saline에 동일 NO2/NO3 SG default 적용 검증** — paper main hook
+    5. **Voltage_comparison HONOvar_v3 figure** — 3-voltage bar comparison 신규 생성
+    6. **O3 4mm deep peak** — reference solver (FD+RK4) 미진행
+
+- 2026-05-14: **fig2b 재구성 (5 radicals) + R27/R32/R77 OFF sweep + Acid-base speciation framework 확정**
+  - **Fig2b TARGET_SPECIES_RADICAL 변경**: `['NO3', 'OH', 'HO2', 'H+']` → `['HO2', 'HO3', 'O2-', 'O3-', 'OH']`. Layout 2×2 → 3×2 (6번째 hidden), abcde 라벨, suptitle `Radical & H+` → `Radical`. 3 voltage `_HONOvar_v3/` 폴더 fig2b 재생성.
+  - **OH voltage scaling 의문 (user 출발점)**: fig2b OH panel에 R27 (O3+OH→HO2+O2)이 main sink로 보이는데, 저전압에서 O3 더 많으니 R27 sink 강해야 → OH 더 낮아야. 그러나 실측 sim: 2.6 kV [OH]=0.91 pM vs 3.6 kV [OH]=5.2×10⁻⁴ pM (1700× 감소).
+  - **확증편향 정정 (반복)**: 첫 답변에서 R77이 lever라고 surface 농도 기반으로 주장 (k_R27=1.1e8/k_R77=1e10 잘못 사용). yaml 확인 결과 R27 k=3.0e9, R77 k=1.0e9. 두번째 답변에서 R77 dominant 다시 주장 (확증편향 user 비판). 세번째 답변에서도 R77 lever 가설 유지. **User: "확증편향적으로 R77이 우세할거라고 얘기하는 이유는?"** → 정량 분해로 정정.
+  - **source vs sink decomposition (3.6 vs 2.6 kV)**: [OH] 1740× 감소 = source 356× 감소 × k_sink_eff 4.9× 증가 곱 (≈1740). **Source 감소가 main driver**, sink intensification 보조.
+  - **R27/R32/R77 OFF sweep 실행** (`Figures/test/diag_r32_r77_off_sweep.py`, N_z=49 stretch 1.12, 2 voltages × 5 cases = 10 sims, ~10분):
+
+| Case | 2.6 kV [OH] | 3.6 kV [OH] | 2.6/3.6 gap |
+|---|---|---|---|
+| baseline | 9.08×10⁻¹³ | 3.26×10⁻¹⁶ | **2780×** |
+| R27 OFF | 3.98×10⁻¹² (×4.4) | 1.13×10⁻¹⁴ (×34.5) | 353× |
+| R32 OFF | **5.21×10⁻¹⁴ (×0.057↓)** | 3.48×10⁻¹⁵ (×10.7) | 15× |
+| R77 OFF | 1.13×10⁻¹² (×1.25) | 1.48×10⁻¹⁵ (×4.5) | 767× |
+| R32+R77 OFF | 1.73×10⁻¹³ (×0.19↓) | 3.71×10⁻¹⁴ (×114) | **4.67×** |
+
+  - **결정적 발견 1**: **R32+R77 합작이 voltage gap 2780× → 4.67× (600× 좁힘)**. 즉 voltage scaling 1700×의 거의 전부가 NO2⁻ 매개 chemistry (R32+R77)에서 옴.
+  - **결정적 발견 2**: **R32 single이 voltage 따라 정반대 부호**. 3.6 kV에서 R32 OFF → OH ×10.7 회복 (NO2⁻이 O3 잡아먹는 lever). 2.6 kV에서 R32 OFF → OH ×0.057 (17× 감소!). [O3] 50× 폭증하면 R28 (O3+HO2→OH)이 [HO2] 540× crash시켜 source 자체 죽음. 비선형 chemistry.
+  - **결정적 발견 3**: **R27 OFF는 voltage gap 거의 못 줄임** (2780→353, 8×). R27이 fig2b vol-int rate에서 dominant인 건 맞지만 voltage-independent — k·[O3]가 voltage 따라 약함. fig2b rate가 voltage 무관하게 ~3e-9으로 비슷한 이유: [OH]·[O3] cancel.
+  - **잘못된 분석 정정 (또)**: 사용자 "R32 왜 끄고 검증함. R27 끈 게 아니라" → R27 OFF 추가. 사용자 "기여도 순서가 fig2b에 있는데 1% 안에도 없는 R78/R15 ㅇㅈㄹ" → t=600s degenerate state budget 들고 온 것 정정, fig2b 직접 읽으면 R27 main sink 인정.
+  - **Sweep figure**: `Figures/test/fig_r27_r32_r77_off_sweep.{png,pdf}` (2.6/3.6 kV × OH/O3 시계열 4-panel + OH recovery bar chart).
+  - ---
+  - **Acid-base speciation framework 확정**:
+    1. **사용자 첫 지적**: O2⁻ panel에 R27/R28/R41/R91 (HO2-direct rxns) 나오고 HO2 panel에 R25 (O2⁻-direct rxn) 나옴 → 헷갈림. 원인: `_total_match_names`가 acid-base pair를 mass pool (HO2_total)로 묶음.
+    2. **strict matching 시도**: O2⁻ panel에 R25만 나오게 변경 → user 거부 ("생성 소멸에 관련된 건 다 표기하라는 의미"). Mass-pool aggregation 복원.
+    3. **사용자 두번째 지적**: "근데 그렇다고 사라지는 O2⁻의 농도가 모두 (1:1로) sink에 기여하지는 않잖아" → speciation factor f_mol/f_ion 적용 필요. Per-cell rate × f(z) vol-avg 구현. HO2/O2⁻ panel 동일 rxn list, magnitude만 f_mol vs f_ion 비율로 분리.
+    4. **사용자 세번째 지적 (핵심)**: "HO2 ↔ H+ + O2⁻를 통해 HO2 source sink를 계산하면 안됨? 그러면 딱 맞을거 아니야 budget" → AB equilibrium을 explicit line으로 표시.
+    5. **최종 framework**:
+       - Strict-direct rxns: 해당 species가 reactant/product에 명시된 경우만, full stoich × rate (no f-weighting)
+       - MT line: `f_self(surface) × MT_pool` (transferable 종만)
+       - **AB equilibrium line** (`HO2 ⇌ H+ + O2-` 등): `residual = ΔC/Δt − strict − MT` ← 정확한 정의
+       - Panel title 농도: f_mol/f_ion으로 speciation 분리
+  - **Mass balance 검증** (`Figures/test/diag_mass_balance_final.py`, 3 voltages):
+    | 종 종류 | ratio Σ/FD | 평가 |
+    |---|---|---|
+    | Acid-base (HO2, O2⁻, NO2⁻, NO3⁻, H2O2) | **1.000000** | by construction 완벽 closure |
+    | Non-pair O3 | 0.96-1.04 | <3% FD timing 잔차 |
+    | OH (일반 시점) | 0.99-1.01 | <1% |
+    | atto-Molar trace (HO3, O3⁻ 후반) | noise | atol-band, absolute 무시 |
+  - **Pool-level 솔버 보존 확인**: `d⟨HO2_total⟩/dt(FD) vs ⟨chem⟩` ratio 0.99-1.00. **솔버는 pool 수준에서 직접 보존**, species 수준은 derived (f × pool). Panel closure는 후처리 residual approach.
+  - **Ratio<1 잔차 원인 (non-pair)**: FD-시점 mismatch (ΔC/Δt 2s 평균 vs snapshot 순간 rate). dense_output Simpson 적분으로 완벽 closure 가능하나 미구현.
+  - ---
+  - **변경/생성 파일**:
+    - `Figures/gen_all_figures.py`:
+      - `TARGET_SPECIES_RADICAL` 변경 (5 radicals)
+      - `gen_fig2b`: 3×2 layout, per-cell rate, AB-residual closure
+      - `gen_fig2`: 동일 framework (strict-direct + MT speciated + AB residual)
+      - `species_contribution`: `strict` 옵션 추가 (기본 False 유지)
+    - 신규: `Figures/test/diag_r32_r77_off_sweep.py` (+ 10 npz caches `r27_r32_r77_sweep_{V}_{case}.npz`)
+    - 신규: `Figures/test/plot_r32_r77_off_sweep.py` → `fig_r27_r32_r77_off_sweep.{png,pdf}`
+    - 신규: `Figures/test/diag_fig2b_mass_balance.py`, `diag_fig2_mass_balance_full.py`, `diag_mass_balance_final.py`, `diag_oh_budget_voltage.py`
+    - 재생성: `Figures/DIW results/{2.6, 3.2, 3.6}kV_Humid_fitting_three_film_HONOvar_v3/fig2_rate_evolution.{png,pdf}`, `fig2b_radical_rate.{png,pdf}`
+  - **다음 단계 후보**:
+    1. Saline에 동일 framework 적용 검증
+    2. Voltage_comparison HONOvar_v3 figure 생성 (3 voltage bar 비교)
+    3. dense_output Simpson 적분으로 non-pair 종 mass balance 완벽 closure (선택)
+    4. R27/R32/R77 sweep에서 잔존 4.67× gap의 추가 lever 식별 (현재 미진행)
