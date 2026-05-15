@@ -1,0 +1,6 @@
+Phase B2+B4 detrended std (t>180s):
+
+                baseline: bulk mean=  2.058 nM, std= 0.4966 nM (24.12%)
+            o3_sinks_off: bulk mean=  2.058 nM, std= 0.4966 nM (24.12%)
+            gas_constant: bulk mean=  1.902 nM, std= 0.1204 nM ( 6.33%)
+     sinks_off+gas_const: bulk mean=  1.902 nM, std= 0.1204 nM ( 6.33%)

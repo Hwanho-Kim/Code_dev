@@ -1,0 +1,8 @@
+Phase B5 detrended std (t>180s):
+
+case                              wall     nfev   vol_std%  bulk_std%
+baseline (1e-15, 1e-6, 1.0)         51    25636     10.740     24.125
+atol 1e-18                          59    31360     10.740     24.124
+rtol 1e-9                          103    78053     10.739     24.114
+max_step 0.1s                       43    25329     10.740     24.125
+all tight                          125    88946     10.740     24.125

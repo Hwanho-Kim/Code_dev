@@ -1,0 +1,5 @@
+Phase B1 detrended std (t>180s) of bulk-only [O₃]:
+
+   2.6kV /   baseline:  mean=  2.058 nM, detrended std=  0.497 nM  (24.12%)
+   2.6kV /     r32off:  mean=  2.058 nM, detrended std=  0.497 nM  (24.12%)
+   3.2kV /     r32off:  mean=  5.095 nM, detrended std=  5.055 nM  (99.22%)

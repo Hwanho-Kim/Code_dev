@@ -1,0 +1,5 @@
+Phase F3 detrended std (t>180s) — NO2/NO3 SG w=151:
+
+case                               wall      nfev    surf%     vol%    bulk%     pH   NO3uM   NO2uM   H2O2uM
+baseline (w=31 all)                 563     92231    5.486   10.673   23.309  4.432   36.94   0.048    5.178
+strong NO2/NO3 (w=151)              469     77320    2.275    4.832   12.515  4.432   36.92   0.049    5.170

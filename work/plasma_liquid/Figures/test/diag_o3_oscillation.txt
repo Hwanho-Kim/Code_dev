@@ -1,0 +1,38 @@
+Phase A: O3 Henry-eq oscillation diagnosis
+======================================================================
+
+--- 2.6kV ---
+  Henry-eq reaching time:  t = 600.0 s
+  k_mt (O3, three_film):   1.745e-05 m/s
+  H_cc (O3):               2.298e-01
+  Bulk-only avg [O3] post-HE:
+     mean = nan nM, std = nan nM, CV = nan%
+  Dominant osc period (post-HE FFT): nan s
+  NO2- final (vol avg):  0.0465 µM
+  R32 effective rate at final:  2.546e-11 M/s
+  τ_chem (1/(k_R32·[NO2-])):  4.30e+01 s
+  τ_MT (L/k_mt):              5.73e+02 s
+
+--- 3.2kV ---
+  Henry-eq reaching time:  t = 4.0 s
+  k_mt (O3, three_film):   1.745e-05 m/s
+  H_cc (O3):               2.298e-01
+  Bulk-only avg [O3] post-HE:
+     mean = 13.454 nM, std = 15.567 nM, CV = 115.71%
+  Dominant osc period (post-HE FFT): 596.0 s
+  NO2- final (vol avg):  3.7683 µM
+  R32 effective rate at final:  1.199e-10 M/s
+  τ_chem (1/(k_R32·[NO2-])):  5.31e-01 s
+  τ_MT (L/k_mt):              5.73e+02 s
+
+--- 3.6kV ---
+  Henry-eq reaching time:  t = 4.0 s
+  k_mt (O3, three_film):   1.745e-05 m/s
+  H_cc (O3):               2.298e-01
+  Bulk-only avg [O3] post-HE:
+     mean = 11.117 nM, std = 16.691 nM, CV = 150.14%
+  Dominant osc period (post-HE FFT): 596.0 s
+  NO2- final (vol avg):  19.9671 µM
+  R32 effective rate at final:  9.198e-11 M/s
+  τ_chem (1/(k_R32·[NO2-])):  1.00e-01 s
+  τ_MT (L/k_mt):              5.73e+02 s

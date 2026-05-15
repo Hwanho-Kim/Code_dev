@@ -1,0 +1,5 @@
+Phase F1 detrended std (t>180s):
+
+case                          wall     nfev  surf_std%   vol_std%  bulk_std%
+baseline (variable)            552    92231      5.486     10.673     23.309
+all gas const (mean)         33305   265968      0.429      1.535      5.094

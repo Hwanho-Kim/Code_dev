@@ -1,0 +1,11 @@
+Phase D O3 at t=480s, key cells:
+
+case                      z=0.00mm z=0.10mm z=0.38mm z=1.28mm z=4.07mm z=9.82mm
+chem_off   atol= 1e-15  +2.87e-05  +2.64e-05  +1.98e-05  +6.49e-06  +1.93e-08  +1.14e-15 wall=  31s nfev=14444
+chem_off   atol= 1e-20  +2.87e-05  +2.64e-05  +1.98e-05  +6.49e-06  +1.93e-08  +8.75e-16 wall=  38s nfev=22854
+chem_off   atol= 1e-25  +2.87e-05  +2.64e-05  +1.98e-05  +6.49e-06  +1.93e-08  +8.72e-16 wall=  58s nfev=38811
+chem_off   atol= 1e-30  +2.87e-05  +2.64e-05  +1.98e-05  +6.49e-06  +1.93e-08  +8.72e-16 wall= 110s nfev=75648
+baseline   atol= 1e-15  +7.08e-07  +4.96e-15  -1.28e-21  +1.13e-22  +1.83e-10  +5.82e-15 wall=  42s nfev=18165
+baseline   atol= 1e-20  +7.08e-07  +4.96e-15  -7.47e-22  +1.12e-22  +1.83e-10  +5.87e-15 wall=  65s nfev=35283
+baseline   atol= 1e-25  +7.08e-07  +4.96e-15  +2.98e-26  +1.12e-22  +1.83e-10  +5.82e-15 wall= 344s nfev=129611
+baseline   atol= 1e-30  +7.08e-07  +4.96e-15  +3.21e-26  +1.12e-22  +1.83e-10  +5.82e-15 wall= 560s nfev=208601

@@ -1,0 +1,8 @@
+Phase B redo detrended std (t>180s):
+
+    baseline (full chem)        vol: mean= 11.574 nM, std= 1.2430 nM (10.74%)
+    baseline (full chem)  bulk-only: mean=  2.058 nM, std= 0.4966 nM (24.12%)
+            R32 only off        vol: mean=346.684 nM, std= 8.8108 nM ( 2.54%)
+            R32 only off  bulk-only: mean=298.582 nM, std= 7.9714 nM ( 2.67%)
+         R22-R32 all off        vol: mean=530.718 nM, std=10.9628 nM ( 2.07%)
+         R22-R32 all off  bulk-only: mean=471.377 nM, std=10.3346 nM ( 2.19%)

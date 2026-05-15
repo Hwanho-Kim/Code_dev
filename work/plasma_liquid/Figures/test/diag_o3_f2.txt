@@ -1,0 +1,8 @@
+Phase F2 detrended std (t>180s):
+
+case                           wall      nfev  surf_std%   vol_std%  bulk_std%
+baseline (all variable)         569     92231      5.486     10.673     23.309
+O3 const                        556     92711      5.425     10.396     22.362
+NO2 const                       621    107780      5.935     17.736     52.435
+N2O5 const                      571     96838      5.477     10.569     22.914
+NO3 const                       600    103643      4.587      7.266     11.538
